@@ -63,6 +63,24 @@ public class PurchaseRequestService {
         return mapToResponse(request);
     }
 
+    public List<PurchaseRequestResponse> getSellerRequests(User seller) {
+        return purchaseRequestRepository.findBySellerOrderByCreatedAtDesc(seller)
+                .stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    public PurchaseRequestResponse declinePurchaseRequest(User seller, Long id) {
+        PurchaseRequest request = purchaseRequestRepository.findByIdAndSeller(id, seller)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Purchase request not found"));
+
+        if (request.getStatus() != PurchaseRequestStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only pending purchase requests can be declined");
+        }
+
+        request.setStatus(PurchaseRequestStatus.DECLINED);
+        return mapToResponse(purchaseRequestRepository.save(request));
+    }
+
     public PurchaseRequestResponse cancelPurchaseRequest(User buyer, Long id) {
         PurchaseRequest request = purchaseRequestRepository.findByIdAndBuyer(id, buyer)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Purchase request not found"));

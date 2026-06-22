@@ -16,6 +16,10 @@ public interface PurchaseRequestRepository extends JpaRepository<PurchaseRequest
 
     Optional<PurchaseRequest> findByIdAndBuyer(Long id, User buyer);
 
+    Optional<PurchaseRequest> findByIdAndSeller(Long id, User seller);
+
+    List<PurchaseRequest> findBySellerOrderByCreatedAtDesc(User seller);
+
     boolean existsByListingAndStatusIn(Listing listing, List<PurchaseRequestStatus> statuses);
 
     boolean existsByListingAndBuyerAndStatusIn(Listing listing, User buyer, List<PurchaseRequestStatus> statuses);

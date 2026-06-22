@@ -53,4 +53,20 @@ public class PurchaseRequestController {
         return ResponseEntity.ok(ApiResponse.success("Purchase request cancelled",
                 purchaseRequestService.cancelPurchaseRequest(user, id)));
     }
+
+    @GetMapping("/incoming")
+    public ResponseEntity<ApiResponse<List<PurchaseRequestResponse>>> getSellerRequests(
+            Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success(purchaseRequestService.getSellerRequests(user)));
+    }
+
+    @PutMapping("/{id}/decline")
+    public ResponseEntity<ApiResponse<PurchaseRequestResponse>> declinePurchaseRequest(
+            Authentication authentication,
+            @PathVariable Long id) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success("Purchase request declined",
+                purchaseRequestService.declinePurchaseRequest(user, id)));
+    }
 }
