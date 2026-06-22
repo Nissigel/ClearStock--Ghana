@@ -18,5 +18,7 @@ public interface PurchaseRequestRepository extends JpaRepository<PurchaseRequest
 
     boolean existsByListingAndStatusIn(Listing listing, List<PurchaseRequestStatus> statuses);
 
+    boolean existsByListingAndBuyerAndStatusIn(Listing listing, User buyer, List<PurchaseRequestStatus> statuses);
+
     List<PurchaseRequest> findByStatusAndExpiresAtBefore(PurchaseRequestStatus status, LocalDateTime now);
 }
