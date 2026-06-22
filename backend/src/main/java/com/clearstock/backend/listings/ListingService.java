@@ -5,12 +5,16 @@ import com.clearstock.backend.listings.dto.ListingResponse;
 import com.clearstock.backend.listings.dto.UpdateListingRequest;
 import com.clearstock.backend.seller.SellerProfile;
 import com.clearstock.backend.seller.SellerRepository;
+import com.clearstock.backend.seller.VerificationStatus;
+import com.clearstock.backend.transactions.PurchaseRequestRepository;
+import com.clearstock.backend.transactions.PurchaseRequestStatus;
 import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,6 +24,7 @@ public class ListingService {
 
     private final ListingRepository listingRepository;
     private final SellerRepository sellerRepository;
+    private final PurchaseRequestRepository purchaseRequestRepository;
 
     public ListingResponse createListing(User user, CreateListingRequest request) {
         SellerProfile seller = requireSellerProfile(user);
@@ -43,16 +48,28 @@ public class ListingService {
                 .images(request.getImages())
                 .build();
 
-        return mapToResponse(listingRepository.save(listing));
+        return ListingResponse.from(listingRepository.save(listing));
     }
 
-    public List<ListingResponse> getAllActiveListings() {
-        return listingRepository.findByListingStatus(ListingStatus.ACTIVE)
-                .stream().map(this::mapToResponse).collect(Collectors.toList());
+    public List<ListingResponse> searchListings(
+            String search, String category, String region, String cityTown,
+            BigDecimal minPrice, BigDecimal maxPrice, VerificationStatus verificationStatus) {
+
+        return listingRepository
+                .findAll(ListingSpecification.withFilters(
+                        search, category, region, cityTown, minPrice, maxPrice, verificationStatus))
+                .stream()
+                .map(ListingResponse::from)
+                .collect(Collectors.toList());
     }
 
     public ListingResponse getListingById(Long id) {
-        return mapToResponse(findListingOrThrow(id));
+        return ListingResponse.from(findListingOrThrow(id));
+    }
+
+    public Listing findListingOrThrow(Long id) {
+        return listingRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Listing not found"));
     }
 
     public ListingResponse updateListing(User user, Long id, UpdateListingRequest request) {
@@ -96,7 +113,7 @@ public class ListingService {
             listing.setCurrentPrice(request.getCurrentPrice());
         }
 
-        return mapToResponse(listingRepository.save(listing));
+        return ListingResponse.from(listingRepository.save(listing));
     }
 
     public void archiveListing(User user, Long id) {
@@ -107,7 +124,13 @@ public class ListingService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only archive your own listings");
         }
 
-        // Active transaction check will be enforced in Block 3 (Orders module)
+        boolean hasActiveRequests = purchaseRequestRepository.existsByListingAndStatusIn(
+                listing, List.of(PurchaseRequestStatus.PENDING, PurchaseRequestStatus.ACCEPTED));
+        if (hasActiveRequests) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cannot archive listing with pending or accepted purchase requests");
+        }
+
         listing.setListingStatus(ListingStatus.ARCHIVED);
         listingRepository.save(listing);
     }
@@ -115,42 +138,12 @@ public class ListingService {
     public List<ListingResponse> getSellerListings(User user) {
         SellerProfile seller = requireSellerProfile(user);
         return listingRepository.findBySeller(seller)
-                .stream().map(this::mapToResponse).collect(Collectors.toList());
+                .stream().map(ListingResponse::from).collect(Collectors.toList());
     }
 
     private SellerProfile requireSellerProfile(User user) {
         return sellerRepository.findByUser(user)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.FORBIDDEN, "A seller profile is required to manage listings"));
-    }
-
-    private Listing findListingOrThrow(Long id) {
-        return listingRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Listing not found"));
-    }
-
-    private ListingResponse mapToResponse(Listing listing) {
-        return ListingResponse.builder()
-                .id(listing.getId())
-                .sellerId(listing.getSeller().getId())
-                .sellerBusinessName(listing.getSeller().getBusinessName())
-                .productName(listing.getProductName())
-                .category(listing.getCategory())
-                .description(listing.getDescription())
-                .quantity(listing.getQuantity())
-                .unitOfMeasurement(listing.getUnitOfMeasurement())
-                .originalPrice(listing.getOriginalPrice())
-                .currentPrice(listing.getCurrentPrice())
-                .expirySensitive(listing.isExpirySensitive())
-                .expiryDate(listing.getExpiryDate())
-                .clearanceEndDate(listing.getClearanceEndDate())
-                .discountStepPercent(listing.getDiscountStepPercent())
-                .discountIntervalDays(listing.getDiscountIntervalDays())
-                .minimumAcceptablePrice(listing.getMinimumAcceptablePrice())
-                .listingStatus(listing.getListingStatus())
-                .images(listing.getImages())
-                .createdAt(listing.getCreatedAt())
-                .updatedAt(listing.getUpdatedAt())
-                .build();
     }
 }

@@ -4,6 +4,8 @@ import com.clearstock.backend.seller.SellerProfile;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
@@ -73,6 +75,7 @@ public class Listing {
     private ListingStatus listingStatus = ListingStatus.ACTIVE;
 
     @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(name = "listing_images", joinColumns = @JoinColumn(name = "listing_id"))
     @Column(name = "image_url", nullable = false)
     @OrderColumn(name = "image_order")

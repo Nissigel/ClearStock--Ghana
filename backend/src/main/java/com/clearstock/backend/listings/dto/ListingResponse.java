@@ -1,5 +1,6 @@
 package com.clearstock.backend.listings.dto;
 
+import com.clearstock.backend.listings.Listing;
 import com.clearstock.backend.listings.ListingStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -33,4 +34,29 @@ public class ListingResponse {
     private List<String> images;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public static ListingResponse from(Listing listing) {
+        return ListingResponse.builder()
+                .id(listing.getId())
+                .sellerId(listing.getSeller().getId())
+                .sellerBusinessName(listing.getSeller().getBusinessName())
+                .productName(listing.getProductName())
+                .category(listing.getCategory())
+                .description(listing.getDescription())
+                .quantity(listing.getQuantity())
+                .unitOfMeasurement(listing.getUnitOfMeasurement())
+                .originalPrice(listing.getOriginalPrice())
+                .currentPrice(listing.getCurrentPrice())
+                .expirySensitive(listing.isExpirySensitive())
+                .expiryDate(listing.getExpiryDate())
+                .clearanceEndDate(listing.getClearanceEndDate())
+                .discountStepPercent(listing.getDiscountStepPercent())
+                .discountIntervalDays(listing.getDiscountIntervalDays())
+                .minimumAcceptablePrice(listing.getMinimumAcceptablePrice())
+                .listingStatus(listing.getListingStatus())
+                .images(listing.getImages())
+                .createdAt(listing.getCreatedAt())
+                .updatedAt(listing.getUpdatedAt())
+                .build();
+    }
 }
