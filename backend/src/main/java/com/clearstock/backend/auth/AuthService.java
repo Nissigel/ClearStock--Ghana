@@ -67,7 +67,11 @@ public class AuthService {
 
         User user = User.builder()
                 .phone(phone)
+                .phoneAlt(phone)
                 .pinHash(passwordEncoder.encode(pin))
+                .name(phone)
+                .region("Ghana")
+                .cityTown("Unknown")
                 .build();
 
         user = userRepository.save(user);

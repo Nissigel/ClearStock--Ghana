@@ -19,15 +19,25 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "phone_number", unique = true, nullable = false)
     private String phone;
+
+    @Column(name = "phone", nullable = false)
+    private String phoneAlt;
 
     @Column(nullable = false)
     private String pinHash;
 
+    @Column(name = "full_name", nullable = false)
     private String name;
 
     private String email;
+
+    @Column(nullable = false)
+    private String region;
+
+    @Column(name = "city_town", nullable = false)
+    private String cityTown;
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
