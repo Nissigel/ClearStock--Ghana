@@ -10,4 +10,5 @@ public class UpdateSellerProfileRequest {
     private String businessLocation;
     private String businessPhone;
     private String businessCategory;
+    private String marketHub;
 }

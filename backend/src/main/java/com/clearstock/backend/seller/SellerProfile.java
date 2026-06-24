@@ -35,6 +35,13 @@ public class SellerProfile {
 
     private String businessCategory;
 
+    @Column(name = "market_hub")
+    private String marketHub;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "seller_type", nullable = false)
+    private SellerType sellerType;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

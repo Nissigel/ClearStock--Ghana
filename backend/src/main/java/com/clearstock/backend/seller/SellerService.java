@@ -5,10 +5,12 @@ import com.clearstock.backend.seller.dto.SellerProfileResponse;
 import com.clearstock.backend.seller.dto.UpdateSellerProfileRequest;
 import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SellerService {
@@ -16,21 +18,28 @@ public class SellerService {
     private final SellerRepository sellerRepository;
 
     public SellerProfileResponse becomeSeller(User user, BecomeSellerRequest request) {
-        if (sellerRepository.existsByUser(user)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Seller profile already exists");
+        try {
+            if (sellerRepository.existsByUser(user)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Seller profile already exists");
+            }
+
+            SellerProfile profile = SellerProfile.builder()
+                    .user(user)
+                    .businessName(request.getBusinessName())
+                    .businessDescription(request.getBusinessDescription())
+                    .businessLocation(request.getBusinessLocation())
+                    .businessPhone(request.getBusinessPhone())
+                    .businessCategory(request.getBusinessCategory())
+                    .marketHub(request.getMarketHub())
+                    .sellerType(request.getSellerType())
+                    .verificationStatus(VerificationStatus.UNVERIFIED)
+                    .build();
+
+            return mapToResponse(sellerRepository.save(profile));
+        } catch (Exception e) {
+            log.error("becomeSeller failed for userId={}", user.getId(), e);
+            throw e;
         }
-
-        SellerProfile profile = SellerProfile.builder()
-                .user(user)
-                .businessName(request.getBusinessName())
-                .businessDescription(request.getBusinessDescription())
-                .businessLocation(request.getBusinessLocation())
-                .businessPhone(request.getBusinessPhone())
-                .businessCategory(request.getBusinessCategory())
-                .verificationStatus(VerificationStatus.UNVERIFIED)
-                .build();
-
-        return mapToResponse(sellerRepository.save(profile));
     }
 
     public SellerProfileResponse getSellerProfile(User user) {
@@ -48,6 +57,7 @@ public class SellerService {
         if (request.getBusinessLocation() != null) profile.setBusinessLocation(request.getBusinessLocation());
         if (request.getBusinessPhone() != null) profile.setBusinessPhone(request.getBusinessPhone());
         if (request.getBusinessCategory() != null) profile.setBusinessCategory(request.getBusinessCategory());
+        if (request.getMarketHub() != null) profile.setMarketHub(request.getMarketHub());
 
         return mapToResponse(sellerRepository.save(profile));
     }
@@ -61,6 +71,7 @@ public class SellerService {
                 .businessLocation(profile.getBusinessLocation())
                 .businessPhone(profile.getBusinessPhone())
                 .businessCategory(profile.getBusinessCategory())
+                .marketHub(profile.getMarketHub())
                 .verificationStatus(profile.getVerificationStatus())
                 .createdAt(profile.getCreatedAt())
                 .build();

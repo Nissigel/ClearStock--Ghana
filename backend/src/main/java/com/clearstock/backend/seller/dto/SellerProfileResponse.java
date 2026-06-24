@@ -17,6 +17,7 @@ public class SellerProfileResponse {
     private String businessLocation;
     private String businessPhone;
     private String businessCategory;
+    private String marketHub;
     private VerificationStatus verificationStatus;
     private LocalDateTime createdAt;
 }
