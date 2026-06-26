@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class SendOtpResponse {
 
-    /** Returned in response for simulation — remove in production. */
+    /** Null when OTP was sent to email instead. */
     private String otp;
     private LocalDateTime expiresAt;
+    private boolean emailSent;
 }

@@ -13,6 +13,7 @@ public class UserProfileResponse {
     private String phone;
     private String name;
     private String email;
+    private Boolean preferEmail;
     private String profileImageUrl;
     private LocalDateTime createdAt;
 }

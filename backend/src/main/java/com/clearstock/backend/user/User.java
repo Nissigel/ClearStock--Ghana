@@ -33,6 +33,9 @@ public class User {
 
     private String email;
 
+    @Column(name = "email_notifications_enabled")
+    private Boolean preferEmail;
+
     @Column(nullable = false)
     private String region;
 

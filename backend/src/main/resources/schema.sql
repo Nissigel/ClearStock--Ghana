@@ -1,1 +1,2 @@
 ALTER TABLE seller_profiles ALTER COLUMN market_hub DROP NOT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_notifications_enabled BOOLEAN DEFAULT FALSE;

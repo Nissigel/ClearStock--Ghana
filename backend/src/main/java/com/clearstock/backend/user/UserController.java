@@ -1,6 +1,8 @@
 package com.clearstock.backend.user;
 
 import com.clearstock.backend.common.ApiResponse;
+import com.clearstock.backend.user.dto.ToggleNotificationsRequest;
+import com.clearstock.backend.user.dto.UpdateEmailRequest;
 import com.clearstock.backend.user.dto.UpdateProfileRequest;
 import com.clearstock.backend.user.dto.UserProfileResponse;
 import jakarta.validation.Valid;
@@ -28,5 +30,22 @@ public class UserController {
             @RequestBody @Valid UpdateProfileRequest request) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(ApiResponse.success("Profile updated", userService.updateProfile(user, request)));
+    }
+
+    @PutMapping("/email")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateEmail(
+            Authentication authentication,
+            @RequestBody @Valid UpdateEmailRequest request) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success("Email updated", userService.updateEmail(user, request.getEmail())));
+    }
+
+    @PutMapping("/notifications")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> toggleNotifications(
+            Authentication authentication,
+            @RequestBody ToggleNotificationsRequest request) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success("Notification preference updated",
+                userService.toggleEmailNotifications(user, request)));
     }
 }

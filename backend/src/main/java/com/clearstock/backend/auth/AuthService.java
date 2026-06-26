@@ -1,6 +1,7 @@
 package com.clearstock.backend.auth;
 
 import com.clearstock.backend.auth.dto.*;
+import com.clearstock.backend.common.EmailService;
 import com.clearstock.backend.common.JwtUtil;
 import com.clearstock.backend.otp.OtpPurpose;
 import com.clearstock.backend.otp.OtpService;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -23,10 +25,17 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public SendOtpResponse sendOtp(String phone) {
         String otp = otpService.generateAndSaveOtp(phone, OtpPurpose.SIGNUP);
-        return new SendOtpResponse(otp, LocalDateTime.now().plusMinutes(5));
+        return userRepository.findByPhone(phone)
+                .filter(u -> Boolean.TRUE.equals(u.getPreferEmail()) && StringUtils.hasText(u.getEmail()))
+                .map(u -> {
+                    boolean sent = emailService.sendOtpEmail(u.getEmail(), otp);
+                    return new SendOtpResponse(sent ? null : otp, LocalDateTime.now().plusMinutes(5), sent);
+                })
+                .orElse(new SendOtpResponse(otp, LocalDateTime.now().plusMinutes(5), false));
     }
 
     public VerifyOtpResponse verifyOtp(String phone, String otp) {
@@ -75,6 +84,9 @@ public class AuthService {
                 .build();
 
         user = userRepository.save(user);
+        if (StringUtils.hasText(user.getEmail())) {
+            emailService.sendWelcomeEmail(user.getEmail(), user.getName());
+        }
         String token = jwtUtil.generateToken(user.getId(), user.getPhone());
         return new AuthResponse(token, user.getId(), user.getPhone(), user.getName());
     }
@@ -92,11 +104,14 @@ public class AuthService {
     }
 
     public SendOtpResponse forgotPin(String phone) {
-        if (!userRepository.existsByPhone(phone)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
-        }
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
         String otp = otpService.generateAndSaveOtp(phone, OtpPurpose.PIN_RESET);
-        return new SendOtpResponse(otp, LocalDateTime.now().plusMinutes(5));
+        if (Boolean.TRUE.equals(user.getPreferEmail()) && StringUtils.hasText(user.getEmail())) {
+            boolean sent = emailService.sendOtpEmail(user.getEmail(), otp);
+            return new SendOtpResponse(sent ? null : otp, LocalDateTime.now().plusMinutes(5), sent);
+        }
+        return new SendOtpResponse(otp, LocalDateTime.now().plusMinutes(5), false);
     }
 
     public AuthResponse resetPin(String phone, String otp, String newPin) {
