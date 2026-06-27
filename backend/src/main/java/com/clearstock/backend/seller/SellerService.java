@@ -3,6 +3,9 @@ package com.clearstock.backend.seller;
 import com.clearstock.backend.seller.dto.BecomeSellerRequest;
 import com.clearstock.backend.seller.dto.SellerProfileResponse;
 import com.clearstock.backend.seller.dto.UpdateSellerProfileRequest;
+import com.clearstock.backend.transactions.ReviewRepository;
+import com.clearstock.backend.transactions.TransactionRepository;
+import com.clearstock.backend.transactions.TransactionStatus;
 import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +19,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class SellerService {
 
     private final SellerRepository sellerRepository;
+    private final ReviewRepository reviewRepository;
+    private final TransactionRepository transactionRepository;
 
     public SellerProfileResponse becomeSeller(User user, BecomeSellerRequest request) {
         try {
@@ -63,9 +68,14 @@ public class SellerService {
     }
 
     private SellerProfileResponse mapToResponse(SellerProfile profile) {
+        Long userId = profile.getUser().getId();
+        Double avg = reviewRepository.findAverageRatingByRevieweeId(userId);
+        long completedTx = transactionRepository.countBySellerIdAndTransactionStatus(
+                userId, TransactionStatus.COMPLETED);
+
         return SellerProfileResponse.builder()
                 .id(profile.getId())
-                .userId(profile.getUser().getId())
+                .userId(userId)
                 .businessName(profile.getBusinessName())
                 .businessDescription(profile.getBusinessDescription())
                 .businessLocation(profile.getBusinessLocation())
@@ -73,6 +83,8 @@ public class SellerService {
                 .businessCategory(profile.getBusinessCategory())
                 .marketHub(profile.getMarketHub())
                 .verificationStatus(profile.getVerificationStatus())
+                .averageRating(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0)
+                .totalCompletedTransactions(completedTx)
                 .createdAt(profile.getCreatedAt())
                 .build();
     }

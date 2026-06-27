@@ -4,6 +4,8 @@ import com.clearstock.backend.common.ApiResponse;
 import com.clearstock.backend.seller.dto.BecomeSellerRequest;
 import com.clearstock.backend.seller.dto.SellerProfileResponse;
 import com.clearstock.backend.seller.dto.UpdateSellerProfileRequest;
+import com.clearstock.backend.transactions.ReviewService;
+import com.clearstock.backend.transactions.dto.SellerRatingResponse;
 import com.clearstock.backend.user.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class SellerController {
 
     private final SellerService sellerService;
+    private final ReviewService reviewService;
 
     @PostMapping("/become")
     public ResponseEntity<ApiResponse<SellerProfileResponse>> becomeSeller(
@@ -40,5 +43,11 @@ public class SellerController {
             @RequestBody @Valid UpdateSellerProfileRequest request) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(ApiResponse.success("Seller profile updated", sellerService.updateSellerProfile(user, request)));
+    }
+
+    @GetMapping("/{sellerId}/rating")
+    public ResponseEntity<ApiResponse<SellerRatingResponse>> getSellerRating(
+            @PathVariable Long sellerId) {
+        return ResponseEntity.ok(ApiResponse.success(reviewService.getSellerRating(sellerId)));
     }
 }

@@ -19,5 +19,7 @@ public class SellerProfileResponse {
     private String businessCategory;
     private String marketHub;
     private VerificationStatus verificationStatus;
+    private Double averageRating;
+    private Long totalCompletedTransactions;
     private LocalDateTime createdAt;
 }
