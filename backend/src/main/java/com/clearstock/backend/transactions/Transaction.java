@@ -55,6 +55,9 @@ public class Transaction {
     @Builder.Default
     private TransactionStatus transactionStatus = TransactionStatus.PENDING_FULFILLMENT;
 
+    @Column(name = "payment_reference", unique = true)
+    private String paymentReference;
+
     private String otpCode;
 
     private LocalDateTime otpGeneratedAt;

@@ -3,7 +3,6 @@ package com.clearstock.backend.transactions;
 import com.clearstock.backend.common.ApiResponse;
 import com.clearstock.backend.transactions.dto.InitiatePaymentRequest;
 import com.clearstock.backend.transactions.dto.PaymentResponse;
-import com.clearstock.backend.transactions.dto.WebhookRequest;
 import com.clearstock.backend.user.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,16 +22,24 @@ public class PaymentController {
             Authentication authentication,
             @RequestBody @Valid InitiatePaymentRequest request) {
         User user = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(ApiResponse.success("Payment initiated",
+        return ResponseEntity.ok(ApiResponse.success("Payment initialized",
                 transactionService.initiatePayment(user, request)));
     }
 
-    @PostMapping("/webhook")
-    public ResponseEntity<ApiResponse<PaymentResponse>> paymentWebhook(
+    @GetMapping("/verify/{reference}")
+    public ResponseEntity<ApiResponse<PaymentResponse>> verifyPayment(
             Authentication authentication,
-            @RequestBody @Valid WebhookRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Webhook processed",
-                transactionService.confirmWebhook(request)));
+            @PathVariable String reference) {
+        return ResponseEntity.ok(ApiResponse.success("Payment verification result",
+                transactionService.verifyPayment(reference)));
+    }
+
+    @PostMapping("/webhook")
+    public ResponseEntity<Void> paymentWebhook(
+            @RequestHeader(value = "x-paystack-signature", required = false) String signature,
+            @RequestBody String payload) {
+        transactionService.handleWebhook(payload, signature);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{transactionId}")

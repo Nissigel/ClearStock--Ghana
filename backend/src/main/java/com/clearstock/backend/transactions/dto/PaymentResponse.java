@@ -10,6 +10,7 @@ public class PaymentResponse {
 
     private Long transactionId;
     private String paymentReference;
+    private String authorizationUrl;
     private PaymentStatus paymentStatus;
     private String message;
 }

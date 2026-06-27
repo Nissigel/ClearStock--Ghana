@@ -15,6 +15,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     Optional<Transaction> findByPurchaseRequest(PurchaseRequest purchaseRequest);
 
+    Optional<Transaction> findByPaymentReference(String paymentReference);
+
     List<Transaction> findByTransactionStatusInAndOtpGeneratedAtBefore(
             List<TransactionStatus> statuses, LocalDateTime cutoff);
 

@@ -1,13 +1,16 @@
 package com.clearstock.backend.transactions.dto;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class WebhookRequest {
+    private String event;
+    private WebhookData data;
 
-    @NotNull(message = "Transaction ID is required")
-    private Long transactionId;
-
-    private String reference;
+    @Data
+    public static class WebhookData {
+        private String status;
+        private String reference;
+        private Long amount;
+    }
 }

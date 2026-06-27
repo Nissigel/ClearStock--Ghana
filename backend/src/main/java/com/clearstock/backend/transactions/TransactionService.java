@@ -7,12 +7,15 @@ import com.clearstock.backend.messaging.ConversationRepository;
 import com.clearstock.backend.messaging.ConversationStatus;
 import com.clearstock.backend.transactions.dto.*;
 import com.clearstock.backend.user.User;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TransactionService {
 
     private static final int AUTO_COMPLETE_DAYS = 3;
@@ -30,6 +34,8 @@ public class TransactionService {
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final ListingRepository listingRepository;
     private final ConversationRepository conversationRepository;
+    private final PaystackService paystackService;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public TransactionResponse createTransaction(User seller, CreateTransactionRequest request) {
@@ -85,40 +91,87 @@ public class TransactionService {
                     "Payment has already been processed for this transaction");
         }
 
-        String reference = "SIM-PAY-" + System.currentTimeMillis();
-        transaction.setPaymentStatus(PaymentStatus.PAYMENT_SUCCESSFUL);
+        String reference = "CLR-" + transaction.getId() + "-" + System.currentTimeMillis();
+        long amountInPesewas = transaction.getListing().getCurrentPrice()
+                .multiply(BigDecimal.valueOf(transaction.getQuantity()))
+                .multiply(BigDecimal.valueOf(100))
+                .longValue();
+
+        String email = buyer.getEmail() != null
+                ? buyer.getEmail()
+                : buyer.getPhone().replaceAll("[^a-zA-Z0-9]", "") + "@clearstock.app";
+
+        String authorizationUrl = paystackService.initializePayment(email, amountInPesewas, reference);
+
+        transaction.setPaymentReference(reference);
         transactionRepository.save(transaction);
 
         return PaymentResponse.builder()
                 .transactionId(transaction.getId())
                 .paymentReference(reference)
-                .paymentStatus(PaymentStatus.PAYMENT_SUCCESSFUL)
-                .message("Payment confirmed successfully (simulated)")
+                .authorizationUrl(authorizationUrl)
+                .paymentStatus(PaymentStatus.PENDING_PAYMENT)
+                .message("Payment initialized. Complete payment at the provided URL.")
                 .build();
     }
 
     @Transactional
-    public PaymentResponse confirmWebhook(WebhookRequest request) {
-        Transaction transaction = transactionRepository.findById(request.getTransactionId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
+    public void handleWebhook(String payload, String signature) {
+        if (signature == null || !paystackService.isValidSignature(payload, signature)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid webhook signature");
+        }
+
+        WebhookRequest webhookRequest;
+        try {
+            webhookRequest = objectMapper.readValue(payload, WebhookRequest.class);
+        } catch (Exception e) {
+            log.warn("Could not parse Paystack webhook payload: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid webhook payload");
+        }
+
+        if (!"charge.success".equals(webhookRequest.getEvent())) {
+            return;
+        }
+
+        String reference = webhookRequest.getData().getReference();
+        transactionRepository.findByPaymentReference(reference).ifPresent(transaction -> {
+            if (transaction.getPaymentStatus() != PaymentStatus.PAYMENT_SUCCESSFUL
+                    && paystackService.verifyPayment(reference)) {
+                transaction.setPaymentStatus(PaymentStatus.PAYMENT_SUCCESSFUL);
+                transactionRepository.save(transaction);
+                log.info("Transaction {} marked PAYMENT_SUCCESSFUL via webhook", transaction.getId());
+            }
+        });
+    }
+
+    @Transactional
+    public PaymentResponse verifyPayment(String reference) {
+        Transaction transaction = transactionRepository.findByPaymentReference(reference)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No transaction found for reference: " + reference));
 
         if (transaction.getPaymentStatus() == PaymentStatus.PAYMENT_SUCCESSFUL) {
             return PaymentResponse.builder()
                     .transactionId(transaction.getId())
-                    .paymentReference(request.getReference())
+                    .paymentReference(reference)
                     .paymentStatus(PaymentStatus.PAYMENT_SUCCESSFUL)
                     .message("Payment already confirmed")
                     .build();
         }
 
-        transaction.setPaymentStatus(PaymentStatus.PAYMENT_SUCCESSFUL);
+        boolean success = paystackService.verifyPayment(reference);
+        if (success) {
+            transaction.setPaymentStatus(PaymentStatus.PAYMENT_SUCCESSFUL);
+        } else {
+            transaction.setPaymentStatus(PaymentStatus.PAYMENT_FAILED);
+        }
         transactionRepository.save(transaction);
 
         return PaymentResponse.builder()
                 .transactionId(transaction.getId())
-                .paymentReference(request.getReference())
-                .paymentStatus(PaymentStatus.PAYMENT_SUCCESSFUL)
-                .message("Payment confirmed via webhook (simulated)")
+                .paymentReference(reference)
+                .paymentStatus(transaction.getPaymentStatus())
+                .message(success ? "Payment verified successfully" : "Payment not successful")
                 .build();
     }
 
@@ -126,7 +179,7 @@ public class TransactionService {
         Transaction transaction = findTransactionForParticipant(user, transactionId);
         return PaymentResponse.builder()
                 .transactionId(transaction.getId())
-                .paymentReference(null)
+                .paymentReference(transaction.getPaymentReference())
                 .paymentStatus(transaction.getPaymentStatus())
                 .message("Payment status retrieved")
                 .build();
