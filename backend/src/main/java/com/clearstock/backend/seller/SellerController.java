@@ -2,6 +2,7 @@ package com.clearstock.backend.seller;
 
 import com.clearstock.backend.common.ApiResponse;
 import com.clearstock.backend.seller.dto.BecomeSellerRequest;
+import com.clearstock.backend.seller.dto.RecoveryDashboardResponse;
 import com.clearstock.backend.seller.dto.SellerProfileResponse;
 import com.clearstock.backend.seller.dto.UpdateSellerProfileRequest;
 import com.clearstock.backend.transactions.ReviewService;
@@ -43,6 +44,13 @@ public class SellerController {
             @RequestBody @Valid UpdateSellerProfileRequest request) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(ApiResponse.success("Seller profile updated", sellerService.updateSellerProfile(user, request)));
+    }
+
+    @GetMapping("/recovery-dashboard")
+    public ResponseEntity<ApiResponse<RecoveryDashboardResponse>> getRecoveryDashboard(
+            Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success(sellerService.getRecoveryDashboard(user)));
     }
 
     @GetMapping("/{sellerId}/rating")

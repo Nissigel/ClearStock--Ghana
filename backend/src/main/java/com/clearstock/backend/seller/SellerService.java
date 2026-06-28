@@ -1,8 +1,10 @@
 package com.clearstock.backend.seller;
 
 import com.clearstock.backend.seller.dto.BecomeSellerRequest;
+import com.clearstock.backend.seller.dto.RecoveryDashboardResponse;
 import com.clearstock.backend.seller.dto.SellerProfileResponse;
 import com.clearstock.backend.seller.dto.UpdateSellerProfileRequest;
+import com.clearstock.backend.transactions.Transaction;
 import com.clearstock.backend.transactions.ReviewRepository;
 import com.clearstock.backend.transactions.TransactionRepository;
 import com.clearstock.backend.transactions.TransactionStatus;
@@ -12,6 +14,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -65,6 +71,33 @@ public class SellerService {
         if (request.getMarketHub() != null) profile.setMarketHub(request.getMarketHub());
 
         return mapToResponse(sellerRepository.save(profile));
+    }
+
+    public RecoveryDashboardResponse getRecoveryDashboard(User user) {
+        List<Transaction> completed = transactionRepository
+                .findBySellerIdAndTransactionStatus(user.getId(), TransactionStatus.COMPLETED);
+
+        BigDecimal totalGhsRecovered = completed.stream()
+                .map(t -> t.getListing().getCurrentPrice()
+                        .multiply(BigDecimal.valueOf(t.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        long goodsRescued = completed.stream()
+                .map(t -> t.getListing().getId())
+                .distinct()
+                .count();
+
+        BigDecimal estimatedGhsSavedFromWaste = totalGhsRecovered
+                .multiply(new BigDecimal("0.4"))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return RecoveryDashboardResponse.builder()
+                .totalGhsRecovered(totalGhsRecovered)
+                .totalTransactionsCompleted(completed.size())
+                .goodsRescued(goodsRescued)
+                .estimatedGhsSavedFromWaste(estimatedGhsSavedFromWaste)
+                .build();
     }
 
     private SellerProfileResponse mapToResponse(SellerProfile profile) {
