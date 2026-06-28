@@ -74,6 +74,18 @@ public class Listing {
     @Builder.Default
     private ListingStatus listingStatus = ListingStatus.ACTIVE;
 
+    @Column(name = "urgency_score")
+    @Builder.Default
+    private Integer urgencyScore = 0;
+
+    @Column(name = "is_high_urgency")
+    @Builder.Default
+    private Boolean isHighUrgency = false;
+
+    @Column(name = "views_count")
+    @Builder.Default
+    private Integer viewsCount = 0;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @Fetch(FetchMode.SUBSELECT)
     @CollectionTable(name = "listing_images", joinColumns = @JoinColumn(name = "listing_id"))

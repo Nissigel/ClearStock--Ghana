@@ -21,6 +21,7 @@ import java.util.List;
 public class ListingController {
 
     private final ListingService listingService;
+    private final UrgencyScoreScheduler urgencyScoreScheduler;
 
     @PostMapping("/listings")
     public ResponseEntity<ApiResponse<ListingResponse>> createListing(
@@ -42,6 +43,11 @@ public class ListingController {
             @RequestParam(required = false) VerificationStatus verificationStatus) {
         return ResponseEntity.ok(ApiResponse.success(
                 listingService.searchListings(search, category, region, cityTown, minPrice, maxPrice, verificationStatus)));
+    }
+
+    @GetMapping("/listings/urgent")
+    public ResponseEntity<ApiResponse<List<ListingResponse>>> getUrgentListings() {
+        return ResponseEntity.ok(ApiResponse.success(listingService.getHighUrgencyListings()));
     }
 
     @GetMapping("/listings/{id}")
@@ -71,5 +77,11 @@ public class ListingController {
     public ResponseEntity<ApiResponse<List<ListingResponse>>> getSellerListings(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(ApiResponse.success(listingService.getSellerListings(user)));
+    }
+
+    @PostMapping("/listings/recalculate-urgency")
+    public ResponseEntity<ApiResponse<Void>> recalculateUrgency() {
+        urgencyScoreScheduler.calculateNow();
+        return ResponseEntity.ok(ApiResponse.success("Urgency scores recalculated", null));
     }
 }

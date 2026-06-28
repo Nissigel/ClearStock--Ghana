@@ -19,6 +19,7 @@ public class ListingSpecification {
 
         return (root, query, cb) -> {
             query.distinct(true);
+            query.orderBy(cb.desc(root.get("urgencyScore")));
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("listingStatus"), ListingStatus.ACTIVE));
 

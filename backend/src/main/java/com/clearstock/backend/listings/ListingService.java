@@ -135,6 +135,11 @@ public class ListingService {
         listingRepository.save(listing);
     }
 
+    public List<ListingResponse> getHighUrgencyListings() {
+        return listingRepository.findHighUrgencyListings()
+                .stream().map(ListingResponse::from).collect(Collectors.toList());
+    }
+
     public List<ListingResponse> getSellerListings(User user) {
         SellerProfile seller = requireSellerProfile(user);
         return listingRepository.findBySeller(seller)

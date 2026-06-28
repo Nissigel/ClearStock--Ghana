@@ -31,6 +31,8 @@ public class ListingResponse {
     private Integer discountIntervalDays;
     private BigDecimal minimumAcceptablePrice;
     private ListingStatus listingStatus;
+    private Integer urgencyScore;
+    private Boolean isHighUrgency;
     private List<String> images;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -54,6 +56,8 @@ public class ListingResponse {
                 .discountIntervalDays(listing.getDiscountIntervalDays())
                 .minimumAcceptablePrice(listing.getMinimumAcceptablePrice())
                 .listingStatus(listing.getListingStatus())
+                .urgencyScore(listing.getUrgencyScore())
+                .isHighUrgency(listing.getIsHighUrgency())
                 .images(listing.getImages())
                 .createdAt(listing.getCreatedAt())
                 .updatedAt(listing.getUpdatedAt())
