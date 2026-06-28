@@ -3,6 +3,17 @@ ALTER TABLE listings ADD COLUMN IF NOT EXISTS urgency_score INTEGER DEFAULT 0;
 ALTER TABLE listings ADD COLUMN IF NOT EXISTS is_high_urgency BOOLEAN DEFAULT FALSE;
 ALTER TABLE listings ADD COLUMN IF NOT EXISTS views_count INTEGER DEFAULT 0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_notifications_enabled BOOLEAN DEFAULT FALSE;
+CREATE TABLE IF NOT EXISTS deal_alerts (
+    id BIGSERIAL PRIMARY KEY,
+    buyer_id BIGINT NOT NULL REFERENCES users(id),
+    category VARCHAR(255),
+    max_price NUMERIC(15,2),
+    keywords VARCHAR(255),
+    location VARCHAR(255),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+ALTER TABLE deal_alerts ADD COLUMN IF NOT EXISTS buyer_id BIGINT;
 CREATE TABLE IF NOT EXISTS reviews (
     id BIGSERIAL PRIMARY KEY,
     transaction_id BIGINT NOT NULL REFERENCES transactions(id),

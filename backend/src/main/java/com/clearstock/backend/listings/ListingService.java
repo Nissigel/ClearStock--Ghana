@@ -25,6 +25,7 @@ public class ListingService {
     private final ListingRepository listingRepository;
     private final SellerRepository sellerRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
+    private final DealAlertService dealAlertService;
 
     public ListingResponse createListing(User user, CreateListingRequest request) {
         SellerProfile seller = requireSellerProfile(user);
@@ -48,7 +49,9 @@ public class ListingService {
                 .images(request.getImages())
                 .build();
 
-        return ListingResponse.from(listingRepository.save(listing));
+        Listing saved = listingRepository.save(listing);
+        dealAlertService.notifyMatchingAlerts(saved);
+        return ListingResponse.from(saved);
     }
 
     public List<ListingResponse> searchListings(
