@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,9 @@ public class ListingService {
     public ListingResponse createListing(User user, CreateListingRequest request) {
         SellerProfile seller = requireSellerProfile(user);
 
+        BigDecimal initialPrice = resolveInitialPrice(
+                request.getOriginalPrice(), request.isDiscountActive(), request.getManualDiscountPercent());
+
         Listing listing = Listing.builder()
                 .seller(seller)
                 .productName(request.getProductName())
@@ -38,7 +42,9 @@ public class ListingService {
                 .quantity(request.getQuantity())
                 .unitOfMeasurement(request.getUnitOfMeasurement())
                 .originalPrice(request.getOriginalPrice())
-                .currentPrice(request.getOriginalPrice())
+                .currentPrice(initialPrice)
+                .isDiscountActive(request.isDiscountActive())
+                .manualDiscountPercent(request.getManualDiscountPercent())
                 .expirySensitive(request.isExpirySensitive())
                 .expiryDate(request.getExpiryDate())
                 .clearanceEndDate(request.getClearanceEndDate())
@@ -91,6 +97,7 @@ public class ListingService {
         if (request.getDescription() != null) listing.setDescription(request.getDescription());
         if (request.getQuantity() != null) listing.setQuantity(request.getQuantity());
         if (request.getUnitOfMeasurement() != null) listing.setUnitOfMeasurement(request.getUnitOfMeasurement());
+        if (request.getIsDiscountActive() != null) listing.setDiscountActive(request.getIsDiscountActive());
         if (request.getExpirySensitive() != null) listing.setExpirySensitive(request.getExpirySensitive());
         if (request.getExpiryDate() != null) listing.setExpiryDate(request.getExpiryDate());
         if (request.getClearanceEndDate() != null) listing.setClearanceEndDate(request.getClearanceEndDate());
@@ -105,8 +112,15 @@ public class ListingService {
         if (request.getMinimumAcceptablePrice() != null) {
             listing.setMinimumAcceptablePrice(request.getMinimumAcceptablePrice());
         }
+        if (request.getManualDiscountPercent() != null) {
+            listing.setManualDiscountPercent(request.getManualDiscountPercent());
+        }
 
-        if (request.getCurrentPrice() != null) {
+        if (!listing.isDiscountActive() && listing.getManualDiscountPercent() != null) {
+            listing.setCurrentPrice(applyPercent(listing.getOriginalPrice(), listing.getManualDiscountPercent()));
+        } else if (listing.isDiscountActive()) {
+            listing.setCurrentPrice(listing.getOriginalPrice());
+        } else if (request.getCurrentPrice() != null) {
             if (listing.getMinimumAcceptablePrice() != null &&
                     request.getCurrentPrice().compareTo(listing.getMinimumAcceptablePrice()) < 0) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -147,6 +161,22 @@ public class ListingService {
         SellerProfile seller = requireSellerProfile(user);
         return listingRepository.findBySeller(seller)
                 .stream().map(ListingResponse::from).collect(Collectors.toList());
+    }
+
+    private BigDecimal resolveInitialPrice(BigDecimal originalPrice, boolean discountActive, BigDecimal manualDiscountPercent) {
+        if (discountActive) {
+            return originalPrice;
+        }
+        if (manualDiscountPercent != null) {
+            return applyPercent(originalPrice, manualDiscountPercent);
+        }
+        return originalPrice;
+    }
+
+    private BigDecimal applyPercent(BigDecimal base, BigDecimal percent) {
+        return base.multiply(BigDecimal.ONE.subtract(
+                        percent.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)))
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     private SellerProfile requireSellerProfile(User user) {

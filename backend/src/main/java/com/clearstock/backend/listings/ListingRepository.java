@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -17,6 +18,15 @@ public interface ListingRepository extends JpaRepository<Listing, Long>, JpaSpec
 
     List<Listing> findByListingStatusAndDiscountStepPercentIsNotNullAndDiscountIntervalDaysIsNotNull(
             ListingStatus status);
+
+    List<Listing> findByListingStatusAndIsDiscountActiveTrueAndDiscountStepPercentIsNotNullAndDiscountIntervalDaysIsNotNull(
+            ListingStatus status);
+
+    List<Listing> findByListingStatusAndIsDiscountActiveFalseAndExpiryDateIsNotNullAndExpiryDateBetween(
+            ListingStatus status, LocalDate from, LocalDate to);
+
+    List<Listing> findByListingStatusAndExpiryDateIsNotNullAndExpiryDateBefore(
+            ListingStatus status, LocalDate date);
 
     @Query("SELECT l FROM Listing l WHERE l.listingStatus = 'ACTIVE' AND l.isHighUrgency = true ORDER BY l.urgencyScore DESC")
     List<Listing> findHighUrgencyListings();

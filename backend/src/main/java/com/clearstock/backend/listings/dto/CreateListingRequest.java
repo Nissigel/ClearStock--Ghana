@@ -31,9 +31,15 @@ public class CreateListingRequest {
 
     private boolean expirySensitive = false;
 
+    private boolean isDiscountActive = false;
+
     private LocalDate expiryDate;
 
     private LocalDate clearanceEndDate;
+
+    @DecimalMin(value = "0.01", message = "Manual discount must be positive")
+    @DecimalMax(value = "100.00", message = "Manual discount cannot exceed 100%")
+    private BigDecimal manualDiscountPercent;
 
     @DecimalMin(value = "0.01", message = "Discount step must be positive")
     @DecimalMax(value = "100.00", message = "Discount step cannot exceed 100%")

@@ -64,6 +64,9 @@ public class Listing {
 
     private Integer discountIntervalDays;
 
+    @Column(name = "manual_discount_percent", precision = 5, scale = 2)
+    private BigDecimal manualDiscountPercent;
+
     private LocalDateTime lastDiscountAppliedAt;
 
     @Column(precision = 15, scale = 2)
@@ -85,6 +88,10 @@ public class Listing {
     @Column(name = "views_count")
     @Builder.Default
     private Integer viewsCount = 0;
+
+    @Column(name = "is_discount_active")
+    @Builder.Default
+    private boolean isDiscountActive = false;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Fetch(FetchMode.SUBSELECT)

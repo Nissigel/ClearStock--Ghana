@@ -29,10 +29,12 @@ public class ListingResponse {
     private LocalDate clearanceEndDate;
     private BigDecimal discountStepPercent;
     private Integer discountIntervalDays;
+    private BigDecimal manualDiscountPercent;
     private BigDecimal minimumAcceptablePrice;
     private ListingStatus listingStatus;
     private Integer urgencyScore;
     private Boolean isHighUrgency;
+    private boolean isDiscountActive;
     private List<String> images;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -54,10 +56,12 @@ public class ListingResponse {
                 .clearanceEndDate(listing.getClearanceEndDate())
                 .discountStepPercent(listing.getDiscountStepPercent())
                 .discountIntervalDays(listing.getDiscountIntervalDays())
+                .manualDiscountPercent(listing.getManualDiscountPercent())
                 .minimumAcceptablePrice(listing.getMinimumAcceptablePrice())
                 .listingStatus(listing.getListingStatus())
                 .urgencyScore(listing.getUrgencyScore())
                 .isHighUrgency(listing.getIsHighUrgency())
+                .isDiscountActive(listing.isDiscountActive())
                 .images(listing.getImages())
                 .createdAt(listing.getCreatedAt())
                 .updatedAt(listing.getUpdatedAt())

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,11 +21,43 @@ public class AutoDiscountScheduler {
 
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
-    public void applyAutoDiscounts() {
+    public void runDailyListingMaintenance() {
+        LocalDate today = LocalDate.now();
         LocalDateTime now = LocalDateTime.now();
 
+        expireListings(today);
+        autoActivateDiscounts(today);
+        applyScheduledDiscounts(now);
+    }
+
+    private void expireListings(LocalDate today) {
+        List<Listing> expired = listingRepository
+                .findByListingStatusAndExpiryDateIsNotNullAndExpiryDateBefore(
+                        ListingStatus.ACTIVE, today);
+
+        for (Listing listing : expired) {
+            listing.setListingStatus(ListingStatus.EXPIRED);
+            listingRepository.save(listing);
+            log.info("Listing {} expired (expiry date: {})", listing.getId(), listing.getExpiryDate());
+        }
+    }
+
+    private void autoActivateDiscounts(LocalDate today) {
+        List<Listing> approaching = listingRepository
+                .findByListingStatusAndIsDiscountActiveFalseAndExpiryDateIsNotNullAndExpiryDateBetween(
+                        ListingStatus.ACTIVE, today, today.plusDays(21));
+
+        for (Listing listing : approaching) {
+            listing.setDiscountActive(true);
+            listingRepository.save(listing);
+            log.info("Auto-activated discount for listing {} (expiry date: {})",
+                    listing.getId(), listing.getExpiryDate());
+        }
+    }
+
+    private void applyScheduledDiscounts(LocalDateTime now) {
         List<Listing> candidates = listingRepository
-                .findByListingStatusAndDiscountStepPercentIsNotNullAndDiscountIntervalDaysIsNotNull(
+                .findByListingStatusAndIsDiscountActiveTrueAndDiscountStepPercentIsNotNullAndDiscountIntervalDaysIsNotNull(
                         ListingStatus.ACTIVE);
 
         for (Listing listing : candidates) {
