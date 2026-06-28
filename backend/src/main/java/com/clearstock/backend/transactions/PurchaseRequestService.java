@@ -3,6 +3,8 @@ package com.clearstock.backend.transactions;
 import com.clearstock.backend.listings.Listing;
 import com.clearstock.backend.listings.ListingRepository;
 import com.clearstock.backend.listings.ListingStatus;
+import com.clearstock.backend.notifications.NotificationService;
+import com.clearstock.backend.notifications.NotificationType;
 import com.clearstock.backend.transactions.dto.CreatePurchaseRequestRequest;
 import com.clearstock.backend.transactions.dto.PurchaseRequestResponse;
 import com.clearstock.backend.user.User;
@@ -23,6 +25,7 @@ public class PurchaseRequestService {
 
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final ListingRepository listingRepository;
+    private final NotificationService notificationService;
 
     public PurchaseRequestResponse createPurchaseRequest(User buyer, CreatePurchaseRequestRequest request) {
         Listing listing = listingRepository.findById(request.getListingId())
@@ -49,7 +52,18 @@ public class PurchaseRequestService {
                 .expiresAt(LocalDateTime.now().plusDays(EXPIRY_DAYS))
                 .build();
 
-        return mapToResponse(purchaseRequestRepository.save(purchaseRequest));
+        PurchaseRequest saved = purchaseRequestRepository.save(purchaseRequest);
+
+        notificationService.send(
+                sellerUser,
+                "New Purchase Request",
+                buyer.getName() + " wants to buy " + request.getRequestedQuantity()
+                        + "x " + listing.getProductName(),
+                NotificationType.PURCHASE_REQUEST,
+                saved.getId()
+        );
+
+        return mapToResponse(saved);
     }
 
     public List<PurchaseRequestResponse> getBuyerRequests(User buyer) {
@@ -78,7 +92,17 @@ public class PurchaseRequestService {
         }
 
         request.setStatus(PurchaseRequestStatus.DECLINED);
-        return mapToResponse(purchaseRequestRepository.save(request));
+        PurchaseRequest saved = purchaseRequestRepository.save(request);
+
+        notificationService.send(
+                request.getBuyer(),
+                "Purchase Request Declined",
+                "Your request for " + request.getListing().getProductName() + " was declined by the seller.",
+                NotificationType.PURCHASE_REQUEST,
+                saved.getId()
+        );
+
+        return mapToResponse(saved);
     }
 
     public PurchaseRequestResponse cancelPurchaseRequest(User buyer, Long id) {

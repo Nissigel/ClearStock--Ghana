@@ -5,6 +5,8 @@ import com.clearstock.backend.listings.ListingRepository;
 import com.clearstock.backend.listings.ListingStatus;
 import com.clearstock.backend.messaging.ConversationRepository;
 import com.clearstock.backend.messaging.ConversationStatus;
+import com.clearstock.backend.notifications.NotificationService;
+import com.clearstock.backend.notifications.NotificationType;
 import com.clearstock.backend.transactions.dto.*;
 import com.clearstock.backend.user.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +38,7 @@ public class TransactionService {
     private final ConversationRepository conversationRepository;
     private final PaystackService paystackService;
     private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
 
     @Transactional
     public TransactionResponse createTransaction(User seller, CreateTransactionRequest request) {
@@ -67,7 +70,18 @@ public class TransactionService {
                 .fulfillmentMethod(request.getFulfillmentMethod())
                 .build();
 
-        return mapToResponse(transactionRepository.save(transaction));
+        Transaction saved = transactionRepository.save(transaction);
+
+        notificationService.send(
+                pr.getBuyer(),
+                "Purchase Request Accepted",
+                "Your request for " + pr.getListing().getProductName()
+                        + " was accepted. Proceed to payment.",
+                NotificationType.TRANSACTION,
+                saved.getId()
+        );
+
+        return mapToResponse(saved);
     }
 
     public List<TransactionResponse> getTransactions(User user) {
@@ -140,6 +154,23 @@ public class TransactionService {
                 transaction.setPaymentStatus(PaymentStatus.PAYMENT_SUCCESSFUL);
                 transactionRepository.save(transaction);
                 log.info("Transaction {} marked PAYMENT_SUCCESSFUL via webhook", transaction.getId());
+
+                notificationService.send(
+                        transaction.getBuyer(),
+                        "Payment Successful",
+                        "Your payment for " + transaction.getListing().getProductName()
+                                + " was received successfully.",
+                        NotificationType.PAYMENT,
+                        transaction.getId()
+                );
+                notificationService.send(
+                        transaction.getSeller(),
+                        "Payment Received",
+                        "Payment for " + transaction.getListing().getProductName()
+                                + " from " + transaction.getBuyer().getName() + " was confirmed.",
+                        NotificationType.PAYMENT,
+                        transaction.getId()
+                );
             }
         });
     }
@@ -166,6 +197,25 @@ public class TransactionService {
             transaction.setPaymentStatus(PaymentStatus.PAYMENT_FAILED);
         }
         transactionRepository.save(transaction);
+
+        if (success) {
+            notificationService.send(
+                    transaction.getBuyer(),
+                    "Payment Successful",
+                    "Your payment for " + transaction.getListing().getProductName()
+                            + " was received successfully.",
+                    NotificationType.PAYMENT,
+                    transaction.getId()
+            );
+            notificationService.send(
+                    transaction.getSeller(),
+                    "Payment Received",
+                    "Payment for " + transaction.getListing().getProductName()
+                            + " from " + transaction.getBuyer().getName() + " was confirmed.",
+                    NotificationType.PAYMENT,
+                    transaction.getId()
+            );
+        }
 
         return PaymentResponse.builder()
                 .transactionId(transaction.getId())
@@ -215,7 +265,27 @@ public class TransactionService {
         }
 
         transaction.setTransactionStatus(newStatus);
-        return mapToResponse(transactionRepository.save(transaction));
+        Transaction saved = transactionRepository.save(transaction);
+
+        String statusMessage = switch (newStatus) {
+            case READY_FOR_COLLECTION -> "Your order for " + transaction.getListing().getProductName()
+                    + " is ready for collection.";
+            case DELIVERED -> "Your order for " + transaction.getListing().getProductName()
+                    + " has been marked as delivered.";
+            case CANCELLED -> "Your transaction for " + transaction.getListing().getProductName()
+                    + " has been cancelled by the seller.";
+            default -> "Your transaction status was updated to " + newStatus + ".";
+        };
+
+        notificationService.send(
+                transaction.getBuyer(),
+                "Transaction Update",
+                statusMessage,
+                NotificationType.TRANSACTION,
+                saved.getId()
+        );
+
+        return mapToResponse(saved);
     }
 
     @Transactional
@@ -267,6 +337,23 @@ public class TransactionService {
         transaction.setTransactionStatus(TransactionStatus.COMPLETED);
         transaction.setCompletedAt(LocalDateTime.now());
         transactionRepository.save(transaction);
+
+        notificationService.send(
+                transaction.getSeller(),
+                "Transaction Completed",
+                "Your transaction for " + transaction.getListing().getProductName()
+                        + " has been completed successfully.",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
+        notificationService.send(
+                transaction.getBuyer(),
+                "Transaction Completed",
+                "Your purchase of " + transaction.getListing().getProductName()
+                        + " is complete. Please leave a review!",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
 
         Listing listing = transaction.getListing();
         int remaining = listing.getQuantity() - transaction.getQuantity();

@@ -4,6 +4,8 @@ import com.clearstock.backend.common.EmailService;
 import com.clearstock.backend.listings.dto.CreateDealAlertRequest;
 import com.clearstock.backend.listings.dto.DealAlertResponse;
 import com.clearstock.backend.listings.dto.UpdateDealAlertRequest;
+import com.clearstock.backend.notifications.NotificationService;
+import com.clearstock.backend.notifications.NotificationType;
 import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ public class DealAlertService {
 
     private final DealAlertRepository dealAlertRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     public DealAlertResponse createAlert(User buyer, CreateDealAlertRequest request) {
         DealAlert alert = DealAlert.builder()
@@ -100,6 +103,16 @@ public class DealAlertService {
 
     private void sendAlertEmail(DealAlert alert, Listing listing) {
         User buyer = alert.getBuyer();
+
+        notificationService.send(
+                buyer,
+                "Deal Alert: " + listing.getProductName(),
+                listing.getProductName() + " in " + listing.getCategory()
+                        + " is now available for GHS " + listing.getCurrentPrice() + ".",
+                NotificationType.DEAL_ALERT,
+                listing.getId()
+        );
+
         if (buyer.getEmail() == null || !Boolean.TRUE.equals(buyer.getPreferEmail())) {
             return;
         }

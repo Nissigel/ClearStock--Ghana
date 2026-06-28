@@ -14,6 +14,17 @@ CREATE TABLE IF NOT EXISTS deal_alerts (
     created_at TIMESTAMP DEFAULT NOW()
 );
 ALTER TABLE deal_alerts ADD COLUMN IF NOT EXISTS buyer_id BIGINT;
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    related_id BIGINT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+ALTER TABLE notifications ALTER COLUMN category DROP NOT NULL;
 CREATE TABLE IF NOT EXISTS reviews (
     id BIGSERIAL PRIMARY KEY,
     transaction_id BIGINT NOT NULL REFERENCES transactions(id),

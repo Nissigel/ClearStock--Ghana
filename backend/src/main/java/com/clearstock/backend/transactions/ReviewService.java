@@ -1,5 +1,7 @@
 package com.clearstock.backend.transactions;
 
+import com.clearstock.backend.notifications.NotificationService;
+import com.clearstock.backend.notifications.NotificationType;
 import com.clearstock.backend.transactions.dto.ReviewResponse;
 import com.clearstock.backend.transactions.dto.SellerRatingResponse;
 import com.clearstock.backend.transactions.dto.SubmitReviewRequest;
@@ -18,6 +20,7 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final TransactionRepository transactionRepository;
+    private final NotificationService notificationService;
 
     public ReviewResponse submitReview(User reviewer, SubmitReviewRequest request) {
         Transaction transaction = transactionRepository.findById(request.getTransactionId())
@@ -60,7 +63,18 @@ public class ReviewService {
                 .comment(request.getComment())
                 .build();
 
-        return mapToResponse(reviewRepository.save(review));
+        Review saved = reviewRepository.save(review);
+
+        notificationService.send(
+                reviewee,
+                "New Review Received",
+                reviewer.getName() + " gave you a " + request.getRating()
+                        + "-star review for " + transaction.getListing().getProductName() + ".",
+                NotificationType.REVIEW,
+                saved.getId()
+        );
+
+        return mapToResponse(saved);
     }
 
     public List<ReviewResponse> getReviewsForUser(Long userId) {
