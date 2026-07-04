@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "cd backend && mvn clean package -DskipTests",
+    "watchPatterns": ["backend/**"]
+  },
+  "deploy": {
+    "startCommand": "java -jar backend/target/*.jar",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
