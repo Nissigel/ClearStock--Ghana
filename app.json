@@ -1,24 +1,45 @@
 {
   "expo": {
-    "name": "clearstock-Ghana-mobile",
-    "slug": "clearstock-Ghana-mobile",
+    "name": "ClearStock Ghana",
+    "slug": "clearstock-ghana-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#006d3b"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.clearstock.ghana"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#006d3b"
+      },
+      "package": "com.clearstock.ghana"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "scheme": "clearstock",
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ClearStock Ghana needs access to your photos to upload listing images and profile pictures."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
