@@ -2,7 +2,7 @@
   "build": {
     "builder": "NIXPACKS",
     "buildCommand": "cd backend && ./mvnw clean package -DskipTests",
-    "watchPatterns": ["backend/**"]
+    "watchPatterns": ["backend/**", "railway.json"]
   },
   "deploy": {
     "startCommand": "java -jar backend/target/*.jar",
