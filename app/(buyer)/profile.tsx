@@ -5,7 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
@@ -98,9 +99,27 @@ export default function ProfileScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const hasSellerProfile = useModeStore((state) => state.hasSellerProfile);
+  const hasSellerProfile = useAuthStore((state) => state.hasSellerProfile);
   const switchToSeller = useModeStore((state) => state.switchToSeller);
   const reset = useModeStore((state) => state.reset);
+
+  // TEMP DEBUG — remove after diagnosing the back-button-jumps-to-home bug.
+  // If pressing back from a pushed screen (e.g. Edit Profile) is landing on
+  // Home instead of here, "[Profile] focused" below will either not fire at
+  // all, or will fire out of order relative to the "navigating to" log.
+  useFocusEffect(
+    useCallback(() => {
+      console.log('[Profile] focused');
+      return () => {
+        console.log('[Profile] blurred');
+      };
+    }, [])
+  );
+
+  const handleNavigate = (path: string) => {
+    console.log('[Profile] navigating to', path);
+    router.push(path as any);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -114,7 +133,7 @@ export default function ProfileScreen() {
       switchToSeller();
       router.replace('/(seller)/dashboard');
     } else {
-      router.push('/(buyer)/become-seller');
+      handleNavigate('/(buyer)/(screens)/become-seller');
     }
   };
 
@@ -219,25 +238,25 @@ export default function ProfileScreen() {
             <SettingsRow
               icon="person-outline"
               label="Edit Profile"
-              onPress={() => router.push('/(buyer)/edit-profile')}
+              onPress={() => handleNavigate('/(buyer)/(screens)/edit-profile')}
               colors={colors}
             />
             <SettingsRow
               icon="call-outline"
               label="Change Phone Number"
-              onPress={() => router.push('/(buyer)/change-phone')}
+              onPress={() => handleNavigate('/(buyer)/(screens)/change-phone')}
               colors={colors}
             />
             <SettingsRow
               icon="lock-closed-outline"
               label="Change PIN"
-              onPress={() => router.push('/(buyer)/change-pin')}
+              onPress={() => handleNavigate('/(buyer)/(screens)/change-pin')}
               colors={colors}
             />
             <SettingsRow
               icon="notifications-outline"
               label="Notification Preferences"
-              onPress={() => router.push('/(buyer)/notification-preferences')}
+              onPress={() => handleNavigate('/(buyer)/(screens)/notification-preferences')}
               colors={colors}
               showArrow
             />
@@ -264,25 +283,25 @@ export default function ProfileScreen() {
             <SettingsRow
               icon="document-text-outline"
               label="Purchase Requests"
-              onPress={() => router.push('/(buyer)/purchase-requests/index')}
+              onPress={() => handleNavigate('/(buyer)/(screens)/purchase-requests')}
               colors={colors}
             />
             <SettingsRow
               icon="swap-horizontal-outline"
               label="Transaction History"
-              onPress={() => router.push('/(buyer)/transactions')}
+              onPress={() => handleNavigate('/(buyer)/(screens)/transactions')}
               colors={colors}
             />
             <SettingsRow
               icon="notifications-outline"
               label="Notifications"
-              onPress={() => router.push('/(buyer)/notifications')}
+              onPress={() => handleNavigate('/(buyer)/(screens)/notifications')}
               colors={colors}
             />
             <SettingsRow
               icon="notifications-outline"
               label="Deal Alerts"
-              onPress={() => router.push('/(buyer)/deal-alerts')}
+              onPress={() => handleNavigate('/(buyer)/(screens)/deal-alerts')}
               colors={colors}
             />
           </View>

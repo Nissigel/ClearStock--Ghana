@@ -1,32 +1,24 @@
 import type { PurchaseRequestStatus, TransactionStatus } from '@/constants/app';
+import type { PaymentStatus } from '@/types/payment.types';
 
 export interface PurchaseRequest {
-  id: string;
-  listingId: string;
-  listingName: string;
-  listingPrimaryImageUrl: string | null;
-  buyerUserId: string;
-  sellerUserId: string;
-  conversationId: string;
+  id: number;
+  listingId: number;
+  listingProductName: string;
+  buyerUserId: number;
+  sellerUserId: number;
+  buyerPhone: string;
+  sellerPhone: string;
   requestedQuantity: number;
-  priceAtRequest: number;
   status: PurchaseRequestStatus;
-  expiresAt: string;
-  createdAt: string;
+  expiresAt: string | null;
+  conversationId: string;
+  createdAt: string | null;
   updatedAt: string;
-  buyer: RequestParty;
-  seller: RequestParty;
-}
-
-export interface RequestParty {
-  id: string;
-  fullName: string;
-  profilePhotoUrl: string | null;
-  phoneNumber: string | null;
 }
 
 export interface CreatePurchaseRequestRequest {
-  listingId: string;
+  listingId: number;
   requestedQuantity: number;
 }
 
@@ -34,35 +26,27 @@ export interface ReviewRequestRequest {
   action: 'ACCEPT' | 'DECLINE';
 }
 
+// Matches the backend's GET /transactions and GET /transactions/{id}
+// TransactionResponse exactly — there is no nested buyer/seller object or
+// price field, only phone numbers and quantity.
 export interface Transaction {
-  id: string;
-  purchaseRequestId: string;
-  listingId: string;
-  listingName: string;
-  listingPrimaryImageUrl: string | null;
-  buyerUserId: string;
-  sellerUserId: string;
+  id: number;
+  purchaseRequestId: number;
+  listingId: number;
+  listingProductName: string;
+  buyerUserId: number;
+  sellerUserId: number;
+  buyerPhone: string;
+  sellerPhone: string;
   quantity: number;
-  priceAtCreation: number;
-  fulfillmentMethod: FulfillmentMethod | null;
-  status: TransactionStatus;
+  fulfillmentMethod: string;
+  paymentStatus: PaymentStatus;
+  transactionStatus: TransactionStatus;
+  otpCode: string | null;
   otpGeneratedAt: string | null;
-  otpUsedAt: string | null;
-  autoCompleteAfter: string | null;
   completedAt: string | null;
-  evidenceImages: TransactionEvidence[];
-  buyer: RequestParty;
-  seller: RequestParty;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface TransactionEvidence {
-  id: string;
-  transactionId: string;
-  imageUrl: string;
-  uploadedBy: string;
-  createdAt: string;
 }
 
 export interface UpdateTransactionStatusRequest {
@@ -75,3 +59,33 @@ export interface VerifyTransactionOtpRequest {
 }
 
 export type FulfillmentMethod = 'COLLECTION' | 'DELIVERY';
+
+// Narrower view of the same GET /transactions response, used by the
+// pay-now/verify-payment flow.
+export interface TransactionResponse {
+  id: number;
+  purchaseRequestId: number;
+  listingId: number;
+  listingProductName: string;
+  quantity: number;
+  paymentStatus: string;
+  transactionStatus: string;
+  otpCode: string | null;
+  completedAt: string | null;
+  createdAt: string;
+}
+
+export interface InitiatePaymentResponse {
+  transactionId: number;
+  paymentReference: string;
+  authorizationUrl: string;
+  paymentStatus: PaymentStatus;
+  message: string;
+}
+
+export interface VerifyPaymentResponse {
+  transactionId: number;
+  paymentReference: string;
+  paymentStatus: PaymentStatus;
+  message: string;
+}

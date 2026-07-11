@@ -40,11 +40,8 @@ export const getListings = async (
       results = results.filter((l) => l.currentPrice <= filters.maxPrice!);
     }
 
-    if (filters.verificationStatus) {
-      results = results.filter(
-        (l) => l.seller.verificationStatus === filters.verificationStatus
-      );
-    }
+    // verificationStatus isn't present on ListingSummary (the backend
+    // doesn't return it), so it can't be filtered client-side in mock mode.
 
     return {
       content: results,
@@ -56,14 +53,34 @@ export const getListings = async (
     };
   }
 
-  const response = await apiClient.get('/listings', { params: filters });
-  return response.data.data as PaginatedListings;
+  const response = await apiClient.get('/listings', {
+    params: {
+      search: filters.search,
+      category: filters.category,
+      region: filters.region,
+      cityTown: filters.cityTown,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      verificationStatus: filters.verificationStatus,
+    },
+  });
+  // Backend returns a plain array (List<ListingResponse>), not a
+  // paginated object — wrap it into the shape screens expect.
+  const listings = response.data.data as ListingSummary[];
+  return {
+    content: listings,
+    page: 0,
+    size: listings.length,
+    totalElements: listings.length,
+    totalPages: 1,
+    hasNext: false,
+  };
 };
 
 export const getListingById = async (id: string): Promise<Listing> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 600));
-    return { ...MOCK_LISTING_DETAIL, id };
+    return { ...MOCK_LISTING_DETAIL, id: Number(id) };
   }
   const response = await apiClient.get(`/listings/${id}`);
   return response.data.data as Listing;
@@ -85,14 +102,16 @@ export const createListing = async (
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return {
       ...MOCK_LISTING_DETAIL,
-      id: `listing-${Date.now()}`,
+      id: Date.now(),
       productName: data.productName,
       category: data.category,
       description: data.description,
       quantity: data.quantity,
       originalPrice: data.originalPrice,
       currentPrice: data.originalPrice,
-      minimumPrice: data.minimumPrice,
+      minimumAcceptablePrice: data.minimumAcceptablePrice,
+      expirySensitive: data.expirySensitive,
+      images: data.images,
     };
   }
   const response = await apiClient.post('/listings', data);
@@ -105,7 +124,7 @@ export const updateListing = async (
 ): Promise<Listing> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 800));
-    return { ...MOCK_LISTING_DETAIL, id, ...data };
+    return { ...MOCK_LISTING_DETAIL, id: Number(id), ...data };
   }
   const response = await apiClient.put(`/listings/${id}`, data);
   return response.data.data as Listing;
@@ -116,7 +135,7 @@ export const archiveListing = async (id: string): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve, 600));
     return;
   }
-  await apiClient.post(`/listings/${id}/archive`);
+  await apiClient.delete(`/listings/${id}`);
 };
 
 export const saveListing = async (listingId: string): Promise<void> => {
@@ -138,8 +157,11 @@ export const unsaveListing = async (listingId: string): Promise<void> => {
 export const getSavedListings = async (): Promise<ListingSummary[]> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 600));
-    return MOCK_LISTINGS.filter((l) => l.isSaved);
+    return MOCK_LISTINGS.slice(0, 2);
   }
+  // Backend wraps each entry as { id, listing, savedAt } rather than
+  // returning listings directly — unwrap.
   const response = await apiClient.get('/saved-listings');
-  return response.data.data as ListingSummary[];
+  const saved = response.data.data as { listing: ListingSummary }[];
+  return saved.map(({ listing }) => listing);
 };

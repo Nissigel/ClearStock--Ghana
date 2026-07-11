@@ -18,7 +18,7 @@ import { CURRENCY_SYMBOL } from '@/constants/app';
 interface PurchaseRequestSheetProps {
   visible: boolean;
   onClose: () => void;
-  listingId: string;
+  listingId: number;
   listingName: string;
   currentPrice: number;
   availableQuantity: number;
@@ -39,7 +39,7 @@ export function PurchaseRequestSheet({
   const [error, setError] = useState('');
   const { mutate: createRequest, isPending } = useCreatePurchaseRequest();
 
-  const qty = parseInt(quantity) || 0;
+  const qty = Number(quantity) || 0;
   const totalAmount = qty * currentPrice;
 
   const handleSubmit = () => {
@@ -53,7 +53,7 @@ export function PurchaseRequestSheet({
     }
     setError('');
     createRequest(
-      { listingId, requestedQuantity: qty },
+      { listingId, requestedQuantity: Number(quantity) || 1 },
       {
         onSuccess: () => {
           Alert.alert(
@@ -62,8 +62,12 @@ export function PurchaseRequestSheet({
             [{ text: 'OK', onPress: onClose }]
           );
         },
-        onError: () => {
-          Alert.alert('Error', 'Failed to send request. Please try again.');
+        onError: (error) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Failed to send request. Please try again.';
+          Alert.alert('Error', message);
         },
       }
     );

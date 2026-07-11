@@ -13,7 +13,6 @@ import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { createPin } from '@/api/auth.api';
 import { useAuthStore } from '@/store/authStore';
-import { useModeStore } from '@/store/modeStore';
 import { Spacing, FontSize } from '@/constants/theme';
 import { PIN_LENGTH } from '@/constants/app';
 
@@ -27,9 +26,6 @@ export default function ConfirmPinScreen() {
   }>();
 
   const setAuth = useAuthStore((state) => state.setAuth);
-  const setHasSellerProfile = useModeStore(
-    (state) => state.setHasSellerProfile
-  );
 
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
@@ -57,12 +53,7 @@ export default function ConfirmPinScreen() {
         tempToken,
         pin: confirmPin,
       });
-      setAuth(
-        authResponse.user,
-        authResponse.token,
-        authResponse.refreshToken
-      );
-      setHasSellerProfile(authResponse.user.hasSellerProfile);
+      setAuth(authResponse.user, authResponse.token);
       router.push({
         pathname: '/(auth)/profile-setup',
         params: { phoneNumber },

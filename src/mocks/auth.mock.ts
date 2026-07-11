@@ -9,7 +9,6 @@ export const MOCK_AUTH_USER: AuthUser = {
   region: 'Greater Accra',
   cityTown: 'Accra',
   accountStatus: 'ACTIVE',
-  hasSellerProfile: false,
 };
 
 export const MOCK_AUTH_USER_WITH_SELLER: AuthUser = {
@@ -21,12 +20,10 @@ export const MOCK_AUTH_USER_WITH_SELLER: AuthUser = {
   region: 'Ashanti',
   cityTown: 'Kumasi',
   accountStatus: 'ACTIVE',
-  hasSellerProfile: true,
 };
 
 export const MOCK_AUTH_RESPONSE: AuthResponse = {
   token: 'mock-jwt-token-001',
-  refreshToken: 'mock-refresh-token-001',
   user: MOCK_AUTH_USER,
 };
 

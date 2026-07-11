@@ -1,6 +1,7 @@
 import {
   View,
   Text,
+  Image,
   FlatList,
   TouchableOpacity,
   StyleSheet,
@@ -38,7 +39,12 @@ export default function SellerListingsScreen() {
     }
   };
 
-  const renderItem = ({ item }: { item: ListingSummary }) => (
+  const renderItem = ({ item }: { item: ListingSummary }) => {
+    const rawImageUrl = item.images[0];
+    const primaryImageUrl =
+      rawImageUrl && !rawImageUrl.startsWith('file://') ? rawImageUrl : null;
+
+    return (
     <TouchableOpacity
       style={[
         styles.card,
@@ -52,18 +58,26 @@ export default function SellerListingsScreen() {
       activeOpacity={0.8}
     >
       <View style={styles.cardContent}>
-        <View
-          style={[
-            styles.imagePlaceholder,
-            { backgroundColor: colors.secondary },
-          ]}
-        >
-          <Text
-            style={[styles.placeholderText, { color: colors.primary }]}
+        {primaryImageUrl ? (
+          <Image
+            source={{ uri: primaryImageUrl }}
+            style={[styles.imagePlaceholder, { borderRadius: Radius.md }]}
+            resizeMode="cover"
+          />
+        ) : (
+          <View
+            style={[
+              styles.imagePlaceholder,
+              { backgroundColor: colors.secondary },
+            ]}
           >
-            {item.productName.slice(0, 2).toUpperCase()}
-          </Text>
-        </View>
+            <Text
+              style={[styles.placeholderText, { color: colors.primary }]}
+            >
+              {item.productName.slice(0, 2).toUpperCase()}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.details}>
           <Text
@@ -93,8 +107,8 @@ export default function SellerListingsScreen() {
             )}
           </View>
           <Badge
-            variant={getStatusVariant(item.status) as any}
-            label={item.status.replace('_', ' ')}
+            variant={getStatusVariant(item.listingStatus) as any}
+            label={item.listingStatus.replace('_', ' ')}
           />
         </View>
 
@@ -107,7 +121,8 @@ export default function SellerListingsScreen() {
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <SafeAreaView
@@ -118,7 +133,7 @@ export default function SellerListingsScreen() {
         title="My Listings"
         rightElement={
           <TouchableOpacity
-            onPress={() =>router.push({ pathname: '/(seller)/create-listing' })}
+            onPress={() =>router.push({ pathname: '/(seller)/(screens)/create-listing' })}
             style={[
               styles.addButton,
               { backgroundColor: colors.primary },
@@ -135,7 +150,7 @@ export default function SellerListingsScreen() {
 
       <FlatList
         data={data ?? []}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         onRefresh={refetch}
         refreshing={isRefetching}
@@ -148,7 +163,7 @@ export default function SellerListingsScreen() {
               title="No listings yet"
               subtitle="Create your first listing to start selling"
               actionLabel="Create Listing"
-              onAction={() => router.push({ pathname: '/(seller)/create-listing' })}
+              onAction={() => router.push({ pathname: '/(seller)/(screens)/create-listing' })}
             />
           ) : null
         }

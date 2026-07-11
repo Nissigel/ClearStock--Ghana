@@ -28,23 +28,18 @@ export default function SplashScreen() {
       const token = await getToken();
       if (token) {
         router.replace('/(buyer)/home');
-      } else {
-        // In development always show onboarding so it's easy to test.
-        if (global.__DEV__) {
+        return;
+      }
+
+      // if user hasn't seen onboarding, show it first
+      try {
+        const seen = await SecureStore.getItemAsync('hasSeenOnboarding');
+        if (!seen) {
           router.replace('/(guest)/onboarding/1');
           return;
         }
-
-        // if user hasn't seen onboarding, show it first
-        try {
-          const seen = await SecureStore.getItemAsync('hasSeenOnboarding');
-          if (!seen) {
-            router.replace('/(guest)/onboarding/1');
-            return;
-          }
-        } catch {}
-        router.replace('/(guest)');
-      }
+      } catch {}
+      router.replace('/(guest)');
     } catch {
       router.replace('/(guest)');
     }

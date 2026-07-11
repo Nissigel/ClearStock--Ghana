@@ -26,7 +26,7 @@ export default function ConversationsScreen() {
   const handleConversationPress = (conversation: Conversation) => {
     resetUnreadCount();
     router.push({
-      pathname: '/(buyer)/conversation/[id]',
+      pathname: '/(buyer)/(screens)/conversation/[id]',
       params: { id: conversation.id },
     });
   };

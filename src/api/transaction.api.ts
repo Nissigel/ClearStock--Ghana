@@ -1,3 +1,4 @@
+import type { AxiosError } from 'axios';
 import ENV from '@/config/env';
 import apiClient from '@/api/client';
 import {
@@ -7,8 +8,10 @@ import {
 import type {
   PurchaseRequest,
   Transaction,
+  TransactionResponse,
+  InitiatePaymentResponse,
+  VerifyPaymentResponse,
   CreatePurchaseRequestRequest,
-  ReviewRequestRequest,
   UpdateTransactionStatusRequest,
   VerifyTransactionOtpRequest,
 } from '@/types/transaction.types';
@@ -21,39 +24,39 @@ export const createPurchaseRequest = async (
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 800));
     const newRequest: PurchaseRequest = {
-      id: `request-${Date.now()}`,
+      id: Date.now(),
       listingId: data.listingId,
-      listingName: 'Indomie Instant Noodles',
-      listingPrimaryImageUrl: 'https://via.placeholder.com/300x200',
-      buyerUserId: 'user-001',
-      sellerUserId: 'user-002',
+      listingProductName: 'Indomie Instant Noodles',
+      buyerUserId: 1,
+      sellerUserId: 2,
+      buyerPhone: '0241234567',
+      sellerPhone: '0201234560',
       conversationId: 'conv-001',
       requestedQuantity: data.requestedQuantity,
-      priceAtRequest: 45.00,
       status: 'PENDING',
       expiresAt: new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
       ).toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      buyer: {
-        id: 'user-001',
-        fullName: 'Ama Mensah',
-        profilePhotoUrl: null,
-        phoneNumber: null,
-      },
-      seller: {
-        id: 'user-002',
-        fullName: 'Kofi Boateng',
-        profilePhotoUrl: null,
-        phoneNumber: null,
-      },
     };
     MOCK_PURCHASE_REQUESTS.unshift(newRequest);
     return newRequest;
   }
-  const response = await apiClient.post('/purchase-requests', data);
-  return response.data.data as PurchaseRequest;
+  try {
+    const response = await apiClient.post('/purchase-requests', data);
+    return response.data.data as PurchaseRequest;
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    console.error(
+      'createPurchaseRequest failed:',
+      axiosError.response?.data
+    );
+    throw new Error(
+      axiosError.response?.data?.message ??
+        'Failed to send request. Please try again.'
+    );
+  }
 };
 
 export const getBuyerPurchaseRequests = async (): Promise<PurchaseRequest[]> => {
@@ -70,7 +73,7 @@ export const getPurchaseRequestById = async (
 ): Promise<PurchaseRequest> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    const request = MOCK_PURCHASE_REQUESTS.find((r) => r.id === id);
+    const request = MOCK_PURCHASE_REQUESTS.find((r) => String(r.id) === id);
     if (!request) {
       throw new Error('Purchase request not found.');
     }
@@ -83,7 +86,7 @@ export const getPurchaseRequestById = async (
 export const cancelPurchaseRequest = async (id: string): Promise<void> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 600));
-    const request = MOCK_PURCHASE_REQUESTS.find((r) => r.id === id);
+    const request = MOCK_PURCHASE_REQUESTS.find((r) => String(r.id) === id);
     if (request) {
       request.status = 'CANCELLED';
     }
@@ -99,26 +102,60 @@ export const getSellerPurchaseRequests = async (): Promise<PurchaseRequest[]> =>
     await new Promise((resolve) => setTimeout(resolve, 600));
     return MOCK_PURCHASE_REQUESTS;
   }
-  const response = await apiClient.get('/seller/purchase-requests');
+  const response = await apiClient.get('/purchase-requests/incoming');
   return response.data.data as PurchaseRequest[];
 };
 
-export const reviewPurchaseRequest = async (
-  id: string,
-  data: ReviewRequestRequest
+export const acceptPurchaseRequest = async (
+  id: string
+): Promise<Transaction> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    const request = MOCK_PURCHASE_REQUESTS.find((r) => String(r.id) === id);
+    if (request) {
+      request.status = 'ACCEPTED';
+    }
+    const newTransaction: Transaction = {
+      id: Date.now(),
+      purchaseRequestId: Number(id),
+      listingId: request?.listingId ?? 0,
+      listingProductName: request?.listingProductName ?? '',
+      buyerUserId: request?.buyerUserId ?? 0,
+      sellerUserId: request?.sellerUserId ?? 0,
+      buyerPhone: request?.buyerPhone ?? '',
+      sellerPhone: request?.sellerPhone ?? '',
+      quantity: request?.requestedQuantity ?? 0,
+      fulfillmentMethod: 'COLLECTION',
+      paymentStatus: 'PENDING_PAYMENT',
+      transactionStatus: 'PENDING_FULFILLMENT',
+      otpCode: null,
+      otpGeneratedAt: null,
+      completedAt: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_TRANSACTIONS.unshift(newTransaction);
+    return newTransaction;
+  }
+  const response = await apiClient.post('/transactions', {
+    purchaseRequestId: Number(id),
+    fulfillmentMethod: 'PICKUP',
+  });
+  return response.data.data as Transaction;
+};
+
+export const declinePurchaseRequest = async (
+  id: string
 ): Promise<PurchaseRequest> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 800));
-    const request = MOCK_PURCHASE_REQUESTS.find((r) => r.id === id);
+    const request = MOCK_PURCHASE_REQUESTS.find((r) => String(r.id) === id);
     if (request) {
-      request.status = data.action === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED';
+      request.status = 'DECLINED';
     }
     return request ?? MOCK_PURCHASE_REQUESTS[0];
   }
-  const response = await apiClient.post(
-    `/seller/purchase-requests/${id}/${data.action.toLowerCase()}`,
-    data
-  );
+  const response = await apiClient.put(`/purchase-requests/${id}/decline`);
   return response.data.data as PurchaseRequest;
 };
 
@@ -138,7 +175,7 @@ export const getTransactionById = async (
 ): Promise<Transaction> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    const transaction = MOCK_TRANSACTIONS.find((t) => t.id === id);
+    const transaction = MOCK_TRANSACTIONS.find((t) => String(t.id) === id);
     if (!transaction) {
       throw new Error('Transaction not found.');
     }
@@ -157,9 +194,9 @@ export const verifyTransactionOtp = async (
     if (data.otp !== '123456') {
       throw new Error('Invalid OTP. Please try again.');
     }
-    const transaction = MOCK_TRANSACTIONS.find((t) => t.id === id);
+    const transaction = MOCK_TRANSACTIONS.find((t) => String(t.id) === id);
     if (transaction) {
-      transaction.status = 'COMPLETED';
+      transaction.transactionStatus = 'COMPLETED';
       transaction.completedAt = new Date().toISOString();
     }
     return transaction ?? MOCK_TRANSACTIONS[0];
@@ -178,7 +215,7 @@ export const getSellerTransactions = async (): Promise<Transaction[]> => {
     await new Promise((resolve) => setTimeout(resolve, 600));
     return MOCK_TRANSACTIONS;
   }
-  const response = await apiClient.get('/seller/transactions');
+  const response = await apiClient.get('/transactions');
   return response.data.data as Transaction[];
 };
 
@@ -188,18 +225,78 @@ export const updateTransactionStatus = async (
 ): Promise<Transaction> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 800));
-    const transaction = MOCK_TRANSACTIONS.find((t) => t.id === id);
+    const transaction = MOCK_TRANSACTIONS.find((t) => String(t.id) === id);
     if (transaction) {
-      transaction.status = data.status;
+      transaction.transactionStatus = data.status;
       if (data.fulfillmentMethod) {
         transaction.fulfillmentMethod = data.fulfillmentMethod;
       }
     }
     return transaction ?? MOCK_TRANSACTIONS[0];
   }
-  const response = await apiClient.put(
-    `/seller/transactions/${id}/status`,
-    data
-  );
+  const response = await apiClient.put(`/transactions/${id}/status`, {
+    transactionStatus: data.status,
+    fulfillmentMethod: data.fulfillmentMethod,
+  });
   return response.data.data as Transaction;
+};
+
+// ─── Payments (Buyer) ────────────────────────────────────────────────────────
+
+export const getTransactions = async (): Promise<TransactionResponse[]> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return MOCK_PURCHASE_REQUESTS.filter(
+      (r) => r.status === 'ACCEPTED' || r.status === 'COMPLETED'
+    ).map((r) => ({
+      id: r.id,
+      purchaseRequestId: r.id,
+      listingId: r.listingId,
+      listingProductName: r.listingProductName,
+      quantity: r.requestedQuantity,
+      paymentStatus: r.status === 'COMPLETED' ? 'SUCCESS' : 'PENDING',
+      transactionStatus:
+        r.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING_FULFILLMENT',
+      otpCode: null,
+      completedAt: r.status === 'COMPLETED' ? r.updatedAt : null,
+      createdAt: r.createdAt ?? new Date().toISOString(),
+    }));
+  }
+  const response = await apiClient.get('/transactions');
+  return response.data.data as TransactionResponse[];
+};
+
+export const initiatePayment = async (
+  transactionId: number
+): Promise<InitiatePaymentResponse> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return {
+      transactionId,
+      paymentReference: `mock-ref-${Date.now()}`,
+      authorizationUrl: 'https://example.com/mock-checkout',
+      paymentStatus: 'PENDING_PAYMENT',
+      message: 'Payment initiated',
+    };
+  }
+  const response = await apiClient.post('/payments/initiate', {
+    transactionId,
+  });
+  return response.data.data as InitiatePaymentResponse;
+};
+
+export const verifyPayment = async (
+  reference: string
+): Promise<VerifyPaymentResponse> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return {
+      transactionId: 0,
+      paymentReference: reference,
+      paymentStatus: 'PAYMENT_SUCCESSFUL',
+      message: 'Payment verified',
+    };
+  }
+  const response = await apiClient.get(`/payments/verify/${reference}`);
+  return response.data.data as VerifyPaymentResponse;
 };

@@ -8,6 +8,7 @@ export default function AuthLayout() {
         headerShown: false,
         contentStyle: { backgroundColor: Colors.background },
         animation: 'slide_from_right',
+        gestureEnabled: false,
       }}
     >
       <Stack.Screen name="phone" />

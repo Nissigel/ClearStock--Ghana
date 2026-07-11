@@ -7,12 +7,15 @@ import type {
   CreateReviewRequest,
 } from '@/types/review.types';
 
+// `sellerId` here is the seller's userId — screens navigate to seller
+// profiles using `listing.seller.userId`, which is what the reviews
+// endpoint is keyed by.
 export const getSellerReviews = async (sellerId: string): Promise<Review[]> => {
   if (ENV.USE_MOCK) {
     await new Promise((r) => setTimeout(r, 600));
     return MOCK_REVIEWS;
   }
-  const response = await apiClient.get(`/sellers/${sellerId}/reviews`);
+  const response = await apiClient.get(`/reviews/user/${sellerId}`);
   return response.data.data as Review[];
 };
 
@@ -23,7 +26,7 @@ export const getSellerRatingSummary = async (
     await new Promise((r) => setTimeout(r, 400));
     return MOCK_SELLER_RATING;
   }
-  const response = await apiClient.get(`/sellers/${sellerId}/rating`);
+  const response = await apiClient.get(`/seller/${sellerId}/rating`);
   return response.data.data as SellerRatingSummary;
 };
 

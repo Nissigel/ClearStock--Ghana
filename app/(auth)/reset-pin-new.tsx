@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { resetPin } from '@/api/auth.api';
+import { getSellerProfile } from '@/api/seller.api';
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { Spacing, FontSize } from '@/constants/theme';
@@ -20,15 +21,14 @@ import { PIN_LENGTH } from '@/constants/app';
 export default function ResetPinNewScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { resetToken, phoneNumber } = useLocalSearchParams<{
-    resetToken: string;
+  const { otp, phoneNumber } = useLocalSearchParams<{
+    otp: string;
     phoneNumber: string;
   }>();
 
   const setAuth = useAuthStore((state) => state.setAuth);
-  const setHasSellerProfile = useModeStore(
-    (state) => state.setHasSellerProfile
-  );
+  const setSellerProfile = useAuthStore((state) => state.setSellerProfile);
+  const switchToSeller = useModeStore((state) => state.switchToSeller);
 
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -60,16 +60,28 @@ export default function ResetPinNewScreen() {
       setLoading(true);
       setConfirmError('');
       const authResponse = await resetPin({
-        resetToken,
+        phone: phoneNumber,
+        otp,
         newPin: confirmPin,
       });
-      setAuth(
-        authResponse.user,
-        authResponse.token,
-        authResponse.refreshToken
-      );
-      setHasSellerProfile(authResponse.user.hasSellerProfile);
-      router.replace('/(buyer)/home');
+      setAuth(authResponse.user, authResponse.token);
+
+      let sellerProfile = null;
+      try {
+        sellerProfile = await getSellerProfile();
+      } catch {
+        // A 404 (no seller profile) is handled inside getSellerProfile.
+        // Any other failure here shouldn't block login — fall back to buyer.
+        sellerProfile = null;
+      }
+      setSellerProfile(sellerProfile);
+
+      if (sellerProfile) {
+        switchToSeller();
+        router.replace('/(seller)/dashboard');
+      } else {
+        router.replace('/(buyer)/home');
+      }
     } catch (err) {
       setConfirmError('Something went wrong. Please try again.');
     } finally {

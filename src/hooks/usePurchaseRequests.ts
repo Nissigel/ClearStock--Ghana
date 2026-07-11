@@ -5,9 +5,14 @@ import {
   getPurchaseRequestById,
   cancelPurchaseRequest,
   getSellerPurchaseRequests,
-  reviewPurchaseRequest,
+  acceptPurchaseRequest,
+  declinePurchaseRequest,
 } from '@/api/transaction.api';
-import type { CreatePurchaseRequestRequest } from '@/types/transaction.types';
+import type {
+  CreatePurchaseRequestRequest,
+  PurchaseRequest,
+  Transaction,
+} from '@/types/transaction.types';
 
 export const PURCHASE_REQUESTS_KEY = 'purchaseRequests';
 
@@ -26,10 +31,11 @@ export const useSellerPurchaseRequests = () => {
 };
 
 export const usePurchaseRequestById = (id: string) => {
+  const isValidId = /^\d+$/.test(id ?? '');
   return useQuery({
     queryKey: [PURCHASE_REQUESTS_KEY, id],
     queryFn: () => getPurchaseRequestById(id),
-    enabled: !!id,
+    enabled: isValidId,
   });
 };
 
@@ -60,14 +66,13 @@ export const useCancelPurchaseRequest = () => {
 
 export const useReviewPurchaseRequest = () => {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      id,
-      action,
-    }: {
-      id: string;
-      action: 'ACCEPT' | 'DECLINE';
-    }) => reviewPurchaseRequest(id, { action }),
+  return useMutation<
+    PurchaseRequest | Transaction,
+    unknown,
+    { id: string; action: 'ACCEPT' | 'DECLINE' }
+  >({
+    mutationFn: ({ id, action }) =>
+      action === 'ACCEPT' ? acceptPurchaseRequest(id) : declinePurchaseRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [PURCHASE_REQUESTS_KEY],

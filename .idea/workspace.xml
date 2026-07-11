@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7c0c86cc-014d-4364-8964-609d8437f0c9" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/app.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/confirm-pin.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/confirm-pin.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/forgot-pin.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/forgot-pin.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/login.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/otp.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/otp.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/phone.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/phone.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/reset-pin-new.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/reset-pin-new.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/become-seller.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/become-seller.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/change-phone.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/change-phone.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/change-pin.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/change-pin.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/conversation/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/conversation/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/deal-alerts.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/deal-alerts.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/edit-profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/edit-profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/messages.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/messages.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/notification-preferences.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/notification-preferences.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/notifications.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/notifications.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/payment/failed.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/payment/failed.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/payment/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/payment/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/payment/success.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/payment/success.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/purchase-requests/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/purchase-requests/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/purchase-requests/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/purchase-requests/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/rate-transaction.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/rate-transaction.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/report.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/report.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/saved.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/saved.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/search.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/search.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/transaction-detail/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/transaction-detail/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/transactions.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/transactions.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(guest)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(guest)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(guest)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(guest)/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(guest)/listing/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(guest)/listing/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(guest)/onboarding/2.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(guest)/onboarding/2.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(guest)/seller/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(guest)/seller/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/create-listing/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/(screens)/create-listing/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/dashboard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/listings.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/listings.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/requests.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/requests.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/seller-profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/(screens)/seller-profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/transaction-detail/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/(screens)/transaction-detail/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/transactions.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/(screens)/transactions.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/_layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/splash.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/splash.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/auth.api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/auth.api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/client.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/listing.api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/listing.api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/messaging.api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/messaging.api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/payment.api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/payment.api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/review.api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/review.api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/transaction.api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/transaction.api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui/PurchaseRequestSheet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui/PurchaseRequestSheet.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui/listing/ListingCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui/listing/ListingCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui/listing/ListingGrid.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui/listing/ListingGrid.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/config/env.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/config/env.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hooks/usePurchaseRequests.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/usePurchaseRequests.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mocks/auth.mock.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/mocks/auth.mock.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mocks/listing.mock.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/mocks/listing.mock.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mocks/transaction.mock.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/mocks/transaction.mock.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/store/authStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/authStore.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/store/modeStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/modeStore.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/auth.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/auth.types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/listing.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/listing.types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/payment.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/payment.types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/transaction.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/transaction.types.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3G2QNBKEwWZvwNiZQdRs5afplFq" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.BackendApplication.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;Spring Boot.BackendApplication.executor&quot;: &quot;Run&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;sdk54-downgrade&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/NISSIGEL/IdeaProjects/ClearStock--Ghana&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\NISSIGEL\\AppData\\Local\\Programs\\IntelliJ IDEA\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;
+  }
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.26222.65" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.26222.65" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7c0c86cc-014d-4364-8964-609d8437f0c9" name="Changes" comment="" />
+      <created>1783167144849</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1783167144849</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

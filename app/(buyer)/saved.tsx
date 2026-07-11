@@ -29,8 +29,8 @@ export default function SavedListingsScreen() {
 
   const handleListingPress = (listing: ListingSummary) => {
     router.push({
-      pathname: '/(guest)/listing/[id]',
-      params: { id: listing.id },
+      pathname: '/(buyer)/listing/[id]',
+      params: { id: String(listing.id) },
     });
   };
 
@@ -49,7 +49,7 @@ export default function SavedListingsScreen() {
         onRefresh={refetch}
         isRefreshing={isRefetching}
         onListingPress={handleListingPress}
-        onSavePress={(listing) => removeSaved(listing.id)}
+        onSavePress={(listing) => removeSaved(String(listing.id))}
         emptyTitle="No saved listings"
         emptySubtitle="Listings you save will appear here"
         emptyIcon="heart-outline"

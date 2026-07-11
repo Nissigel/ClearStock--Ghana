@@ -11,13 +11,11 @@ export const initiatePayment = async (
   if (ENV.USE_MOCK) {
     await new Promise((r) => setTimeout(r, 2000));
     return {
-      id: `pay-${Date.now()}`,
       transactionId: data.transactionId,
-      amount: data.amount,
-      status: 'SUCCESS',
-      paymentMethod: data.paymentMethod,
-      reference: `REF-${Date.now()}`,
-      createdAt: new Date().toISOString(),
+      paymentReference: `REF-${Date.now()}`,
+      authorizationUrl: 'https://example.com/mock-checkout',
+      paymentStatus: 'PENDING_PAYMENT',
+      message: 'Payment initiated',
     };
   }
   const response = await apiClient.post('/payments/initiate', data);
@@ -25,20 +23,18 @@ export const initiatePayment = async (
 };
 
 export const verifyPayment = async (
-  reference: string
+  paymentReference: string
 ): Promise<PaymentResponse> => {
   if (ENV.USE_MOCK) {
     await new Promise((r) => setTimeout(r, 1000));
     return {
-      id: `pay-001`,
       transactionId: 'txn-001',
-      amount: 850,
-      status: 'SUCCESS',
-      paymentMethod: 'MOMO',
-      reference,
-      createdAt: new Date().toISOString(),
+      paymentReference,
+      authorizationUrl: 'https://example.com/mock-checkout',
+      paymentStatus: 'PAYMENT_SUCCESSFUL',
+      message: 'Payment verified',
     };
   }
-  const response = await apiClient.get(`/payments/verify/${reference}`);
+  const response = await apiClient.get(`/payments/verify/${paymentReference}`);
   return response.data.data as PaymentResponse;
 };

@@ -1,0 +1,129 @@
+(1) Full contents of src/config/env.ts
+----------------------------------------
+const ENV = {
+  USE_MOCK: false,
+  API_BASE_URL: 'https://clearstock-ghana.onrender.com',
+  API_TIMEOUT: 30000,
+} as const;
+
+export default ENV;
+
+
+(2) login function from src/api/auth.api.ts
+----------------------------------------
+export const login = async (data: LoginRequest): Promise<AuthResponse> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    if (data.pin !== MOCK_PIN) {
+      throw new Error('Incorrect PIN. Please try again.');
+    }
+    await saveTokens(
+      MOCK_AUTH_RESPONSE.token,
+      MOCK_AUTH_RESPONSE.refreshToken
+    );
+    return MOCK_AUTH_RESPONSE;
+  }
+  const response = await apiClient.post('/auth/login', data);
+  return buildAuthResponse(response.data.data as RawAuthResponse);
+};
+
+Exact object/fields POSTed to /auth/login: `data`, i.e. { phone: string, pin: string } (the LoginRequest passed in by the caller, forwarded unmodified — no field remapping happens in this function).
+
+
+(3) LoginRequest interface from src/types/auth.types.ts
+----------------------------------------
+export interface LoginRequest {
+  phone: string;
+  pin: string;
+}
+
+Uses `phone`, not `phoneNumber`.
+
+
+(4) Phone-number formatting lines from app/(auth)/login.tsx
+----------------------------------------
+const handleLogin = async () => {
+    if (!validate()) return;
+    try {
+      setLoading(true);
+      const authResponse = await login({
+        phone: phoneNumber,
+        pin,
+      });
+
+No +233 conversion present. `phoneNumber` (the raw local-format input state, e.g. "0244000003") is passed straight through as `phone` with no transformation.
+
+
+(5) git diff --stat / git status --short
+----------------------------------------
+$ git diff --stat
+ app/(auth)/forgot-pin.tsx                 |    5 +-
+ app/(auth)/login.tsx                      |    3 +-
+ app/(auth)/otp.tsx                        |   18 +-
+ app/(auth)/phone.tsx                      |    5 +-
+ app/(auth)/reset-pin-new.tsx              |    7 +-
+ app/(buyer)/_layout.tsx                   |    4 +
+ app/(buyer)/saved.tsx                     |    6 +-
+ app/(buyer)/search.tsx                    |    4 +-
+ app/(guest)/_layout.tsx                   |    6 +-
+ app/(guest)/index.tsx                     |   40 +-
+ app/(guest)/listing/[id].tsx              |  618 +---
+ app/(guest)/onboarding/2.tsx              |    8 +-
+ app/(guest)/seller/[id].tsx               |   23 +-
+ app/(seller)/create-listing/index.tsx     |    6 +-
+ app/(seller)/dashboard.tsx                |    4 +-
+ app/(seller)/listings.tsx                 |    6 +-
+ app/splash.tsx                            |   23 +-
+ package-lock.json                         | 4633 +++++++++++++++++++++--------
+ package.json                              |   39 +-
+ src/api/auth.api.ts                       |   49 +-
+ src/api/listing.api.ts                    |   64 +-
+ src/api/messaging.api.ts                  |    8 +-
+ src/api/review.api.ts                     |    7 +-
+ src/api/transaction.api.ts                |   65 +-
+ src/components/ui/listing/ListingCard.tsx |   28 +-
+ src/components/ui/listing/ListingGrid.tsx |    2 +-
+ src/config/env.ts                         |    6 +-
+ src/hooks/usePurchaseRequests.ts          |   24 +-
+ src/mocks/listing.mock.ts                 |  304 +-
+ src/types/auth.types.ts                   |    9 +-
+ src/types/listing.types.ts                |   84 +-
+ 31 files changed, 3896 insertions(+), 2212 deletions(-)
+
+$ git status --short
+ M app/(auth)/forgot-pin.tsx
+ M app/(auth)/login.tsx
+ M app/(auth)/otp.tsx
+ M app/(auth)/phone.tsx
+ M app/(auth)/reset-pin-new.tsx
+ M app/(buyer)/_layout.tsx
+ M app/(buyer)/saved.tsx
+ M app/(buyer)/search.tsx
+ M app/(guest)/_layout.tsx
+ M app/(guest)/index.tsx
+ M app/(guest)/listing/[id].tsx
+ M app/(guest)/onboarding/2.tsx
+ M app/(guest)/seller/[id].tsx
+ M app/(seller)/create-listing/index.tsx
+ M app/(seller)/dashboard.tsx
+ M app/(seller)/listings.tsx
+ M app/splash.tsx
+ M package-lock.json
+ M package.json
+ M src/api/auth.api.ts
+ M src/api/listing.api.ts
+ M src/api/messaging.api.ts
+ M src/api/review.api.ts
+ M src/api/transaction.api.ts
+ M src/components/ui/listing/ListingCard.tsx
+ M src/components/ui/listing/ListingGrid.tsx
+ M src/config/env.ts
+ M src/hooks/usePurchaseRequests.ts
+ M src/mocks/listing.mock.ts
+ M src/types/auth.types.ts
+ M src/types/listing.types.ts
+?? .idea/
+?? INTEGRATION-AUDIT.md
+?? app/(buyer)/listing/
+?? backend/
+?? src/screens/

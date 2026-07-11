@@ -1,0 +1,21 @@
+package com.clearstock.backend.auth.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+@Data
+public class ResetPinRequest {
+
+    @NotBlank(message = "Phone number is required")
+    private String phone;
+
+    @NotBlank(message = "OTP is required")
+    @Size(min = 6, max = 6, message = "OTP must be 6 digits")
+    private String otp;
+
+    @NotBlank(message = "New PIN is required")
+    @Pattern(regexp = "\\d{4}", message = "PIN must be exactly 4 digits")
+    private String newPin;
+}

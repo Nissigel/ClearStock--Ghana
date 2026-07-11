@@ -102,10 +102,7 @@ export default function SellerLayout() {
           ),
         }}
       />
-<Tabs.Screen name="create-listing/index" options={{ href: null }} /> 
-<Tabs.Screen name="seller-profile" options={{ href: null }} />
-<Tabs.Screen name="transactions" options={{ href: null }} />
-<Tabs.Screen name="transaction-detail/[id]" options={{ href: null }} />
+      <Tabs.Screen name="(screens)" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -52,18 +52,20 @@ export default function OtpVerifyScreen() {
     try {
       setLoading(true);
       setError('');
-      const tempToken = await verifyOtp({
-        phoneNumber,
-        otp: code,
-        purpose: purpose ?? 'REGISTRATION',
-      });
-
       if (purpose === 'PIN_RESET') {
+        // Backend's reset-pin endpoint re-verifies the phone + otp itself
+        // (it has no concept of a tempToken), so skip verify-otp here and
+        // just carry the code the user entered forward.
         router.push({
           pathname: '/(auth)/reset-pin-new',
-          params: { resetToken: tempToken, phoneNumber },
+          params: { otp: code, phoneNumber },
         });
       } else {
+        const tempToken = await verifyOtp({
+          phone: phoneNumber,
+          otp: code,
+          purpose: purpose ?? 'REGISTRATION',
+        });
         router.push({
           pathname: '/(auth)/create-pin',
           params: { tempToken, phoneNumber },
@@ -81,7 +83,7 @@ export default function OtpVerifyScreen() {
     try {
       setResendLoading(true);
       await sendOtp({
-        phoneNumber,
+        phone: phoneNumber,
         purpose: purpose ?? 'REGISTRATION',
       });
       setCountdown(OTP_RESEND_COOLDOWN_SECONDS);

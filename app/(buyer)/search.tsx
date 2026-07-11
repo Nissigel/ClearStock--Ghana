@@ -1,9 +1,10 @@
-import { View, StyleSheet } from 'react-native';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { View, StyleSheet, Keyboard } from 'react-native';
+import { useState, useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { SearchBar } from '@/components/ui/SearchBar';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ListingGrid } from '@/components/ui/listing/ListingGrid';
 import { useListings } from '@/hooks/useListings';
 import { Spacing } from '@/constants/theme';
@@ -21,16 +22,28 @@ export default function SearchScreen() {
   });
 
   const handleListingPress = (listing: ListingSummary) => {
+    Keyboard.dismiss();
     router.push({
-      pathname: '/(guest)/listing/[id]',
-      params: { id: listing.id },
+      pathname: '/(buyer)/listing/[id]',
+      params: { id: String(listing.id) },
     });
   };
+
+  // Dismiss the keyboard whenever this screen loses focus — switching tabs,
+  // pushing a listing, or going back should never leave it hanging open.
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        Keyboard.dismiss();
+      };
+    }, [])
+  );
 
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
+      {router.canGoBack() && <ScreenHeader title="Search" />}
       <View
         style={[
           styles.searchContainer,
@@ -40,7 +53,6 @@ export default function SearchScreen() {
         <SearchBar
           value={search}
           onChangeText={setSearch}
-          autoFocus
           placeholder="Search products, sellers..."
           containerStyle={styles.searchBar}
         />

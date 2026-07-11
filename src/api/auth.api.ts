@@ -16,6 +16,25 @@ import type {
   AuthUser,
 } from '@/types/auth.types';
 
+// Backend's login/create-pin/reset-pin responses (shared shape) are a flat
+// { token, userId, phone, name } — no refreshToken, no role/isSeller, no
+// nested user. Adapt it to the app's AuthResponse contract here so callers
+// (store/screens) don't need to change.
+interface RawAuthResponse {
+  token: string;
+  userId: number;
+  phone: string;
+  name: string;
+}
+
+const buildAuthResponse = async (
+  raw: RawAuthResponse
+): Promise<AuthResponse> => {
+  await saveTokens(raw.token);
+  const user = await getMyProfile();
+  return { token: raw.token, user };
+};
+
 export const sendOtp = async (data: SendOtpRequest): Promise<void> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -43,16 +62,11 @@ export const createPin = async (
 ): Promise<AuthResponse> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 800));
-    await saveTokens(
-      MOCK_AUTH_RESPONSE.token,
-      MOCK_AUTH_RESPONSE.refreshToken
-    );
+    await saveTokens(MOCK_AUTH_RESPONSE.token);
     return MOCK_AUTH_RESPONSE;
   }
   const response = await apiClient.post('/auth/create-pin', data);
-  const authData = response.data.data as AuthResponse;
-  await saveTokens(authData.token, authData.refreshToken);
-  return authData;
+  return buildAuthResponse(response.data.data as RawAuthResponse);
 };
 
 export const login = async (data: LoginRequest): Promise<AuthResponse> => {
@@ -61,16 +75,11 @@ export const login = async (data: LoginRequest): Promise<AuthResponse> => {
     if (data.pin !== MOCK_PIN) {
       throw new Error('Incorrect PIN. Please try again.');
     }
-    await saveTokens(
-      MOCK_AUTH_RESPONSE.token,
-      MOCK_AUTH_RESPONSE.refreshToken
-    );
+    await saveTokens(MOCK_AUTH_RESPONSE.token);
     return MOCK_AUTH_RESPONSE;
   }
   const response = await apiClient.post('/auth/login', data);
-  const authData = response.data.data as AuthResponse;
-  await saveTokens(authData.token, authData.refreshToken);
-  return authData;
+  return buildAuthResponse(response.data.data as RawAuthResponse);
 };
 
 export const resetPin = async (
@@ -78,16 +87,11 @@ export const resetPin = async (
 ): Promise<AuthResponse> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 800));
-    await saveTokens(
-      MOCK_AUTH_RESPONSE.token,
-      MOCK_AUTH_RESPONSE.refreshToken
-    );
+    await saveTokens(MOCK_AUTH_RESPONSE.token);
     return MOCK_AUTH_RESPONSE;
   }
   const response = await apiClient.post('/auth/reset-pin', data);
-  const authData = response.data.data as AuthResponse;
-  await saveTokens(authData.token, authData.refreshToken);
-  return authData;
+  return buildAuthResponse(response.data.data as RawAuthResponse);
 };
 
 export const logout = async (): Promise<void> => {
@@ -100,5 +104,23 @@ export const getMyProfile = async (): Promise<AuthUser> => {
     return MOCK_AUTH_USER;
   }
   const response = await apiClient.get('/user/profile');
-  return response.data.data as AuthUser;
+  const raw = response.data.data as {
+    id: number;
+    phone: string;
+    name: string;
+    email: string | null;
+    profileImageUrl: string | null;
+  };
+  // Backend only returns { id, phone, name, email, profileImageUrl, createdAt } —
+  // there's no role/seller field at all. Seller status is derived separately
+  // via GET /seller/profile (see src/api/seller.api.ts) after login.
+  // region/cityTown/accountStatus are still genuinely absent from this
+  // response; left unset rather than guessed — see INTEGRATION-AUDIT.md.
+  return {
+    id: String(raw.id),
+    fullName: raw.name,
+    phoneNumber: raw.phone,
+    email: raw.email ?? null,
+    profilePhotoUrl: raw.profileImageUrl ?? null,
+  } as AuthUser;
 };

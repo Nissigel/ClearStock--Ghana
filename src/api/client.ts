@@ -4,28 +4,20 @@ import ENV from '@/config/env';
 
 const SECURE_STORE_KEYS = {
   TOKEN: 'clearstock_token',
-  REFRESH_TOKEN: 'clearstock_refresh_token',
 } as const;
 
-export const saveTokens = async (
-  token: string,
-  refreshToken: string
-): Promise<void> => {
+// Backend login/create-pin/reset-pin responses only ever include a single
+// access token — there's no refresh token to store.
+export const saveTokens = async (token: string): Promise<void> => {
   await SecureStore.setItemAsync(SECURE_STORE_KEYS.TOKEN, token);
-  await SecureStore.setItemAsync(SECURE_STORE_KEYS.REFRESH_TOKEN, refreshToken);
 };
 
 export const getToken = async (): Promise<string | null> => {
   return await SecureStore.getItemAsync(SECURE_STORE_KEYS.TOKEN);
 };
 
-export const getRefreshToken = async (): Promise<string | null> => {
-  return await SecureStore.getItemAsync(SECURE_STORE_KEYS.REFRESH_TOKEN);
-};
-
 export const clearTokens = async (): Promise<void> => {
   await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.TOKEN);
-  await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.REFRESH_TOKEN);
 };
 
 const apiClient = axios.create({

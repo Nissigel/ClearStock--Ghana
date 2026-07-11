@@ -1,29 +1,13 @@
 import type { ListingStatus, VerificationStatus } from '@/constants/app';
 import type { Category } from '@/constants/categories';
 
-export interface ListingImage {
-  id: string;
-  listingId: string;
-  imageUrl: string | null;
-  sortOrder: number;
-}
-
-export interface ListingSeller {
-  id: string;
-  userId: string;
-  businessName: string | null;
-  sellerType: string;
-  marketHub: string;
-  region: string;
-  cityTown: string;
-  verificationStatus: VerificationStatus;
-  fullName: string;
-  profilePhotoUrl: string | null;
-}
-
-export interface Listing {
-  id: string;
-  sellerId: string;
+// Matches the backend's ListingResponse DTO exactly — used for both the
+// list endpoint and the single-listing endpoint, which return the same
+// flat shape (no nested seller object, no image objects).
+export interface ListingSummary {
+  id: number;
+  sellerId: number;
+  sellerBusinessName: string;
   productName: string;
   category: Category;
   description: string;
@@ -31,44 +15,23 @@ export interface Listing {
   unitOfMeasurement: string | null;
   originalPrice: number;
   currentPrice: number;
-  minimumPrice: number;
-  isExpirySensitive: boolean;
+  expirySensitive: boolean;
   expiryDate: string | null;
   clearanceEndDate: string;
   discountStepPercent: number | null;
   discountIntervalDays: number | null;
-  lastDiscountAt: string | null;
-  status: ListingStatus;
-  images: ListingImage[];
-  seller: ListingSeller;
-  isSaved: boolean;
+  manualDiscountPercent: number | null;
+  minimumAcceptablePrice: number;
+  listingStatus: ListingStatus;
+  urgencyScore: number;
+  isHighUrgency: boolean;
+  discountActive: boolean;
+  images: string[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ListingSellerSummary {
-  id: string;
-  businessName: string | null;
-  fullName: string;
-  verificationStatus: VerificationStatus;
-}
-
-export interface ListingSummary {
-  id: string;
-  productName: string;
-  category: Category;
-  currentPrice: number;
-  originalPrice: number;
-  unitOfMeasurement: string | null;
-  status: ListingStatus;
-  primaryImageUrl: string | null;
-  seller: ListingSellerSummary;
-  isSaved: boolean;
-  isExpirySensitive: boolean;
-  expiryDate: string | null;
-  clearanceEndDate: string;
-  createdAt: string;
-}
+export interface Listing extends ListingSummary {}
 
 export interface CreateListingRequest {
   productName: string;
@@ -77,13 +40,13 @@ export interface CreateListingRequest {
   quantity: number;
   unitOfMeasurement: string | null;
   originalPrice: number;
-  minimumPrice: number;
-  isExpirySensitive: boolean;
+  minimumAcceptablePrice: number;
+  expirySensitive: boolean;
   expiryDate: string | null;
   clearanceEndDate: string;
   discountStepPercent: number | null;
   discountIntervalDays: number | null;
-  imageUrls: string[];
+  images: string[];
 }
 
 export interface UpdateListingRequest {
@@ -93,13 +56,13 @@ export interface UpdateListingRequest {
   quantity?: number;
   unitOfMeasurement?: string | null;
   originalPrice?: number;
-  minimumPrice?: number;
-  isExpirySensitive?: boolean;
+  minimumAcceptablePrice?: number;
+  expirySensitive?: boolean;
   expiryDate?: string | null;
   clearanceEndDate?: string;
   discountStepPercent?: number | null;
   discountIntervalDays?: number | null;
-  imageUrls?: string[];
+  images?: string[];
 }
 
 export interface ListingFilters {

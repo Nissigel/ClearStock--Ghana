@@ -9,9 +9,14 @@ export default function GuestLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
+        gestureEnabled: false,
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="listing/[id]" />
+      <Stack.Screen name="seller/[id]" />
+      <Stack.Screen name="onboarding/1" />
+      <Stack.Screen name="onboarding/2" />
     </Stack>
   );
 }

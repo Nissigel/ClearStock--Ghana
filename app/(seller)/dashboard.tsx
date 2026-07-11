@@ -74,12 +74,12 @@ export default function SellerDashboardScreen() {
     queryFn: getSellerPurchaseRequests,
   });
 
-  const activeListings = listings?.filter((l) => l.status === 'ACTIVE').length ?? 0;
+  const activeListings = listings?.filter((l) => l.listingStatus === 'ACTIVE').length ?? 0;
   const totalListings = listings?.length ?? 0;
   const pendingRequests = requests?.filter((r) => r.status === 'PENDING').length ?? 0;
   const totalRequests = requests?.length ?? 0;
   const recoveredValue = listings
-    ?.filter((l) => l.status === 'ACTIVE')
+    ?.filter((l) => l.listingStatus === 'ACTIVE')
     .reduce((sum, l) => sum + l.currentPrice, 0) ?? 0;
 
   const handleSwitchToBuyer = () => {
@@ -196,7 +196,7 @@ export default function SellerDashboardScreen() {
               styles.quickAction,
               { borderBottomColor: colors.border },
             ]}
-            onPress={() => router.push({ pathname: '/(seller)/create-listing' })}
+            onPress={() => router.push({ pathname: '/(seller)/(screens)/create-listing' })}
           >
             <Ionicons
               name="add-circle-outline"

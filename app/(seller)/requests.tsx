@@ -18,7 +18,6 @@ import {
   useReviewPurchaseRequest,
 } from '@/hooks/usePurchaseRequests';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
-import { CURRENCY_SYMBOL } from '@/constants/app';
 import type { PurchaseRequest } from '@/types/transaction.types';
 
 export default function SellerRequestsScreen() {
@@ -30,12 +29,13 @@ export default function SellerRequestsScreen() {
   const handleAccept = (request: PurchaseRequest) => {
     Alert.alert(
       'Accept Request',
-      `Accept purchase request from ${request.buyer.fullName} for ${request.requestedQuantity} units?`,
+      `Accept purchase request from ${request.buyerPhone} for ${request.requestedQuantity} units?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Accept',
-          onPress: () => reviewRequest({ id: request.id, action: 'ACCEPT' }),
+          onPress: () =>
+            reviewRequest({ id: String(request.id), action: 'ACCEPT' }),
         },
       ]
     );
@@ -50,7 +50,8 @@ export default function SellerRequestsScreen() {
         {
           text: 'Decline',
           style: 'destructive',
-          onPress: () => reviewRequest({ id: request.id, action: 'DECLINE' }),
+          onPress: () =>
+            reviewRequest({ id: String(request.id), action: 'DECLINE' }),
         },
       ]
     );
@@ -85,21 +86,18 @@ export default function SellerRequestsScreen() {
           style={[styles.productName, { color: colors.foreground }]}
           numberOfLines={1}
         >
-          {item.listingName}
+          {item.listingProductName}
         </Text>
         <Badge variant={getStatusVariant(item.status) as any} label={item.status} />
       </View>
 
       <Text style={[styles.buyerName, { color: colors.mutedForeground }]}>
-        From: {item.buyer.fullName}
+        From: {item.buyerPhone}
       </Text>
 
       <View style={styles.detailRow}>
         <Text style={[styles.detail, { color: colors.mutedForeground }]}>
           Qty: {item.requestedQuantity}
-        </Text>
-        <Text style={[styles.price, { color: colors.primary }]}>
-          {CURRENCY_SYMBOL}{item.priceAtRequest.toFixed(2)} per unit
         </Text>
       </View>
 
@@ -130,7 +128,7 @@ export default function SellerRequestsScreen() {
       <ScreenHeader showBack={false} title="Purchase Requests" />
       <FlatList
         data={data ?? []}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         onRefresh={refetch}
         refreshing={isRefetching}

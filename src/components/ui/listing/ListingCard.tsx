@@ -58,8 +58,10 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
     return (parts[0][0] + parts[1][0]).toUpperCase();
   };
 
-  const sellerName =
-    listing.seller.businessName ?? listing.seller.fullName;
+  const rawImageUrl = listing.images[0];
+  const primaryImageUrl =
+    rawImageUrl && !rawImageUrl.startsWith('file://') ? rawImageUrl : null;
+  const sellerName = listing.sellerBusinessName;
 
   return (
     <TouchableOpacity
@@ -88,9 +90,9 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
           },
         ]}
       >
-       {listing.primaryImageUrl ? (
+       {primaryImageUrl ? (
           <Image
-            source={{ uri: listing.primaryImageUrl }}
+            source={{ uri: primaryImageUrl }}
             style={styles.image}
             resizeMode="cover"
           />
@@ -119,11 +121,9 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
             ]}
           >
             <Ionicons
-              name={listing.isSaved ? 'heart' : 'heart-outline'}
+              name="heart-outline"
               size={16}
-              color={
-                listing.isSaved ? colors.destructive : colors.mutedForeground
-              }
+              color={colors.mutedForeground}
             />
           </View>
         </TouchableOpacity>
@@ -139,6 +139,7 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
               <Badge variant="expirySoon" label={`${daysUntilExpiry}d left`} />
             </View>
           )}
+      </View>
       {/* Details */}
       <View style={styles.details}>
        <Heading
@@ -158,20 +159,11 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
 
         {/* Seller info */}
         <Caption
-            numberOfLines={1}
-            style={styles.sellerName}
-          >
-            {sellerName}
-          </Caption>
-          {listing.seller.verificationStatus === 'VERIFIED' && (
-            <Ionicons
-              name="checkmark-circle"
-              size={14}
-              color={colors.gold}
-              style={styles.verifiedIcon}
-            />
-          )}
-        </View>
+          numberOfLines={1}
+          style={styles.sellerName}
+        >
+          {sellerName}
+        </Caption>
       </View>
     </TouchableOpacity>
   );

@@ -315,7 +315,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
@@ -342,7 +342,16 @@ const IMAGE_HEIGHT = CARD_WIDTH * 0.85;
 export default function GuestHomeScreen() {
   const { colors, isDark, setColorScheme, colorScheme } = useTheme();
   const router = useRouter();
+  const segments = useSegments();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // This screen is rendered both at /(guest) (guest browsing, no tab bar)
+  // and — via app/(buyer)/home.tsx re-exporting it — at /(buyer)/home
+  // (inside the buyer tab navigator). Route to the matching group's
+  // listing detail screen so buyers don't drop into the guest stack and
+  // lose their tab bar.
+  const listingDetailRoute =
+    segments[0] === '(buyer)' ? '/(buyer)/listing/[id]' : '/(guest)/listing/[id]';
 
   const filters = useListingFilterStore((state) => state.filters);
   const setFilter = useListingFilterStore((state) => state.setFilter);
@@ -363,8 +372,8 @@ export default function GuestHomeScreen() {
 
   const handleListingPress = (listing: ListingSummary) => {
     router.push({
-      pathname: '/(guest)/listing/[id]',
-      params: { id: listing.id },
+      pathname: listingDetailRoute,
+      params: { id: String(listing.id) },
     });
   };
 
@@ -374,7 +383,7 @@ export default function GuestHomeScreen() {
       setShowAuthPrompt(true);
       return;
     }
-    toggleSave({ listingId: listing.id, isSaved: listing.isSaved });
+    toggleSave({ listingId: String(listing.id), isSaved: false });
   };
 
   const handleLoginPress = () => {
@@ -414,6 +423,10 @@ export default function GuestHomeScreen() {
       ? `Exp: ${new Date(item.expiryDate).toLocaleDateString('en-GH', { month: 'short', year: 'numeric' })}`
       : null;
 
+    const rawImageUrl = item.images[0];
+    const primaryImageUrl =
+      rawImageUrl && !rawImageUrl.startsWith('file://') ? rawImageUrl : null;
+
     return (
       <TouchableOpacity
         onPress={() => handleListingPress(item)}
@@ -440,9 +453,9 @@ export default function GuestHomeScreen() {
             },
           ]}
         >
-          {item.primaryImageUrl ? (
+          {primaryImageUrl ? (
             <Image
-              source={{ uri: item.primaryImageUrl }}
+              source={{ uri: primaryImageUrl }}
               style={styles.image}
               resizeMode="cover"
             />
@@ -481,9 +494,9 @@ export default function GuestHomeScreen() {
               style={[styles.saveButtonBg, { backgroundColor: colors.card }]}
             >
               <Ionicons
-                name={item.isSaved ? 'heart' : 'heart-outline'}
+                name="heart-outline"
                 size={16}
-                color={item.isSaved ? colors.destructive : colors.mutedForeground}
+                color={colors.mutedForeground}
               />
             </View>
           </TouchableOpacity>
@@ -530,21 +543,8 @@ export default function GuestHomeScreen() {
               style={[styles.sellerName, { color: colors.mutedForeground }]}
               numberOfLines={1}
             >
-              {item.seller.businessName ?? item.seller.fullName}
+              {item.sellerBusinessName}
             </Text>
-            {item.seller.verificationStatus === 'VERIFIED' && (
-              <View
-                style={[
-                  styles.verifiedPill,
-                  { backgroundColor: '#FFF8E7', borderColor: colors.gold },
-                ]}
-              >
-                <Ionicons name="checkmark-circle" size={10} color={colors.gold} />
-                <Text style={[styles.verifiedText, { color: colors.gold }]}>
-                  Verified
-                </Text>
-              </View>
-            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -694,7 +694,7 @@ export default function GuestHomeScreen() {
       >
         <FlatList
           data={listings}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.id)}
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.listContent}

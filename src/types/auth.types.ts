@@ -1,10 +1,10 @@
 export interface SendOtpRequest {
-  phoneNumber: string;
+  phone: string;
   purpose: OtpPurpose;
 }
 
 export interface VerifyOtpRequest {
-  phoneNumber: string;
+  phone: string;
   otp: string;
   purpose: OtpPurpose;
 }
@@ -15,18 +15,18 @@ export interface CreatePinRequest {
 }
 
 export interface LoginRequest {
-  phoneNumber: string;
+  phone: string;
   pin: string;
 }
 
 export interface ResetPinRequest {
-  resetToken: string;
+  phone: string;
+  otp: string;
   newPin: string;
 }
 
 export interface AuthResponse {
   token: string;
-  refreshToken: string;
   user: AuthUser;
 }
 
@@ -39,7 +39,6 @@ export interface AuthUser {
   region: string;
   cityTown: string;
   accountStatus: AccountStatus;
-  hasSellerProfile: boolean;
 }
 
 export type OtpPurpose =

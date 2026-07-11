@@ -13,9 +13,9 @@ export default function OnboardingTwo() {
 
   const handleSkip = async () => {
     try {
-      await SecureStore.setItemAsync('hasSeenOnboarding', '1');
+      await SecureStore.setItemAsync('hasSeenOnboarding', 'true');
     } catch {}
-    router.replace('/(guest)');
+    router.replace('/(auth)/phone');
   };
 
   return (
@@ -60,9 +60,9 @@ export default function OnboardingTwo() {
             style={[styles.button, { backgroundColor: colors.primary }]}
             onPress={async () => {
               try {
-                await SecureStore.setItemAsync('hasSeenOnboarding', '1');
+                await SecureStore.setItemAsync('hasSeenOnboarding', 'true');
               } catch {}
-              router.replace('/(guest)');
+              router.replace('/(auth)/phone');
             }}
           >
             <Text style={[styles.buttonText, { color: colors.gold }]}>Get Started →</Text>

@@ -36,7 +36,8 @@
         {
           "photosPermission": "ClearStock Ghana needs access to your photos to upload listing images and profile pictures."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

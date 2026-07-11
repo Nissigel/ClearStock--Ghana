@@ -1,14 +1,13 @@
 import {
   View,
-  Text,
   StyleSheet,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
+import { Text } from '@/components/ui/Typography';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Avatar } from '@/components/ui/Avatar';
-import { Badge } from '@/components/ui/Badge';
 import { ListingGrid } from '@/components/ui/listing/ListingGrid';
 import { useQuery } from '@tanstack/react-query';
 import { getListings } from '@/api/listing.api';
@@ -34,16 +33,11 @@ export default function SellerPublicProfileScreen() {
   const handleListingPress = (listing: ListingSummary) => {
     router.push({
       pathname: '/(guest)/listing/[id]',
-      params: { id: listing.id },
+      params: { id: String(listing.id) },
     });
   };
 
-  const sellerName =
-    listings[0]?.seller.businessName ??
-    listings[0]?.seller.fullName ??
-    'Seller';
-  const verificationStatus =
-    listings[0]?.seller.verificationStatus ?? 'UNVERIFIED';
+  const sellerName = listings[0]?.sellerBusinessName ?? 'Seller';
 
 const { data: reviews } = useQuery({
     queryKey: ['seller-reviews', id],
@@ -71,17 +65,6 @@ const { data: reviews } = useQuery({
         <Text style={[styles.sellerName, { color: colors.foreground }]}>
           {sellerName}
         </Text>
-        <View style={styles.badgeRow}>
-          <Badge
-            variant={
-              verificationStatus === 'VERIFIED'
-                ? 'verified'
-                : verificationStatus === 'PENDING'
-                ? 'pending'
-                : 'unverified'
-            }
-          />
-        </View>
         {ratingSummary && (
           <View style={styles.ratingRow}>
             <StarRating rating={ratingSummary.averageRating} size={16} />

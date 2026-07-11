@@ -88,10 +88,10 @@ export default function SellerProfileScreen() {
             ]}
           >
             {[
-              { icon: 'storefront-outline', label: 'Seller Profile', route: '/(seller)/seller-profile' },
-              { icon: 'swap-horizontal-outline', label: 'Transaction History', route: '/(seller)/transactions' },
-              { icon: 'person-outline', label: 'Edit Profile', route: '/(buyer)/edit-profile' },
-              { icon: 'notifications-outline', label: 'Notifications', route: '/(buyer)/notifications' },
+              { icon: 'storefront-outline', label: 'Seller Profile', route: '/(seller)/(screens)/seller-profile' },
+              { icon: 'swap-horizontal-outline', label: 'Transaction History', route: '/(seller)/(screens)/transactions' },
+              { icon: 'person-outline', label: 'Edit Profile', route: '/(buyer)/(screens)/edit-profile' },
+              { icon: 'notifications-outline', label: 'Notifications', route: '/(buyer)/(screens)/notifications' },
             ].map((item, index) => (
               <TouchableOpacity
                 key={index}

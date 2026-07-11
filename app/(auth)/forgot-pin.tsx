@@ -39,15 +39,14 @@ export default function ForgotPinScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
-      const formattedNumber = `+233${phoneNumber.replace(/^0/, '')}`;
       await sendOtp({
-        phoneNumber: formattedNumber,
+        phone: phoneNumber,
         purpose: 'PIN_RESET',
       });
       router.push({
         pathname: '/(auth)/otp',
         params: {
-          phoneNumber: formattedNumber,
+          phoneNumber,
           purpose: 'PIN_RESET',
         },
       });

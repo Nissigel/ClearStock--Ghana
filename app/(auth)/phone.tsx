@@ -39,15 +39,14 @@ export default function PhoneEntryScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
-      const formattedNumber = `+233${phoneNumber.replace(/^0/, '')}`;
       await sendOtp({
-        phoneNumber: formattedNumber,
+        phone: phoneNumber,
         purpose: 'REGISTRATION',
       });
       router.push({
         pathname: '/(auth)/otp',
         params: {
-          phoneNumber: formattedNumber,
+          phoneNumber,
           purpose: 'REGISTRATION',
         },
       });

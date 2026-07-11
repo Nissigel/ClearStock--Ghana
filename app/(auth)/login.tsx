@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { login } from '@/api/auth.api';
+import { getSellerProfile } from '@/api/seller.api';
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { Spacing, FontSize } from '@/constants/theme';
@@ -24,9 +25,8 @@ export default function LoginPinScreen() {
   const router = useRouter();
 
   const setAuth = useAuthStore((state) => state.setAuth);
-  const setHasSellerProfile = useModeStore(
-    (state) => state.setHasSellerProfile
-  );
+  const setSellerProfile = useAuthStore((state) => state.setSellerProfile);
+  const switchToSeller = useModeStore((state) => state.switchToSeller);
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [pin, setPin] = useState('');
@@ -55,18 +55,28 @@ export default function LoginPinScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
-      const formattedNumber = `+233${phoneNumber.replace(/^0/, '')}`;
       const authResponse = await login({
-        phoneNumber: formattedNumber,
+        phone: phoneNumber,
         pin,
       });
-      setAuth(
-        authResponse.user,
-        authResponse.token,
-        authResponse.refreshToken
-      );
-      setHasSellerProfile(authResponse.user.hasSellerProfile);
-      router.replace('/(buyer)/home');
+      setAuth(authResponse.user, authResponse.token);
+
+      let sellerProfile = null;
+      try {
+        sellerProfile = await getSellerProfile();
+      } catch {
+        // A 404 (no seller profile) is handled inside getSellerProfile.
+        // Any other failure here shouldn't block login — fall back to buyer.
+        sellerProfile = null;
+      }
+      setSellerProfile(sellerProfile);
+
+      if (sellerProfile) {
+        switchToSeller();
+        router.replace('/(seller)/dashboard');
+      } else {
+        router.replace('/(buyer)/home');
+      }
     } catch (err) {
       setPinError('Incorrect phone number or PIN. Please try again.');
       setPin('');

@@ -67,10 +67,10 @@ export const sendMessage = async (
     }
     return newMessage;
   }
-  const response = await apiClient.post(
-    `/conversations/${conversationId}/messages`,
-    data
-  );
+  const response = await apiClient.post('/messages', {
+    conversationId,
+    ...data,
+  });
   return response.data.data as Message;
 };
 
