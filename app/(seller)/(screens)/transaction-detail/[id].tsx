@@ -58,11 +58,11 @@ export default function SellerTransactionDetailScreen() {
       'How will the buyer receive this order?',
       [
         {
-          text: 'Collection',
+          text: 'Pickup',
           onPress: () =>
             updateStatus({
               status: 'READY_FOR_COLLECTION',
-              fulfillmentMethod: 'COLLECTION',
+              fulfillmentMethod: 'PICKUP',
             }),
         },
         {

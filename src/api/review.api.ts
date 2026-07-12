@@ -60,6 +60,13 @@ export const createReview = async (
     MOCK_REVIEWS.unshift(newReview);
     return newReview;
   }
-  const response = await apiClient.post('/reviews', data);
+  // Backend's SubmitReviewRequest expects { transactionId, revieweeId, rating,
+  // comment } with numeric IDs — map from the app's sellerId/string shape.
+  const response = await apiClient.post('/reviews', {
+    transactionId: Number(data.transactionId),
+    revieweeId: Number(data.sellerId),
+    rating: data.rating,
+    comment: data.comment ?? null,
+  });
   return response.data.data as Review;
 };

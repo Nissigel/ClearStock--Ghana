@@ -66,7 +66,7 @@ export interface VerifyTransactionOtpRequest {
   otp: string;
 }
 
-export type FulfillmentMethod = 'COLLECTION' | 'DELIVERY';
+export type FulfillmentMethod = 'PICKUP' | 'DELIVERY';
 
 // Narrower view of the same GET /transactions response, used by the
 // pay-now/verify-payment flow.

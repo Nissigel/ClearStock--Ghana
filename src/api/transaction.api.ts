@@ -126,7 +126,7 @@ export const acceptPurchaseRequest = async (
       buyerPhone: request?.buyerPhone ?? '',
       sellerPhone: request?.sellerPhone ?? '',
       quantity: request?.requestedQuantity ?? 0,
-      fulfillmentMethod: 'COLLECTION',
+      fulfillmentMethod: 'PICKUP',
       paymentStatus: 'PENDING_PAYMENT',
       transactionStatus: 'PENDING_FULFILLMENT',
       otpCode: null,
@@ -202,9 +202,10 @@ export const verifyTransactionOtp = async (
     }
     return transaction ?? MOCK_TRANSACTIONS[0];
   }
+  // Backend expects { otpCode }, not { otp }.
   const response = await apiClient.post(
     `/transactions/${id}/verify-otp`,
-    data
+    { otpCode: data.otp }
   );
   return response.data.data as Transaction;
 };
