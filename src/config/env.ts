@@ -9,7 +9,7 @@ const ENV = {
   // that display on every device. Create a free account, add an *unsigned*
   // upload preset, then fill these in. If left blank, image upload is skipped
   // and listings fall back to the initials placeholder.
-  CLOUDINARY_CLOUD_NAME: 'Nissigel',
+  CLOUDINARY_CLOUD_NAME: 'o41mj0jt',
   CLOUDINARY_UPLOAD_PRESET: 'cuteee',
 } as const;
 
