@@ -11,6 +11,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { sendOtp } from '@/api/auth.api';
 import { Spacing, FontSize, Radius } from '@/constants/theme';
 
@@ -68,6 +69,15 @@ export default function PhoneEntryScreen() {
       <KeyboardAvoidingWrapper
         containerStyle={{ backgroundColor: colors.background }}
       >
+        {/* Back / cancel — lets a guest who tapped a gated action leave */}
+        <ScreenHeader
+          transparent
+          containerStyle={styles.header}
+          onBackPress={() =>
+            router.canGoBack() ? router.back() : router.replace('/(guest)')
+          }
+        />
+
         {/* TOP — Green section */}
         <View style={[styles.topSection, { backgroundColor: colors.background }]}>
           {/* Logo icon */}
@@ -243,6 +253,10 @@ export default function PhoneEntryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  header: {
+    borderBottomWidth: 0,
+    paddingHorizontal: Spacing.base,
   },
   topSection: {
     paddingTop: Spacing['2xl'],
