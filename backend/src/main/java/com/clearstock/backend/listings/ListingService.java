@@ -8,10 +8,12 @@ import com.clearstock.backend.seller.SellerRepository;
 import com.clearstock.backend.seller.VerificationStatus;
 import com.clearstock.backend.transactions.PurchaseRequestRepository;
 import com.clearstock.backend.transactions.PurchaseRequestStatus;
+import com.clearstock.backend.transactions.TransactionRepository;
 import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -26,6 +28,8 @@ public class ListingService {
     private final ListingRepository listingRepository;
     private final SellerRepository sellerRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
+    private final TransactionRepository transactionRepository;
+    private final SavedListingRepository savedListingRepository;
     private final DealAlertService dealAlertService;
 
     public ListingResponse createListing(User user, CreateListingRequest request) {
@@ -168,8 +172,11 @@ public class ListingService {
         return ListingResponse.from(listingRepository.save(listing));
     }
 
-    // Hard delete — only allowed for an archived listing with no order history
-    // (any purchase request would break the row's foreign keys).
+    // Hard delete an archived listing. Blocked only when a real transaction
+    // exists (a completed/in-progress order carries evidence and reviews that
+    // shouldn't be discarded). Otherwise its purchase requests and saved
+    // entries are removed first so the row's foreign keys don't block deletion.
+    @Transactional
     public void permanentlyDeleteListing(User user, Long id) {
         SellerProfile seller = requireSellerProfile(user);
         Listing listing = findListingOrThrow(id);
@@ -181,11 +188,13 @@ public class ListingService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Archive the listing before deleting it permanently");
         }
-        if (purchaseRequestRepository.existsByListing(listing)) {
+        if (transactionRepository.existsByListing(listing)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "This listing has order history and can't be permanently deleted; it stays archived");
+                    "This listing has a completed order and can't be permanently deleted; it stays archived");
         }
 
+        purchaseRequestRepository.deleteByListing(listing);
+        savedListingRepository.deleteByListing(listing);
         listingRepository.delete(listing);
     }
 

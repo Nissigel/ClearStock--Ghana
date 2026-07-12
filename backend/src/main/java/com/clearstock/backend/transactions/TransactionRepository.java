@@ -1,5 +1,6 @@
 package com.clearstock.backend.transactions;
 
+import com.clearstock.backend.listings.Listing;
 import com.clearstock.backend.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -23,4 +24,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     long countBySellerIdAndTransactionStatus(Long sellerId, TransactionStatus transactionStatus);
 
     List<Transaction> findBySellerIdAndTransactionStatus(Long sellerId, TransactionStatus transactionStatus);
+
+    boolean existsByListing(Listing listing);
 }
