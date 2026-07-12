@@ -11,7 +11,13 @@ export const updateProfile = async (
     await new Promise((resolve) => setTimeout(resolve, 800));
     throw new Error('Not available in mock mode.');
   }
-  const response = await apiClient.put('/user/profile', data);
+  // Backend expects { name, email, profileImageUrl } and only updates the
+  // fields that are present — the app's shape uses different names.
+  const response = await apiClient.put('/user/profile', {
+    name: data.fullName,
+    email: data.email ?? undefined,
+    profileImageUrl: data.profilePhotoUrl ?? undefined,
+  });
   return mapRawUser(response.data.data);
 };
 
