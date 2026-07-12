@@ -8,7 +8,49 @@ import type {
   Notification,
   NotificationListResponse,
   UnreadCountResponse,
+  ReferenceType,
 } from '@/types/notification.types';
+import type { NotificationCategory } from '@/constants/app';
+
+// The backend returns a flat list of { id, title, message, type, isRead,
+// relatedId, createdAt } — map it to the app's Notification shape.
+interface RawNotification {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  relatedId: number | null;
+  createdAt: string;
+}
+
+const CATEGORY_BY_TYPE: Record<string, NotificationCategory> = {
+  DEAL_ALERT: 'LISTING',
+  PURCHASE_REQUEST: 'PURCHASE_REQUEST',
+  TRANSACTION: 'TRANSACTION',
+  REVIEW: 'TRANSACTION',
+  PAYMENT: 'TRANSACTION',
+};
+
+const REFERENCE_BY_TYPE: Record<string, ReferenceType> = {
+  DEAL_ALERT: 'listing',
+  PURCHASE_REQUEST: 'purchase_request',
+  TRANSACTION: 'transaction',
+  REVIEW: 'transaction',
+  PAYMENT: 'transaction',
+};
+
+const mapNotification = (raw: RawNotification): Notification => ({
+  id: String(raw.id),
+  userId: '',
+  category: CATEGORY_BY_TYPE[raw.type] ?? 'TRANSACTION',
+  title: raw.title,
+  body: raw.message,
+  status: raw.isRead ? 'READ' : 'UNREAD',
+  referenceType: REFERENCE_BY_TYPE[raw.type] ?? null,
+  referenceId: raw.relatedId != null ? String(raw.relatedId) : null,
+  createdAt: raw.createdAt,
+});
 
 export const getNotifications = async (): Promise<NotificationListResponse> => {
   if (ENV.USE_MOCK) {
@@ -23,7 +65,15 @@ export const getNotifications = async (): Promise<NotificationListResponse> => {
     };
   }
   const response = await apiClient.get('/notifications');
-  return response.data.data as NotificationListResponse;
+  const content = (response.data.data as RawNotification[]).map(mapNotification);
+  return {
+    content,
+    page: 0,
+    size: content.length,
+    totalElements: content.length,
+    totalPages: 1,
+    hasNext: false,
+  };
 };
 
 export const getUnreadCount = async (): Promise<UnreadCountResponse> => {
