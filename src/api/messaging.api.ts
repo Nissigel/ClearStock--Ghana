@@ -1,15 +1,89 @@
 import type { AxiosError } from 'axios';
 import ENV from '@/config/env';
 import apiClient from '@/api/client';
+import { useAuthStore } from '@/store/authStore';
 import {
   MOCK_CONVERSATIONS,
   MOCK_MESSAGES,
 } from '@/mocks/messaging.mock';
 import type {
   Conversation,
+  ConversationStatus,
   Message,
   SendMessageRequest,
 } from '@/types/messaging.types';
+
+// ─── Backend response shapes ──────────────────────────────────────────────────
+// The backend uses different field names (messageContent/seen) and a leaner
+// conversation shape (no otherParty / names / unread counts), so map here.
+
+interface RawMessage {
+  id: number;
+  conversationId: number;
+  senderUserId: number;
+  messageContent: string;
+  deleted: boolean;
+  seen: boolean;
+  seenAt: string | null;
+  createdAt: string;
+}
+
+interface RawConversation {
+  id: number;
+  listingId: number;
+  listingProductName: string | null;
+  buyerUserId: number;
+  sellerUserId: number;
+  buyerPhone: string | null;
+  sellerPhone: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const currentUserId = () => useAuthStore.getState().user?.id ?? '';
+
+const mapMessage = (raw: RawMessage): Message => ({
+  id: String(raw.id),
+  conversationId: String(raw.conversationId),
+  senderUserId: String(raw.senderUserId),
+  content: raw.messageContent,
+  isRead: raw.seen,
+  deletedAt: raw.deleted ? raw.seenAt ?? raw.createdAt : null,
+  createdAt: raw.createdAt,
+});
+
+const mapConversation = (raw: RawConversation): Conversation => {
+  const me = currentUserId();
+  const isBuyer = String(raw.buyerUserId) === me;
+  const otherId = isBuyer ? raw.sellerUserId : raw.buyerUserId;
+  // The backend doesn't return the other party's name — the phone is the best
+  // human-readable label we have.
+  const otherPhone = isBuyer ? raw.sellerPhone : raw.buyerPhone;
+  return {
+    id: String(raw.id),
+    listingId: String(raw.listingId),
+    listingName: raw.listingProductName ?? 'Listing',
+    listingPrimaryImageUrl: null,
+    buyerUserId: String(raw.buyerUserId),
+    sellerUserId: String(raw.sellerUserId),
+    otherParty: {
+      id: String(otherId),
+      fullName: otherPhone || 'ClearStock user',
+      profilePhotoUrl: null,
+      phoneNumber: otherPhone || null,
+    },
+    status: (raw.status as ConversationStatus) ?? 'ACTIVE',
+    buyerPhoneVisible: !!raw.buyerPhone,
+    sellerPhoneVisible: !!raw.sellerPhone,
+    lastMessage: null,
+    unreadCount: 0,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  };
+};
+
+// ─── API ──────────────────────────────────────────────────────────────────────
 
 // Returns null when no conversation exists yet for this listing (backend
 // responds 404) — that's the normal "not started" state, not an error.
@@ -18,15 +92,11 @@ export const getConversationByListingId = async (
 ): Promise<Conversation | null> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 400));
-    return (
-      MOCK_CONVERSATIONS.find((c) => c.listingId === listingId) ?? null
-    );
+    return MOCK_CONVERSATIONS.find((c) => c.listingId === listingId) ?? null;
   }
   try {
-    const response = await apiClient.get(
-      `/conversations/listing/${listingId}`
-    );
-    return response.data.data as Conversation;
+    const response = await apiClient.get(`/conversations/listing/${listingId}`);
+    return mapConversation(response.data.data as RawConversation);
   } catch (error) {
     const axiosError = error as AxiosError;
     if (axiosError.response?.status === 404) {
@@ -41,32 +111,12 @@ export const createConversation = async (
 ): Promise<Conversation> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 600));
-    const newConversation: Conversation = {
-      id: `conv-${Date.now()}`,
-      listingId,
-      listingName: '',
-      listingPrimaryImageUrl: null,
-      buyerUserId: 'user-001',
-      sellerUserId: 'user-002',
-      otherParty: {
-        id: 'user-002',
-        fullName: 'Seller',
-        profilePhotoUrl: null,
-        phoneNumber: null,
-      },
-      status: 'ACTIVE',
-      buyerPhoneVisible: false,
-      sellerPhoneVisible: false,
-      lastMessage: null,
-      unreadCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    MOCK_CONVERSATIONS.unshift(newConversation);
-    return newConversation;
+    return MOCK_CONVERSATIONS[0];
   }
-  const response = await apiClient.post('/conversations', { listingId });
-  return response.data.data as Conversation;
+  const response = await apiClient.post('/conversations', {
+    listingId: Number(listingId),
+  });
+  return mapConversation(response.data.data as RawConversation);
 };
 
 export const getConversations = async (): Promise<Conversation[]> => {
@@ -75,7 +125,7 @@ export const getConversations = async (): Promise<Conversation[]> => {
     return MOCK_CONVERSATIONS;
   }
   const response = await apiClient.get('/conversations');
-  return response.data.data as Conversation[];
+  return (response.data.data as RawConversation[]).map(mapConversation);
 };
 
 export const getConversationById = async (
@@ -90,7 +140,7 @@ export const getConversationById = async (
     return conversation;
   }
   const response = await apiClient.get(`/conversations/${id}`);
-  return response.data.data as Conversation;
+  return mapConversation(response.data.data as RawConversation);
 };
 
 export const getMessages = async (
@@ -103,7 +153,7 @@ export const getMessages = async (
   const response = await apiClient.get(
     `/conversations/${conversationId}/messages`
   );
-  return response.data.data as Message[];
+  return (response.data.data as RawMessage[]).map(mapMessage);
 };
 
 export const sendMessage = async (
@@ -126,11 +176,12 @@ export const sendMessage = async (
     }
     return newMessage;
   }
+  // Backend expects { conversationId, messageContent }.
   const response = await apiClient.post('/messages', {
-    conversationId,
-    ...data,
+    conversationId: Number(conversationId),
+    messageContent: data.content,
   });
-  return response.data.data as Message;
+  return mapMessage(response.data.data as RawMessage);
 };
 
 export const deleteMessage = async (messageId: string): Promise<void> => {
