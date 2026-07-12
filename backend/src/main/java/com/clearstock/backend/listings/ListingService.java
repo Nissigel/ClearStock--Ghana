@@ -152,6 +152,43 @@ public class ListingService {
         listingRepository.save(listing);
     }
 
+    // Un-archive: put an archived listing back on the marketplace.
+    public ListingResponse repostListing(User user, Long id) {
+        SellerProfile seller = requireSellerProfile(user);
+        Listing listing = findListingOrThrow(id);
+
+        if (!listing.getSeller().getId().equals(seller.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only repost your own listings");
+        }
+        if (listing.getListingStatus() != ListingStatus.ARCHIVED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only archived listings can be reposted");
+        }
+
+        listing.setListingStatus(ListingStatus.ACTIVE);
+        return ListingResponse.from(listingRepository.save(listing));
+    }
+
+    // Hard delete — only allowed for an archived listing with no order history
+    // (any purchase request would break the row's foreign keys).
+    public void permanentlyDeleteListing(User user, Long id) {
+        SellerProfile seller = requireSellerProfile(user);
+        Listing listing = findListingOrThrow(id);
+
+        if (!listing.getSeller().getId().equals(seller.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own listings");
+        }
+        if (listing.getListingStatus() != ListingStatus.ARCHIVED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Archive the listing before deleting it permanently");
+        }
+        if (purchaseRequestRepository.existsByListing(listing)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This listing has order history and can't be permanently deleted; it stays archived");
+        }
+
+        listingRepository.delete(listing);
+    }
+
     public List<ListingResponse> getHighUrgencyListings() {
         return listingRepository.findHighUrgencyListings()
                 .stream().map(ListingResponse::from).collect(Collectors.toList());
