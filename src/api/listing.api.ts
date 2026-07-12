@@ -147,6 +147,25 @@ export const archiveListing = async (id: string): Promise<void> => {
   await apiClient.delete(`/listings/${id}`);
 };
 
+// Un-archive an archived listing, putting it back on the marketplace.
+export const repostListing = async (id: string): Promise<Listing> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return MOCK_LISTING_DETAIL;
+  }
+  const response = await apiClient.put(`/listings/${id}/repost`, {});
+  return response.data.data as Listing;
+};
+
+// Permanently remove an archived listing (only when it has no order history).
+export const permanentlyDeleteListing = async (id: string): Promise<void> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return;
+  }
+  await apiClient.delete(`/listings/${id}/permanent`);
+};
+
 export const saveListing = async (listingId: string): Promise<void> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 400));
