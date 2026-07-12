@@ -4,7 +4,10 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Image,
+  TouchableOpacity,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
@@ -15,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getTransactionById,
   updateTransactionStatus,
+  uploadTransactionEvidence,
 } from '@/api/transaction.api';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -88,6 +92,27 @@ export default function SellerTransactionDetailScreen() {
     );
   };
 
+  const { mutate: uploadEvidence, isPending: isUploadingEvidence } = useMutation({
+    mutationFn: (imageUrls: string[]) => uploadTransactionEvidence(id, imageUrls),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transaction', id] });
+    },
+    onError: () => {
+      Alert.alert('Error', 'Failed to upload evidence. Please try again.');
+    },
+  });
+
+  const handleAddEvidence = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      uploadEvidence([result.assets[0].uri]);
+    }
+  };
+
   const handleCancel = () => {
     Alert.alert(
       'Cancel Transaction',
@@ -120,7 +145,7 @@ export default function SellerTransactionDetailScreen() {
         <ScreenHeader
           showBack
           title="Transaction"
-          onBackPress={() => router.replace('/(seller)/(screens)/transactions')}
+          onBackPress={() => router.back()}
         />
       </SafeAreaView>
     );
@@ -139,7 +164,7 @@ export default function SellerTransactionDetailScreen() {
       <ScreenHeader
         showBack
         title="Transaction Details"
-        onBackPress={() => router.replace('/(seller)/(screens)/transactions')}
+        onBackPress={() => router.back()}
       />
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -212,6 +237,50 @@ export default function SellerTransactionDetailScreen() {
             </View>
           ))}
         </View>
+
+        {isActive && (
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderRadius: Radius.lg,
+                ...Shadow.sm,
+              },
+            ]}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              Delivery Evidence
+            </Text>
+            <View style={styles.evidenceRow}>
+              {(transaction.evidence ?? []).map((item) => (
+                <Image
+                  key={item.id}
+                  source={{ uri: item.imageUrl }}
+                  style={[styles.evidenceThumb, { borderRadius: Radius.md }]}
+                />
+              ))}
+              <TouchableOpacity
+                onPress={handleAddEvidence}
+                disabled={isUploadingEvidence}
+                style={[
+                  styles.evidenceAdd,
+                  {
+                    borderColor: colors.border,
+                    borderRadius: Radius.md,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="camera-outline"
+                  size={22}
+                  color={colors.mutedForeground}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {isPendingFulfillment && (
           <View style={styles.actions}>
@@ -293,6 +362,21 @@ const styles = StyleSheet.create({
   },
   detailLabel: { fontSize: FontSize.sm },
   detailValue: { fontSize: FontSize.sm, fontWeight: '500' },
+  sectionTitle: {
+    fontSize: FontSize.base,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+  },
+  evidenceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  evidenceThumb: { width: 72, height: 72 },
+  evidenceAdd: {
+    width: 72,
+    height: 72,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   actions: { gap: Spacing.sm },
   cancelButton: { marginTop: Spacing.xs },
   infoCard: {

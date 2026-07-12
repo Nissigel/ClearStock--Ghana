@@ -1,3 +1,4 @@
+import type { AxiosError } from 'axios';
 import ENV from '@/config/env';
 import apiClient from '@/api/client';
 import {
@@ -9,6 +10,64 @@ import type {
   Message,
   SendMessageRequest,
 } from '@/types/messaging.types';
+
+// Returns null when no conversation exists yet for this listing (backend
+// responds 404) — that's the normal "not started" state, not an error.
+export const getConversationByListingId = async (
+  listingId: string
+): Promise<Conversation | null> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    return (
+      MOCK_CONVERSATIONS.find((c) => c.listingId === listingId) ?? null
+    );
+  }
+  try {
+    const response = await apiClient.get(
+      `/conversations/listing/${listingId}`
+    );
+    return response.data.data as Conversation;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    if (axiosError.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+};
+
+export const createConversation = async (
+  listingId: string
+): Promise<Conversation> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const newConversation: Conversation = {
+      id: `conv-${Date.now()}`,
+      listingId,
+      listingName: '',
+      listingPrimaryImageUrl: null,
+      buyerUserId: 'user-001',
+      sellerUserId: 'user-002',
+      otherParty: {
+        id: 'user-002',
+        fullName: 'Seller',
+        profilePhotoUrl: null,
+        phoneNumber: null,
+      },
+      status: 'ACTIVE',
+      buyerPhoneVisible: false,
+      sellerPhoneVisible: false,
+      lastMessage: null,
+      unreadCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_CONVERSATIONS.unshift(newConversation);
+    return newConversation;
+  }
+  const response = await apiClient.post('/conversations', { listingId });
+  return response.data.data as Conversation;
+};
 
 export const getConversations = async (): Promise<Conversation[]> => {
   if (ENV.USE_MOCK) {

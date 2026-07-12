@@ -43,7 +43,7 @@ export function AuthPromptSheet({
       onRequestClose={onClose}
     >
       <TouchableOpacity
-        style={styles.overlay}
+        style={[styles.overlay, { backgroundColor: colors.overlay }]}
         activeOpacity={1}
         onPress={onClose}
       >
@@ -134,12 +134,11 @@ export function AuthPromptSheet({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: Radius['2xl'],
+    borderTopRightRadius: Radius['2xl'],
     padding: Spacing.xl,
     paddingBottom: Spacing['3xl'],
     alignItems: 'center',

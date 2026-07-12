@@ -92,11 +92,29 @@ public class SellerService {
                 .multiply(new BigDecimal("0.4"))
                 .setScale(2, RoundingMode.HALF_UP);
 
+        // Distinct buyers served across all completed transactions.
+        long buyersReached = completed.stream()
+                .map(t -> t.getBuyer().getId())
+                .distinct()
+                .count();
+
+        // Estimated CO2e avoided by diverting goods from landfill. Uses a
+        // documented factor of 2.5 kg CO2e per unit of goods rescued
+        // (consistent basis with estimatedGhsSavedFromWaste's flat multiplier).
+        long totalUnitsRescued = completed.stream()
+                .mapToLong(t -> t.getQuantity() == null ? 0 : t.getQuantity())
+                .sum();
+        BigDecimal co2AvoidedKg = BigDecimal.valueOf(totalUnitsRescued)
+                .multiply(new BigDecimal("2.5"))
+                .setScale(2, RoundingMode.HALF_UP);
+
         return RecoveryDashboardResponse.builder()
                 .totalGhsRecovered(totalGhsRecovered)
                 .totalTransactionsCompleted(completed.size())
                 .goodsRescued(goodsRescued)
                 .estimatedGhsSavedFromWaste(estimatedGhsSavedFromWaste)
+                .buyersReached(buyersReached)
+                .co2AvoidedKg(co2AvoidedKg)
                 .build();
     }
 

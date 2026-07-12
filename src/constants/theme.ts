@@ -4,6 +4,8 @@ const palette = {
   green700: '#006d3b',
   green600: '#008a4a',
   green500: '#16a34a',
+  green400: '#22c55e', // vivid accent (dark-mode buttons / price highlights)
+  green300: '#4ade80',
   green200: '#bbf7d0',
   green100: '#e8f2e5',
   green50: '#dff0e8',
@@ -29,11 +31,14 @@ const palette = {
   warmGray800: '#1e2d1f',
   warmGray900: '#091a11',
 
-  // Dark mode surfaces
-  dark50: '#1a2e1b',
-  dark100: '#152415',
-  dark200: '#0f1a10',
-  dark300: '#0a120a',
+  // Dark mode surfaces — near-neutral charcoal (barely green-biased),
+  // stepped so cards/inputs sit above the page background.
+  dark50: '#2a302b', // raised / input surfaces
+  dark100: '#20251f', // secondary surfaces, chips
+  dark200: '#161a16', // cards
+  dark300: '#0c0f0c', // page background (near-black)
+  darkBorder: '#2c332d',
+  darkInput: '#242a24',
 
   // Semantic
   red500: '#e62c2c',
@@ -87,6 +92,9 @@ export const LightColors = {
   input: palette.warmGray300,
   ring: palette.green700,
 
+  // --- Overlay (modal scrim) ---
+  overlay: 'rgba(9, 26, 17, 0.45)',
+
   // --- Tab Bar ---
   tabBar: palette.white,
   tabBarBorder: palette.warmGray200,
@@ -94,10 +102,10 @@ export const LightColors = {
 
 export const DarkColors = {
   // --- Primary ---
-  primary: palette.green600,
-  primaryDark: palette.green700,
-  primaryLight: palette.green500,
-  primaryForeground: palette.white,
+  primary: palette.green400,
+  primaryDark: palette.green500,
+  primaryLight: palette.green300,
+  primaryForeground: '#04140a', // near-black for contrast on vivid green
 
   // --- Gold Accent ---
   gold: palette.gold300,
@@ -114,12 +122,12 @@ export const DarkColors = {
   foreground: palette.offWhite,
   cardForeground: palette.offWhite,
   secondaryForeground: palette.amber400,
-  mutedForeground: palette.warmGray500,
+  mutedForeground: '#8b968c', // lifted for legibility on near-black
   accentForeground: palette.gold300,
 
   // --- Semantic States ---
-  success: palette.green500,
-  successForeground: palette.white,
+  success: palette.green400,
+  successForeground: '#04140a',
   warning: palette.amber400,
   warningForeground: palette.warmGray900,
   info: palette.blue400,
@@ -129,13 +137,16 @@ export const DarkColors = {
   flame: palette.orange400,
 
   // --- Borders & Inputs ---
-  border: palette.warmGray700,
-  input: palette.warmGray800,
-  ring: palette.green600,
+  border: palette.darkBorder,
+  input: palette.darkInput,
+  ring: palette.green400,
+
+  // --- Overlay (modal scrim) ---
+  overlay: 'rgba(0, 0, 0, 0.6)',
 
   // --- Tab Bar ---
   tabBar: palette.dark200,
-  tabBarBorder: palette.warmGray700,
+  tabBarBorder: palette.darkBorder,
 } as const;
 
 export const Colors = LightColors;
@@ -227,7 +238,9 @@ export const Theme = {
   shadow: Shadow,
 } as const;
 
-export type ThemeColors = typeof LightColors;
+// Common shape shared by LightColors and DarkColors. Values are widened to
+// `string` so both palettes are assignable (their literal hex values differ).
+export type ThemeColors = { [K in keyof typeof LightColors]: string };
 export type ThemeSpacing = typeof Spacing;
 export type ThemeRadius = typeof Radius;
 export type ColorScheme = 'light' | 'dark' | 'system';

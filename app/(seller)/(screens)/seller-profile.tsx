@@ -1,25 +1,145 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { FontSize, Spacing } from '@/constants/theme';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { useAuthStore } from '@/store/authStore';
+import { getSellerProfile, updateSellerProfile } from '@/api/seller.api';
+import { FontSize, Spacing, Radius } from '@/constants/theme';
+
+const VERIFICATION_BADGE = {
+  VERIFIED: 'verified',
+  PENDING: 'pending',
+  REJECTED: 'rejected',
+  UNVERIFIED: 'unverified',
+} as const;
 
 export default function SellerProfileEditScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const sellerProfile = useAuthStore((state) => state.sellerProfile);
+  const setSellerProfile = useAuthStore((state) => state.setSellerProfile);
+
+  const [businessName, setBusinessName] = useState('');
+  const [marketHub, setMarketHub] = useState('');
+  const [businessDescription, setBusinessDescription] = useState('');
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      const profile = sellerProfile ?? (await getSellerProfile());
+      if (profile) {
+        setSellerProfile(profile);
+        setBusinessName(profile.businessName ?? '');
+        setMarketHub(profile.marketHub);
+        setBusinessDescription(profile.businessDescription);
+      }
+      setLoadingProfile(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSave = async () => {
+    if (!marketHub.trim() || !businessDescription.trim()) {
+      setError('Market hub and business description are required');
+      return;
+    }
+    try {
+      setSaving(true);
+      const updated = await updateSellerProfile({
+        businessName: businessName.trim() || null,
+        marketHub: marketHub.trim(),
+        businessDescription: businessDescription.trim(),
+      });
+      setSellerProfile(updated);
+      router.back();
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScreenHeader
         showBack
         title="Seller Profile"
-        onBackPress={() => router.replace('/(seller)/profile')}
+        onBackPress={() => router.back()}
       />
-      <View style={styles.container}>
-        <Text style={[styles.text, { color: colors.mutedForeground }]}>
-          Seller profile edit — coming soon
-        </Text>
-      </View>
+      {loadingProfile ? (
+        <View style={styles.container}>
+          <Text style={[styles.text, { color: colors.mutedForeground }]}>
+            Loading...
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          {sellerProfile && (
+            <View style={styles.badgeRow}>
+              <Badge
+                variant={
+                  VERIFICATION_BADGE[sellerProfile.verificationStatus] ??
+                  'unverified'
+                }
+              />
+            </View>
+          )}
+
+          {sellerProfile?.rejectionReason && (
+            <Text style={[styles.rejectionReason, { color: colors.destructive }]}>
+              {sellerProfile.rejectionReason}
+            </Text>
+          )}
+
+          {error && (
+            <Text style={[styles.error, { color: colors.destructive }]}>
+              {error}
+            </Text>
+          )}
+
+          <Input
+            label="Business Name (Optional)"
+            placeholder="e.g. Kofi Traders"
+            value={businessName}
+            onChangeText={setBusinessName}
+            leftIcon="business-outline"
+          />
+
+          <Input
+            label="Market Hub"
+            placeholder="e.g. Kantamanto Market, Kumasi Central"
+            value={marketHub}
+            onChangeText={setMarketHub}
+            leftIcon="location-outline"
+          />
+
+          <Input
+            label="Business Description"
+            placeholder="Tell buyers what you sell..."
+            value={businessDescription}
+            onChangeText={setBusinessDescription}
+            multiline
+            numberOfLines={4}
+          />
+
+          <Button
+            label="Save Changes"
+            onPress={handleSave}
+            loading={saving}
+            style={styles.button}
+          />
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -32,5 +152,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: Spacing.base,
   },
+  content: {
+    padding: Spacing.base,
+    gap: Spacing.md,
+    paddingBottom: Spacing['4xl'],
+  },
+  badgeRow: { flexDirection: 'row' },
+  rejectionReason: { fontSize: FontSize.sm },
+  error: { fontSize: FontSize.sm },
   text: { fontSize: FontSize.base, textAlign: 'center' },
+  button: { marginTop: Spacing.md },
 });

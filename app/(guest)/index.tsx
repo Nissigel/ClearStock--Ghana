@@ -321,7 +321,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { ClearStockLogo } from '@/components/ui/ClearStockLogo';
-import { useListings, useSaveListing } from '@/hooks/useListings';
+import { useListings, useSaveListing, useUrgentListings } from '@/hooks/useListings';
 import { useListingFilterStore } from '@/store/listingFilterStore';
 import { useAuthStore } from '@/store/authStore';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
@@ -334,6 +334,7 @@ import { FilterSheet } from '@/components/ui/FilterSheet';
 import { Image } from 'react-native';
 import { CURRENCY_SYMBOL } from '@/constants/app';
 import { Badge } from '@/components/ui/Badge';
+import { PriceDropCountdown } from '@/components/ui/PriceDropCountdown';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - Spacing.base * 2 - Spacing.sm) / 2;
@@ -346,23 +347,25 @@ export default function GuestHomeScreen() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   // This screen is rendered both at /(guest) (guest browsing, no tab bar)
-  // and — via app/(buyer)/home.tsx re-exporting it — at /(buyer)/home
+  // and — via app/(buyer)/(tabs)/home.tsx re-exporting it — at /(buyer)/(tabs)/home
   // (inside the buyer tab navigator). Route to the matching group's
   // listing detail screen so buyers don't drop into the guest stack and
   // lose their tab bar.
   const listingDetailRoute =
-    segments[0] === '(buyer)' ? '/(buyer)/listing/[id]' : '/(guest)/listing/[id]';
+    segments[0] === '(buyer)' ? '/(buyer)/(tabs)/listing/[id]' : '/(guest)/listing/[id]';
 
   const filters = useListingFilterStore((state) => state.filters);
   const setFilter = useListingFilterStore((state) => state.setFilter);
   const setFilters = useListingFilterStore((state) => state.setFilters);
 
   const { data, isLoading, isError, refetch, isRefetching } = useListings(filters);
+  const { data: urgentListings = [] } = useUrgentListings();
   const { mutate: toggleSave } = useSaveListing();
 
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [authPromptMessage, setAuthPromptMessage] = useState('');
   const [showFilter, setShowFilter] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
   const handleSearch = (text: string) => setFilter('search', text);
 
@@ -396,14 +399,6 @@ export default function GuestHomeScreen() {
 
   const listings = data?.content ?? [];
 
-  const urgentListings = listings.filter((l) => {
-    if (!l.expiryDate) return false;
-    const days = Math.ceil(
-      (new Date(l.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    );
-    return days <= 21;
-  });
-
   const renderListingCard = ({ item }: { item: ListingSummary }) => {
     const isDiscounted = item.currentPrice < item.originalPrice;
     const discountPercent = isDiscounted
@@ -425,7 +420,9 @@ export default function GuestHomeScreen() {
 
     const rawImageUrl = item.images[0];
     const primaryImageUrl =
-      rawImageUrl && !rawImageUrl.startsWith('file://') ? rawImageUrl : null;
+      rawImageUrl && !rawImageUrl.startsWith('file://') && !failedImages[item.id]
+        ? rawImageUrl
+        : null;
 
     return (
       <TouchableOpacity
@@ -458,6 +455,9 @@ export default function GuestHomeScreen() {
               source={{ uri: primaryImageUrl }}
               style={styles.image}
               resizeMode="cover"
+              onError={() =>
+                setFailedImages((prev) => ({ ...prev, [item.id]: true }))
+              }
             />
           ) : (
             <View style={styles.imagePlaceholder}>
@@ -538,6 +538,18 @@ export default function GuestHomeScreen() {
             </Text>
           )}
 
+          {item.discountActive &&
+            item.listingStatus === 'ACTIVE' &&
+            !!item.discountIntervalDays &&
+            item.currentPrice > item.minimumAcceptablePrice && (
+              <PriceDropCountdown
+                createdAt={item.createdAt}
+                intervalDays={item.discountIntervalDays}
+                compact
+                style={styles.cardCountdown}
+              />
+            )}
+
           <View style={styles.sellerRow}>
             <Text
               style={[styles.sellerName, { color: colors.mutedForeground }]}
@@ -553,10 +565,10 @@ export default function GuestHomeScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.primary }]}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       {/* GREEN HEADER SECTION */}
-      <View style={[styles.headerSection, { backgroundColor: colors.primary }]}>
+      <View style={[styles.headerSection, { backgroundColor: colors.background }]}>
         {/* Top Row — Logo + Login + Theme */}
         <View style={styles.topRow}>
           <View style={styles.logoRow}>
@@ -589,13 +601,13 @@ export default function GuestHomeScreen() {
               onPress={toggleTheme}
               style={[
                 styles.themeButton,
-                { backgroundColor: 'rgba(255,255,255,0.15)' },
+                { backgroundColor: colors.secondary },
               ]}
             >
               <Ionicons
                 name={isDark ? 'sunny-outline' : 'moon-outline'}
                 size={18}
-                color={colors.primaryForeground}
+                color={colors.foreground}
               />
             </TouchableOpacity>
           </View>
@@ -606,20 +618,25 @@ export default function GuestHomeScreen() {
           <View
             style={[
               styles.searchContainer,
-              { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: Radius.lg },
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderWidth: 0.5,
+                borderRadius: Radius.lg,
+              },
             ]}
           >
-            <Ionicons name="search-outline" size={18} color="rgba(255,255,255,0.7)" />
+            <Ionicons name="search-outline" size={18} color={colors.mutedForeground} />
             <TouchableOpacity
               style={styles.searchInput}
-              onPress={() => router.push('/(buyer)/search')}
+              onPress={() => router.push('/(buyer)/(tabs)/search')}
             >
-              <Text style={[styles.searchPlaceholder, { color: 'rgba(255,255,255,0.7)' }]}>
+              <Text style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}>
                 Search goods, sellers...
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowFilter(true)}>
-              <Ionicons name="options-outline" size={18} color="rgba(255,255,255,0.7)" />
+              <Ionicons name="options-outline" size={18} color={colors.mutedForeground} />
             </TouchableOpacity>
           </View>
         </View>
@@ -635,7 +652,7 @@ export default function GuestHomeScreen() {
             style={[
               styles.chip,
               {
-                backgroundColor: !filters.category ? colors.gold : 'rgba(255,255,255,0.15)',
+                backgroundColor: !filters.category ? colors.gold : colors.secondary,
                 borderRadius: Radius.full,
               },
             ]}
@@ -644,7 +661,7 @@ export default function GuestHomeScreen() {
               style={[
                 styles.chipText,
                 {
-                  color: !filters.category ? colors.goldForeground : colors.primaryForeground,
+                  color: !filters.category ? colors.goldForeground : colors.mutedForeground,
                 },
               ]}
             >
@@ -662,7 +679,7 @@ export default function GuestHomeScreen() {
                   backgroundColor:
                     filters.category === category
                       ? colors.gold
-                      : 'rgba(255,255,255,0.15)',
+                      : colors.secondary,
                   borderRadius: Radius.full,
                 },
               ]}
@@ -674,7 +691,7 @@ export default function GuestHomeScreen() {
                     color:
                       filters.category === category
                         ? colors.goldForeground
-                        : colors.primaryForeground,
+                        : colors.mutedForeground,
                   },
                 ]}
               >
@@ -707,7 +724,7 @@ export default function GuestHomeScreen() {
                 style={[
                   styles.flashBanner,
                   {
-                    backgroundColor: '#FFF3F0',
+                    backgroundColor: colors.card,
                     borderColor: colors.flame,
                     borderRadius: Radius.lg,
                   },
@@ -955,6 +972,9 @@ const styles = StyleSheet.create({
   originalPrice: {
     fontSize: FontSize.xs,
     textDecorationLine: 'line-through',
+    marginBottom: Spacing.xs,
+  },
+  cardCountdown: {
     marginBottom: Spacing.xs,
   },
   sellerRow: {

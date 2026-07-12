@@ -5,7 +5,7 @@ import {
   Switch,
   ScrollView,
 } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
@@ -13,12 +13,35 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Button } from '@/components/ui/Button';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
 import { CATEGORIES } from '@/constants/categories';
+import {
+  getDealAlerts,
+  createDealAlert,
+  deleteDealAlert,
+} from '@/api/dealAlert.api';
 
 export default function DealAlertsScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const [alertIdByCategory, setAlertIdByCategory] = useState<
+    Record<string, string>
+  >({});
   const [subscribedCategories, setSubscribedCategories] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getDealAlerts().then((alerts) => {
+      const idMap: Record<string, string> = {};
+      const subscribed: Record<string, boolean> = {};
+      for (const alert of alerts) {
+        if (alert.isActive) {
+          idMap[alert.category] = alert.id;
+          subscribed[alert.category] = true;
+        }
+      }
+      setAlertIdByCategory(idMap);
+      setSubscribedCategories(subscribed);
+    });
+  }, []);
 
   const toggleCategory = (category: string) => {
     setSubscribedCategories((prev) => ({
@@ -29,8 +52,24 @@ export default function DealAlertsScreen() {
 
   const handleSave = async () => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
+    try {
+      const idMap = { ...alertIdByCategory };
+      for (const category of CATEGORIES) {
+        const isSubscribed = subscribedCategories[category] ?? false;
+        const existingId = idMap[category];
+        if (isSubscribed && !existingId) {
+          const alert = await createDealAlert({ category });
+          idMap[category] = alert.id;
+        } else if (!isSubscribed && existingId) {
+          await deleteDealAlert(existingId);
+          delete idMap[category];
+        }
+      }
+      setAlertIdByCategory(idMap);
+      router.back();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const subscribedCount = Object.values(subscribedCategories).filter(Boolean).length;
@@ -42,7 +81,7 @@ export default function DealAlertsScreen() {
       <ScreenHeader
         showBack
         title="Deal Alerts"
-        onBackPress={() => router.replace('/(buyer)/profile')}
+        onBackPress={() => router.back()}
       />
       <ScrollView
         showsVerticalScrollIndicator={false}

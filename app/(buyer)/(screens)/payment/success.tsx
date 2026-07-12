@@ -82,7 +82,7 @@ export default function PaymentSuccessScreen() {
         />
         <Button
           label="Back to Home"
-          onPress={() => router.replace('/(buyer)/home')}
+          onPress={() => router.replace('/(buyer)/(tabs)/home')}
           variant="outline"
         />
       </View>

@@ -59,14 +59,14 @@ export default function ForgotPinScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.primary }]}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <KeyboardAvoidingWrapper
         containerStyle={{ backgroundColor: colors.background }}
       >
         {/* TOP — Green section */}
         <View
-          style={[styles.topSection, { backgroundColor: colors.primary }]}
+          style={[styles.topSection, { backgroundColor: colors.background }]}
         >
           <ScreenHeader
             showBack
@@ -79,7 +79,7 @@ export default function ForgotPinScreen() {
           <Text
             style={[
               styles.topSubtitle,
-              { color: colors.primaryForeground },
+              { color: colors.mutedForeground },
             ]}
           >
             No worries. We will help you reset it.

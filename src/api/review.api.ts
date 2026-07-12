@@ -26,8 +26,19 @@ export const getSellerRatingSummary = async (
     await new Promise((r) => setTimeout(r, 400));
     return MOCK_SELLER_RATING;
   }
+  // Backend returns { sellerId, averageRating, reviewCount,
+  // totalCompletedTransactions } — normalise to the app's shape (it uses
+  // `totalReviews`, and there's no per-star breakdown from the backend).
   const response = await apiClient.get(`/seller/${sellerId}/rating`);
-  return response.data.data as SellerRatingSummary;
+  const raw = response.data.data as {
+    averageRating: number | null;
+    reviewCount: number | null;
+  };
+  return {
+    averageRating: raw.averageRating ?? 0,
+    totalReviews: raw.reviewCount ?? 0,
+    breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+  };
 };
 
 export const createReview = async (

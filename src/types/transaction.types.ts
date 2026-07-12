@@ -47,6 +47,14 @@ export interface Transaction {
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  evidence?: TransactionEvidence[];
+}
+
+export interface TransactionEvidence {
+  id: number;
+  imageUrl: string;
+  uploadedByUserId: number;
+  createdAt: string;
 }
 
 export interface UpdateTransactionStatusRequest {

@@ -125,7 +125,7 @@ export default function SellerRequestsScreen() {
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      <ScreenHeader showBack={false} title="Purchase Requests" />
+      <ScreenHeader showBack title="Purchase Requests" />
       <FlatList
         data={data ?? []}
         keyExtractor={(item) => String(item.id)}

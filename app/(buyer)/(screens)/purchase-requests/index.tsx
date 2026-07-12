@@ -82,7 +82,7 @@ export default function PurchaseRequestsScreen() {
       <ScreenHeader
         showBack
         title="Purchase Requests"
-        onBackPress={() => router.replace('/(buyer)/profile')}
+        onBackPress={() => router.back()}
       />
       <FlatList
         data={data ?? []}

@@ -5,7 +5,9 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from 'react-native';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,9 +15,8 @@ import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Button } from '@/components/ui/Button';
-import { useQuery } from '@tanstack/react-query';
-import { getMyListings } from '@/api/listing.api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getMyListings, archiveListing } from '@/api/listing.api';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 import { CURRENCY_SYMBOL } from '@/constants/app';
 import type { ListingSummary } from '@/types/listing.types';
@@ -23,11 +24,39 @@ import type { ListingSummary } from '@/types/listing.types';
 export default function SellerListingsScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['my-listings'],
     queryFn: getMyListings,
   });
+
+  const { mutate: deleteListing } = useMutation({
+    mutationFn: (id: string) => archiveListing(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-listings'] });
+    },
+    onError: () => {
+      Alert.alert('Error', 'Could not delete the listing. Please try again.');
+    },
+  });
+
+  const confirmDelete = (listing: ListingSummary) => {
+    Alert.alert(
+      'Delete Listing',
+      `Delete "${listing.productName}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteListing(String(listing.id)),
+        },
+      ]
+    );
+  };
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -42,7 +71,9 @@ export default function SellerListingsScreen() {
   const renderItem = ({ item }: { item: ListingSummary }) => {
     const rawImageUrl = item.images[0];
     const primaryImageUrl =
-      rawImageUrl && !rawImageUrl.startsWith('file://') ? rawImageUrl : null;
+      rawImageUrl && !rawImageUrl.startsWith('file://') && !failedImages[item.id]
+        ? rawImageUrl
+        : null;
 
     return (
     <TouchableOpacity
@@ -63,6 +94,9 @@ export default function SellerListingsScreen() {
             source={{ uri: primaryImageUrl }}
             style={[styles.imagePlaceholder, { borderRadius: Radius.md }]}
             resizeMode="cover"
+            onError={() =>
+              setFailedImages((prev) => ({ ...prev, [item.id]: true }))
+            }
           />
         ) : (
           <View
@@ -112,11 +146,15 @@ export default function SellerListingsScreen() {
           />
         </View>
 
-        <TouchableOpacity style={styles.moreButton}>
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={() => confirmDelete(item)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Ionicons
-            name="ellipsis-vertical"
+            name="trash-outline"
             size={20}
-            color={colors.mutedForeground}
+            color={colors.destructive}
           />
         </TouchableOpacity>
       </View>

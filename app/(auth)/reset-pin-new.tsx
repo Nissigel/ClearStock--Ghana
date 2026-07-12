@@ -78,9 +78,9 @@ export default function ResetPinNewScreen() {
 
       if (sellerProfile) {
         switchToSeller();
-        router.replace('/(seller)/dashboard');
+        router.replace('/(seller)/(tabs)/dashboard');
       } else {
-        router.replace('/(buyer)/home');
+        router.replace('/(buyer)/(tabs)/home');
       }
     } catch (err) {
       setConfirmError('Something went wrong. Please try again.');
@@ -91,14 +91,14 @@ export default function ResetPinNewScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.primary }]}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <KeyboardAvoidingWrapper
         containerStyle={{ backgroundColor: colors.background }}
       >
         {/* TOP — Green section */}
         <View
-          style={[styles.topSection, { backgroundColor: colors.primary }]}
+          style={[styles.topSection, { backgroundColor: colors.background }]}
         >
           <ScreenHeader
             showBack
@@ -114,7 +114,7 @@ export default function ResetPinNewScreen() {
           <Text
             style={[
               styles.topSubtitle,
-              { color: colors.primaryForeground },
+              { color: colors.mutedForeground },
             ]}
           >
             {step === 'new'

@@ -2,14 +2,26 @@ import Svg, {
   Path,
   Circle,
 } from 'react-native-svg';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ClearStockLogoProps {
   size?: number;
+  /** Override the tag-face color; defaults to a theme-aware green. */
+  faceColor?: string;
+  /** Override the accent (arrow / % marks) color; defaults to gold. */
+  accentColor?: string;
 }
 
-export function ClearStockLogo({ size = 120 }: ClearStockLogoProps) {
-  const gold = '#e0af3b';
-  const darkGreen = '#005d33';
+export function ClearStockLogo({
+  size = 120,
+  faceColor,
+  accentColor,
+}: ClearStockLogoProps) {
+  const { colors, isDark } = useTheme();
+  // On near-black dark surfaces the original #005d33 face disappears, so use
+  // the vivid primary green there; keep the deep brand green in light mode.
+  const gold = accentColor ?? colors.gold;
+  const darkGreen = faceColor ?? (isDark ? colors.primary : '#005d33');
 
   return (
     <Svg

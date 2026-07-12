@@ -24,7 +24,7 @@ export default function SearchScreen() {
   const handleListingPress = (listing: ListingSummary) => {
     Keyboard.dismiss();
     router.push({
-      pathname: '/(buyer)/listing/[id]',
+      pathname: '/(buyer)/(tabs)/listing/[id]',
       params: { id: String(listing.id) },
     });
   };

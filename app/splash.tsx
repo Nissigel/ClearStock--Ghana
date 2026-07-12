@@ -27,7 +27,7 @@ export default function SplashScreen() {
     try {
       const token = await getToken();
       if (token) {
-        router.replace('/(buyer)/home');
+        router.replace('/(buyer)/(tabs)/home');
         return;
       }
 
@@ -115,7 +115,7 @@ export default function SplashScreen() {
     <Animated.View
       style={[
         styles.container,
-        { backgroundColor: colors.primary },
+        { backgroundColor: colors.background },
         { opacity: screenOpacity },
       ]}
     >
@@ -140,7 +140,7 @@ export default function SplashScreen() {
           <Animated.Text
             style={[
               styles.appName,
-              { color: colors.gold, opacity: nameOpacity },
+              { color: colors.foreground, opacity: nameOpacity },
             ]}
           >
             ClearStock
@@ -160,7 +160,7 @@ export default function SplashScreen() {
           <Animated.Text
             style={[
               styles.tagline,
-              { color: colors.gold, opacity: taglineOpacity },
+              { color: colors.mutedForeground, opacity: taglineOpacity },
             ]}
           >
             Fast Deals on Stock That Can't Wait.
@@ -172,19 +172,19 @@ export default function SplashScreen() {
           <Animated.View
             style={[
               styles.loadingDot,
-              { backgroundColor: colors.gold, transform: [{ scale: dot1Scale }] },
+              { backgroundColor: colors.primary, transform: [{ scale: dot1Scale }] },
             ]}
           />
           <Animated.View
             style={[
               styles.loadingDot,
-              { backgroundColor: colors.gold, transform: [{ scale: dot2Scale }] },
+              { backgroundColor: colors.primary, transform: [{ scale: dot2Scale }] },
             ]}
           />
           <Animated.View
             style={[
               styles.loadingDot,
-              { backgroundColor: colors.gold, transform: [{ scale: dot3Scale }] },
+              { backgroundColor: colors.primary, transform: [{ scale: dot3Scale }] },
             ]}
           />
         </View>

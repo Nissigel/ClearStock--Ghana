@@ -5,16 +5,18 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { useCallback } from 'react';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/useTheme';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { logout } from '@/api/auth.api';
+import { getBuyerTransactions } from '@/api/transaction.api';
+import { getSellerRatingSummary } from '@/api/review.api';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 
 interface SettingsRowProps {
@@ -50,7 +52,7 @@ function SettingsRow({
           styles.settingsIcon,
           {
             backgroundColor: destructive
-              ? '#fee2e2'
+              ? colors.muted
               : colors.secondary,
           },
         ]}
@@ -94,6 +96,34 @@ function SettingsRow({
   );
 }
 
+function StatColumn({
+  label,
+  value,
+  colors,
+  star,
+}: {
+  label: string;
+  value: string | number;
+  colors: any;
+  star?: boolean;
+}) {
+  return (
+    <View style={styles.statColumn}>
+      <View style={styles.statValueRow}>
+        <Text style={[styles.statValue, { color: colors.foreground }]}>
+          {value}
+        </Text>
+        {star && value !== '—' && (
+          <Ionicons name="star" size={13} color={colors.gold} />
+        )}
+      </View>
+      <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const router = useRouter();
@@ -103,21 +133,49 @@ export default function ProfileScreen() {
   const switchToSeller = useModeStore((state) => state.switchToSeller);
   const reset = useModeStore((state) => state.reset);
 
-  // TEMP DEBUG — remove after diagnosing the back-button-jumps-to-home bug.
-  // If pressing back from a pushed screen (e.g. Edit Profile) is landing on
-  // Home instead of here, "[Profile] focused" below will either not fire at
-  // all, or will fire out of order relative to the "navigating to" log.
-  useFocusEffect(
-    useCallback(() => {
-      console.log('[Profile] focused');
-      return () => {
-        console.log('[Profile] blurred');
-      };
-    }, [])
+  // The stat row is non-essential, so tolerate backend errors: a failed call
+  // resolves to a safe default instead of rejecting (which would surface a
+  // 500 and leave the row broken).
+  const { data: transactions } = useQuery({
+    queryKey: ['buyer-transactions'],
+    queryFn: async () => {
+      try {
+        return await getBuyerTransactions();
+      } catch {
+        return [];
+      }
+    },
+    retry: false,
+  });
+
+  const { data: rating } = useQuery({
+    queryKey: ['seller-rating', user?.id],
+    queryFn: async () => {
+      try {
+        return await getSellerRatingSummary(String(user?.id));
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!user?.id,
+    retry: false,
+  });
+
+  // GET /transactions is role-aware and returns every transaction the user is
+  // party to, so split by role off the user id.
+  const completed = (transactions ?? []).filter(
+    (t) => t.transactionStatus === 'COMPLETED'
   );
+  const boughtCount = completed.filter(
+    (t) => String(t.buyerUserId) === user?.id
+  ).length;
+  const soldCount = completed.filter(
+    (t) => String(t.sellerUserId) === user?.id
+  ).length;
+  const ratingLabel =
+    rating && rating.totalReviews > 0 ? rating.averageRating.toFixed(1) : '—';
 
   const handleNavigate = (path: string) => {
-    console.log('[Profile] navigating to', path);
     router.push(path as any);
   };
 
@@ -131,7 +189,7 @@ export default function ProfileScreen() {
   const handleSwitchToSeller = () => {
     if (hasSellerProfile) {
       switchToSeller();
-      router.replace('/(seller)/dashboard');
+      router.replace('/(seller)/(tabs)/dashboard');
     } else {
       handleNavigate('/(buyer)/(screens)/become-seller');
     }
@@ -165,11 +223,47 @@ export default function ProfileScreen() {
           >
             {user?.phoneNumber}
           </Text>
-          <Text
-            style={[styles.userLocation, { color: colors.mutedForeground }]}
-          >
-            {user?.cityTown}, {user?.region}
-          </Text>
+          {(user?.cityTown || user?.region) && (
+            <Text
+              style={[styles.userLocation, { color: colors.mutedForeground }]}
+            >
+              {[user?.cityTown, user?.region].filter(Boolean).join(', ')}
+            </Text>
+          )}
+
+          {/* Role badges */}
+          <View style={styles.roleBadges}>
+            <View
+              style={[styles.roleBadge, { backgroundColor: colors.secondary }]}
+            >
+              <Text style={[styles.roleBadgeText, { color: colors.primary }]}>
+                Buyer
+              </Text>
+            </View>
+            {hasSellerProfile && (
+              <View
+                style={[styles.roleBadge, { backgroundColor: colors.secondary }]}
+              >
+                <Text style={[styles.roleBadgeText, { color: colors.primary }]}>
+                  Seller
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Stat row */}
+          <View style={[styles.statRow, { borderTopColor: colors.border }]}>
+            <StatColumn label="Sold" value={soldCount} colors={colors} />
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <StatColumn label="Bought" value={boughtCount} colors={colors} />
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <StatColumn
+              label="Rating"
+              value={ratingLabel}
+              colors={colors}
+              star
+            />
+          </View>
         </View>
 
         {/* Seller Mode Switch */}
@@ -248,17 +342,10 @@ export default function ProfileScreen() {
               colors={colors}
             />
             <SettingsRow
-              icon="lock-closed-outline"
-              label="Change PIN"
-              onPress={() => handleNavigate('/(buyer)/(screens)/change-pin')}
+              icon="settings-outline"
+              label="Settings"
+              onPress={() => handleNavigate('/(buyer)/(screens)/settings')}
               colors={colors}
-            />
-            <SettingsRow
-              icon="notifications-outline"
-              label="Notification Preferences"
-              onPress={() => handleNavigate('/(buyer)/(screens)/notification-preferences')}
-              colors={colors}
-              showArrow
             />
           </View>
         </View>
@@ -281,15 +368,15 @@ export default function ProfileScreen() {
             ]}
           >
             <SettingsRow
-              icon="document-text-outline"
-              label="Purchase Requests"
-              onPress={() => handleNavigate('/(buyer)/(screens)/purchase-requests')}
+              icon="heart-outline"
+              label="Saved Items"
+              onPress={() => handleNavigate('/(buyer)/(tabs)/saved')}
               colors={colors}
             />
             <SettingsRow
-              icon="swap-horizontal-outline"
-              label="Transaction History"
-              onPress={() => handleNavigate('/(buyer)/(screens)/transactions')}
+              icon="document-text-outline"
+              label="Purchase Requests"
+              onPress={() => handleNavigate('/(buyer)/(screens)/purchase-requests')}
               colors={colors}
             />
             <SettingsRow
@@ -356,6 +443,50 @@ const styles = StyleSheet.create({
   },
   userLocation: {
     fontSize: FontSize.sm,
+  },
+  roleBadges: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  roleBadge: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+  },
+  roleBadgeText: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+  },
+  statRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    alignSelf: 'stretch',
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.lg,
+    borderTopWidth: 0.5,
+  },
+  statColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  statValue: {
+    fontSize: FontSize.lg,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    fontSize: FontSize.xs,
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 0.5,
+    height: 28,
   },
   sellerModeCard: {
     flexDirection: 'row',

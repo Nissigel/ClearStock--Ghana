@@ -110,7 +110,7 @@ export default function PurchaseRequestDetailScreen() {
         <ScreenHeader
           showBack
           title="Request Details"
-          onBackPress={() => router.replace('/(buyer)/(screens)/purchase-requests')}
+          onBackPress={() => router.back()}
         />
         <EmptyState
           icon="alert-circle-outline"
@@ -129,7 +129,7 @@ export default function PurchaseRequestDetailScreen() {
         <ScreenHeader
           showBack
           title="Request Details"
-          onBackPress={() => router.replace('/(buyer)/(screens)/purchase-requests')}
+          onBackPress={() => router.back()}
         />
         <EmptyState
           icon="cloud-offline-outline"
@@ -148,7 +148,7 @@ export default function PurchaseRequestDetailScreen() {
         <ScreenHeader
           showBack
           title="Request Details"
-          onBackPress={() => router.replace('/(buyer)/(screens)/purchase-requests')}
+          onBackPress={() => router.back()}
         />
       </SafeAreaView>
     );
@@ -163,7 +163,7 @@ export default function PurchaseRequestDetailScreen() {
       <ScreenHeader
         showBack
         title="Request Details"
-        onBackPress={() => router.replace('/(buyer)/(screens)/purchase-requests')}
+        onBackPress={() => router.back()}
       />
 
       <ScrollView

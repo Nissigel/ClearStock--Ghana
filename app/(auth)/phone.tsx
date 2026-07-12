@@ -63,13 +63,13 @@ export default function PhoneEntryScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.primary }]}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <KeyboardAvoidingWrapper
         containerStyle={{ backgroundColor: colors.background }}
       >
         {/* TOP — Green section */}
-        <View style={[styles.topSection, { backgroundColor: colors.primary }]}>
+        <View style={[styles.topSection, { backgroundColor: colors.background }]}>
           {/* Logo icon */}
           <View style={styles.logoContainer}>
             <View
@@ -93,7 +93,7 @@ export default function PhoneEntryScreen() {
           <Text style={[styles.appRegion, { color: colors.gold }]}>
             GHANA
           </Text>
-          <Text style={[styles.tagline, { color: colors.successForeground }]}>
+          <Text style={[styles.tagline, { color: colors.mutedForeground }]}>
             Fast Deals on Stock That Can't Wait.
           </Text>
         </View>

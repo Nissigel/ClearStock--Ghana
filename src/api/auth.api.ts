@@ -98,29 +98,32 @@ export const logout = async (): Promise<void> => {
   await clearTokens();
 };
 
+// Backend only returns { id, phone, name, email, profileImageUrl, createdAt } —
+// there's no role/seller field at all. Seller status is derived separately
+// via GET /seller/profile (see src/api/seller.api.ts) after login.
+// region/cityTown/accountStatus are still genuinely absent from this
+// response; left unset rather than guessed — see INTEGRATION-AUDIT.md.
+export const mapRawUser = (raw: {
+  id: number;
+  phone: string;
+  name: string;
+  email: string | null;
+  profileImageUrl: string | null;
+  preferEmail?: boolean;
+}): AuthUser => ({
+  id: String(raw.id),
+  fullName: raw.name,
+  phoneNumber: raw.phone,
+  email: raw.email ?? null,
+  profilePhotoUrl: raw.profileImageUrl ?? null,
+  emailNotifications: raw.preferEmail ?? true,
+});
+
 export const getMyProfile = async (): Promise<AuthUser> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return MOCK_AUTH_USER;
   }
   const response = await apiClient.get('/user/profile');
-  const raw = response.data.data as {
-    id: number;
-    phone: string;
-    name: string;
-    email: string | null;
-    profileImageUrl: string | null;
-  };
-  // Backend only returns { id, phone, name, email, profileImageUrl, createdAt } —
-  // there's no role/seller field at all. Seller status is derived separately
-  // via GET /seller/profile (see src/api/seller.api.ts) after login.
-  // region/cityTown/accountStatus are still genuinely absent from this
-  // response; left unset rather than guessed — see INTEGRATION-AUDIT.md.
-  return {
-    id: String(raw.id),
-    fullName: raw.name,
-    phoneNumber: raw.phone,
-    email: raw.email ?? null,
-    profilePhotoUrl: raw.profileImageUrl ?? null,
-  } as AuthUser;
+  return mapRawUser(response.data.data);
 };

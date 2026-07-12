@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
-import { Radius, FontSize, Spacing } from '@/constants/theme';
+import { Radius, FontSize, Spacing, FontFamily } from '@/constants/theme';
 
 interface SearchBarProps {
   value: string;
@@ -69,7 +69,7 @@ export function SearchBar({
           {
             color: colors.foreground,
             fontSize: FontSize.base,
-            fontFamily: 'Inter_400Regular',
+            fontFamily: FontFamily.regular,
           },
         ]}
     

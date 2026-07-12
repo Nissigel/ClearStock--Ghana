@@ -100,7 +100,7 @@ export default function ProfileSetupScreen() {
           cityTown: form.cityTown,
         });
       }
-      router.replace('/(buyer)/home');
+      router.replace('/(auth)/role-selection');
     } catch (err) {
       setErrors({ fullName: 'Something went wrong. Please try again.' });
     } finally {
@@ -110,9 +110,9 @@ export default function ProfileSetupScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.primary }]}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      <View style={[styles.topSection, { backgroundColor: colors.primary }]}>
+      <View style={[styles.topSection, { backgroundColor: colors.background }]}>
         <ScreenHeader
           showBack
           transparent
@@ -122,7 +122,7 @@ export default function ProfileSetupScreen() {
           Set up your profile
         </Text>
         <Text
-          style={[styles.topSubtitle, { color: colors.primaryForeground }]}
+          style={[styles.topSubtitle, { color: colors.mutedForeground }]}
         >
           Tell us a little about yourself
         </Text>

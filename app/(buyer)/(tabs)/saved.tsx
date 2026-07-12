@@ -29,7 +29,7 @@ export default function SavedListingsScreen() {
 
   const handleListingPress = (listing: ListingSummary) => {
     router.push({
-      pathname: '/(buyer)/listing/[id]',
+      pathname: '/(buyer)/(tabs)/listing/[id]',
       params: { id: String(listing.id) },
     });
   };
@@ -40,7 +40,7 @@ export default function SavedListingsScreen() {
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      <ScreenHeader showBack={false} title="Saved Listings" />
+      <ScreenHeader showBack title="Saved Listings" />
 
       <ListingGrid
         listings={listings}

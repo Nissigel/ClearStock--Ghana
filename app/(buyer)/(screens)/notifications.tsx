@@ -112,7 +112,7 @@ const unreadCount = notifications.filter((n: Notification) => n.status === 'UNRE
       <ScreenHeader
         showBack
         title="Notifications"
-        onBackPress={() => router.replace('/(buyer)/profile')}
+        onBackPress={() => router.back()}
         rightElement={
           unreadCount > 0 ? (
             <TouchableOpacity onPress={() => markAllRead()}>

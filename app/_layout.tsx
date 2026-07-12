@@ -1,5 +1,9 @@
 ﻿import { Stack } from 'expo-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  QueryCache,
+} from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,6 +12,7 @@ import { useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
+import { warmUpBackend } from '@/api/client';
 import { useFonts } from 'expo-font';
 import {
   Inter_400Regular,
@@ -24,9 +29,17 @@ import {
 import { Text } from 'react-native';
 
 const queryClient = new QueryClient({
+  // Centralised error handling: react-query already captures query errors into
+  // state, but attaching a cache-level handler marks them handled so React
+  // Native's dev overlay stops flagging them as "unhandled promise rejection".
+  queryCache: new QueryCache({
+    onError: (error) => {
+      console.log('[query error]', (error as Error)?.message ?? error);
+    },
+  }),
   defaultOptions: {
     queries: {
-      retry: 2,
+      retry: 1,
       staleTime: 1000 * 60 * 5,
     },
   },
@@ -52,6 +65,12 @@ function AppContent() {
     applySystemScheme(systemColorScheme === 'dark');
   }, [systemColorScheme]);
 
+  // Wake the Render backend as early as possible so it's booting while the
+  // user moves through the splash / onboarding / auth screens.
+  useEffect(() => {
+    warmUpBackend();
+  }, []);
+
   // NOTE: onboarding redirect is handled by the splash screen after animations
 
   if (!fontsLoaded) {
@@ -61,10 +80,10 @@ function AppContent() {
           flex: 1,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: colors.primary,
+          backgroundColor: colors.background,
         }}
       >
-        <ActivityIndicator size="large" color={colors.gold} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }

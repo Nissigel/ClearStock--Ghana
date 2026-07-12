@@ -79,7 +79,7 @@ export default function ChangePinScreen() {
       <ScreenHeader
         showBack
         title="Change PIN"
-        onBackPress={() => router.replace('/(buyer)/profile')}
+        onBackPress={() => router.back()}
       />
       <KeyboardAvoidingWrapper>
         <View style={styles.content}>

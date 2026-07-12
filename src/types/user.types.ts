@@ -57,9 +57,11 @@ export interface BecomeSellerRequest {
   email?: string | null;
 }
 
-export interface NotificationPreferences {
-  messageNotifications: boolean;
-  requestNotifications: boolean;
-  listingNotifications: boolean;
-  transactionNotifications: boolean;
+export interface RecoveryDashboard {
+  totalGhsRecovered: number;
+  totalTransactionsCompleted: number;
+  goodsRescued: number;
+  estimatedGhsSavedFromWaste: number;
+  buyersReached: number;
+  co2AvoidedKg: number;
 }

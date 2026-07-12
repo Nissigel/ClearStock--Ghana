@@ -9,6 +9,7 @@ import type {
   PurchaseRequest,
   Transaction,
   TransactionResponse,
+  TransactionEvidence,
   InitiatePaymentResponse,
   VerifyPaymentResponse,
   CreatePurchaseRequestRequest,
@@ -239,6 +240,25 @@ export const updateTransactionStatus = async (
     fulfillmentMethod: data.fulfillmentMethod,
   });
   return response.data.data as Transaction;
+};
+
+export const uploadTransactionEvidence = async (
+  id: string,
+  imageUrls: string[]
+): Promise<TransactionEvidence[]> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return imageUrls.map((imageUrl, index) => ({
+      id: Date.now() + index,
+      imageUrl,
+      uploadedByUserId: 0,
+      createdAt: new Date().toISOString(),
+    }));
+  }
+  const response = await apiClient.post(`/transactions/${id}/evidence`, {
+    imageUrls,
+  });
+  return response.data.data as TransactionEvidence[];
 };
 
 // ─── Payments (Buyer) ────────────────────────────────────────────────────────

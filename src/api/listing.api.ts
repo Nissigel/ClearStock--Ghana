@@ -77,6 +77,15 @@ export const getListings = async (
   };
 };
 
+export const getUrgentListings = async (): Promise<ListingSummary[]> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return MOCK_LISTINGS.filter((l) => l.expirySensitive);
+  }
+  const response = await apiClient.get('/listings/urgent');
+  return response.data.data as ListingSummary[];
+};
+
 export const getListingById = async (id: string): Promise<Listing> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 600));

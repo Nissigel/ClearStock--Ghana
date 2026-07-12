@@ -39,7 +39,7 @@ export default function ChangePhoneScreen() {
       <ScreenHeader
         showBack
         title="Change Phone Number"
-        onBackPress={() => router.replace('/(buyer)/profile')}
+        onBackPress={() => router.back()}
       />
       <KeyboardAvoidingWrapper>
         <View style={styles.content}>

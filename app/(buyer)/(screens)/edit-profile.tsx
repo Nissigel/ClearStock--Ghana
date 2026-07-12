@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
+import { updateProfile, updateEmail } from '@/api/user.api';
 import { Spacing } from '@/constants/theme';
 
 export default function EditProfileScreen() {
@@ -28,10 +29,11 @@ export default function EditProfileScreen() {
     }
     try {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      if (user) {
-        setUser({ ...user, fullName, email: email || null });
+      let updatedUser = await updateProfile({ fullName: fullName.trim() });
+      if (email.trim() !== (user?.email ?? '')) {
+        updatedUser = await updateEmail(email.trim());
       }
+      setUser(updatedUser);
       router.back();
     } catch {
       setError('Something went wrong. Please try again.');
@@ -47,7 +49,7 @@ export default function EditProfileScreen() {
       <ScreenHeader
         showBack
         title="Edit Profile"
-        onBackPress={() => router.replace('/(buyer)/profile')}
+        onBackPress={() => router.back()}
       />
       <ScrollView
         contentContainerStyle={styles.content}

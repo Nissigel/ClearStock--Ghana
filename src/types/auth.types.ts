@@ -36,9 +36,13 @@ export interface AuthUser {
   phoneNumber: string;
   email: string | null;
   profilePhotoUrl: string | null;
-  region: string;
-  cityTown: string;
-  accountStatus: AccountStatus;
+  // Not returned by GET /user/profile — only present via mocks until the
+  // backend adds them. See src/api/auth.api.ts getMyProfile.
+  region?: string;
+  cityTown?: string;
+  accountStatus?: AccountStatus;
+  // Whether the user opts into email notifications (backend: preferEmail).
+  emailNotifications?: boolean;
 }
 
 export type OtpPurpose =

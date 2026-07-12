@@ -43,4 +43,8 @@ export interface SendMessageRequest {
   content: string;
 }
 
+export interface CreateConversationRequest {
+  listingId: string;
+}
+
 export type ConversationStatus = 'ACTIVE' | 'CLOSED';

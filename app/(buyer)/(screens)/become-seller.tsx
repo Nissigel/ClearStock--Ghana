@@ -15,13 +15,14 @@ import { Button } from '@/components/ui/Button';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
+import { becomeSeller } from '@/api/seller.api';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
 import { SELLER_TYPES, SELLER_TYPE_DESCRIPTIONS, type SellerType } from '@/constants/sellerTypes';
 
 export default function BecomeSellerScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const setHasSellerProfile = useAuthStore((state) => state.setHasSellerProfile);
+  const setSellerProfile = useAuthStore((state) => state.setSellerProfile);
   const switchToSeller = useModeStore((state) => state.switchToSeller);
 
   const [sellerType, setSellerType] = useState<SellerType | null>(null);
@@ -44,10 +45,15 @@ export default function BecomeSellerScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setHasSellerProfile(true);
+      const profile = await becomeSeller({
+        sellerType: sellerType!,
+        businessName: businessName.trim() || null,
+        marketHub: marketHub.trim(),
+        businessDescription: businessDescription.trim(),
+      });
+      setSellerProfile(profile);
       switchToSeller();
-      router.replace('/(seller)/dashboard');
+      router.replace('/(seller)/(tabs)/dashboard');
     } catch {
       setErrors({ submit: 'Something went wrong. Please try again.' });
     } finally {
@@ -57,20 +63,20 @@ export default function BecomeSellerScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.primary }]}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <KeyboardAvoidingWrapper containerStyle={{ backgroundColor: colors.background }}>
-        <View style={[styles.topSection, { backgroundColor: colors.primary }]}>
+        <View style={[styles.topSection, { backgroundColor: colors.background }]}>
           <ScreenHeader
             showBack
             transparent
             containerStyle={styles.header}
-            onBackPress={() => router.replace('/(buyer)/profile')}
+            onBackPress={() => router.back()}
           />
           <Text style={[styles.topTitle, { color: colors.gold }]}>
             Become a Seller
           </Text>
-          <Text style={[styles.topSubtitle, { color: colors.primaryForeground }]}>
+          <Text style={[styles.topSubtitle, { color: colors.mutedForeground }]}>
             Start selling your surplus stock on ClearStock Ghana
           </Text>
         </View>
@@ -79,6 +85,12 @@ export default function BecomeSellerScreen() {
           <Text style={[styles.heading, { color: colors.foreground }]}>
             Tell us about your business
           </Text>
+
+          {errors.submit && (
+            <Text style={[styles.error, { color: colors.destructive }]}>
+              {errors.submit}
+            </Text>
+          )}
 
           <Text style={[styles.label, { color: colors.foreground }]}>
             Seller Type

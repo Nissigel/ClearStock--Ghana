@@ -84,7 +84,7 @@ export default function SellerTransactionsScreen() {
       <ScreenHeader
         showBack
         title="Transactions"
-        onBackPress={() => router.replace('/(seller)/profile')}
+        onBackPress={() => router.back()}
       />
       <FlatList
         data={data ?? []}

@@ -44,11 +44,50 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    // Surface exactly which request failed (method, path, status) so failing
+    // endpoints are obvious in the Metro logs instead of an opaque AxiosError.
+    const method = (error.config?.method ?? 'get').toUpperCase();
+    const url = error.config?.url ?? '(unknown url)';
+    const status = error.response?.status ?? error.code ?? 'no-response';
+    const body = error.response?.data;
+    console.log(
+      `[API ${status}] ${method} ${url}`,
+      body ? JSON.stringify(body).slice(0, 300) : ''
+    );
+
     if (error.response?.status === 401) {
       await clearTokens();
     }
+
+    // Render's free tier cold-starts after idle: the first request often times
+    // out or fails at the network layer while the server spins up. Retry once —
+    // by then the backend is usually awake.
+    const config = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
+    const isColdStart =
+      !error.response &&
+      (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK');
+    if (config && isColdStart && !config._retry) {
+      config._retry = true;
+      return apiClient(config);
+    }
+
     return Promise.reject(error);
   }
 );
+
+// Fire-and-forget wake-up call, run at app launch so the Render backend is
+// booting while the user reads the splash/onboarding. Any response — even a
+// 404 — means the server is awake; errors are ignored.
+export const warmUpBackend = async (): Promise<void> => {
+  try {
+    // Hit a public endpoint that returns 200 so the warm-up itself never
+    // produces an error to reason about; it just wakes the server.
+    await axios.get(`${ENV.API_BASE_URL}/listings`, { timeout: 60000 });
+  } catch {
+    // Ignored — real requests will retry once the server is up.
+  }
+};
 
 export default apiClient;

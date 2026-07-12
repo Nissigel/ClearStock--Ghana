@@ -7,11 +7,13 @@ import {
   Dimensions,
   type ViewStyle,
 } from 'react-native';
+import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { Radius, FontSize, Spacing, Shadow } from '@/constants/theme';
 import { PriceDisplay } from '@/components/ui/PriceDisplay';
 import { Badge } from '@/components/ui/Badge';
+import { PriceDropCountdown } from '@/components/ui/PriceDropCountdown';
 import type { ListingSummary } from '@/types/listing.types';
 import { Heading, Label, Caption } from '@/components/ui/Typography';
 
@@ -33,6 +35,7 @@ export function ListingCard({
   style,
 }: ListingCardProps) {
   const { colors } = useTheme();
+  const [imageFailed, setImageFailed] = useState(false);
 
   const isDiscounted = listing.currentPrice < listing.originalPrice;
   const discountPercent = isDiscounted
@@ -60,7 +63,9 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
 
   const rawImageUrl = listing.images[0];
   const primaryImageUrl =
-    rawImageUrl && !rawImageUrl.startsWith('file://') ? rawImageUrl : null;
+    rawImageUrl && !rawImageUrl.startsWith('file://') && !imageFailed
+      ? rawImageUrl
+      : null;
   const sellerName = listing.sellerBusinessName;
 
   return (
@@ -95,6 +100,7 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
             source={{ uri: primaryImageUrl }}
             style={styles.image}
             resizeMode="cover"
+            onError={() => setImageFailed(true)}
           />
         ) : (
           <View style={styles.imagePlaceholder}>
@@ -156,6 +162,19 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
           size="sm"
           containerStyle={styles.price}
         />
+
+        {/* Auto price-drop countdown */}
+        {listing.discountActive &&
+          listing.listingStatus === 'ACTIVE' &&
+          !!listing.discountIntervalDays &&
+          listing.currentPrice > listing.minimumAcceptablePrice && (
+            <PriceDropCountdown
+              createdAt={listing.createdAt}
+              intervalDays={listing.discountIntervalDays}
+              compact
+              style={styles.countdown}
+            />
+          )}
 
         {/* Seller info */}
         <Caption
@@ -222,6 +241,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   price: {
+    marginBottom: Spacing.xs,
+  },
+  countdown: {
     marginBottom: Spacing.xs,
   },
   sellerRow: {

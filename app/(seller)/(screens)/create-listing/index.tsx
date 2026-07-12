@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useState } from 'react';
+import type { AxiosError } from 'axios';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useCreateListingStore } from '@/store/createListingStore';
 import { createListing } from '@/api/listing.api';
+import { uploadImages } from '@/api/upload.api';
 import { useQueryClient } from '@tanstack/react-query';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
 import { CATEGORIES, type Category } from '@/constants/categories';
@@ -95,13 +97,31 @@ export default function CreateListingScreen() {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     } else {
-      router.replace('/(seller)/dashboard');
+      router.replace('/(seller)/(tabs)/dashboard');
     }
   };
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
+      // Upload locally-picked images to a real host so they display on every
+      // device; already-hosted URLs pass through unchanged.
+      const hostedImages = await uploadImages(store.images);
+
+      // The backend requires at least one image. If the seller picked images
+      // but none uploaded, it's a Cloudinary config problem — say so clearly.
+      if (store.images.length > 0 && hostedImages.length === 0) {
+        Alert.alert(
+          'Image upload failed',
+          'Your images could not be uploaded. In Cloudinary, make sure the upload preset is set to "Unsigned" and the cloud name is correct.'
+        );
+        return;
+      }
+      if (hostedImages.length === 0) {
+        Alert.alert('Add a photo', 'Please add at least one image for your listing.');
+        return;
+      }
+
       await createListing({
         productName: store.productName,
         category: store.category!,
@@ -115,15 +135,21 @@ export default function CreateListingScreen() {
         clearanceEndDate: store.clearanceEndDate,
         discountStepPercent: store.discountStepPercent ? Number(store.discountStepPercent) : null,
         discountIntervalDays: store.discountIntervalDays ? Number(store.discountIntervalDays) : null,
-        images: store.images,
+        images: hostedImages,
       });
       queryClient.invalidateQueries({ queryKey: ['my-listings'] });
       store.reset();
       Alert.alert('Success', 'Listing created successfully!', [
-        { text: 'OK', onPress: () => router.replace('/(seller)/listings') },
+        { text: 'OK', onPress: () => router.replace('/(seller)/(tabs)/listings') },
       ]);
-    } catch {
-      Alert.alert('Error', 'Failed to create listing. Please try again.');
+    } catch (err) {
+      // Surface the backend's validation message (e.g. "Unit of measurement is
+      // required") instead of a generic failure.
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      const message =
+        axiosErr.response?.data?.message ??
+        'Failed to create listing. Please try again.';
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }

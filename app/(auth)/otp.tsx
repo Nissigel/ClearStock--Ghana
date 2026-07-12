@@ -103,7 +103,7 @@ export default function OtpVerifyScreen() {
 
  return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.primary }]}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background }}
@@ -111,7 +111,7 @@ export default function OtpVerifyScreen() {
       >
         
         {/* TOP — Green section */}
-        <View style={[styles.topSection, { backgroundColor: colors.primary }]}>
+        <View style={[styles.topSection, { backgroundColor: colors.background }]}>
           <ScreenHeader
             showBack
             transparent
@@ -120,7 +120,7 @@ export default function OtpVerifyScreen() {
           <Text style={[styles.topTitle, { color: colors.gold }]}>
             Verify your number
           </Text>
-          <Text style={[styles.topSubtitle, { color: colors.primaryForeground }]}>
+          <Text style={[styles.topSubtitle, { color: colors.mutedForeground }]}>
             Enter the 6-digit code sent to
           </Text>
           <Text style={[styles.phoneDisplay, { color: colors.gold }]}>

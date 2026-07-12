@@ -46,7 +46,7 @@ export default function ReportScreen() {
       <ScreenHeader
         showBack
         title={`Report ${reportType === 'LISTING' ? 'Listing' : 'User'}`}
-        onBackPress={() => router.replace('/(buyer)/profile')}
+        onBackPress={() => router.back()}
       />
       <View style={styles.content}>
         <Input

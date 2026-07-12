@@ -19,11 +19,16 @@ import { PriceDisplay } from '@/components/ui/PriceDisplay';
 import { Avatar } from '@/components/ui/Avatar';
 import { useQuery } from '@tanstack/react-query';
 import { getListingById } from '@/api/listing.api';
+import {
+  getConversationByListingId,
+  createConversation,
+} from '@/api/messaging.api';
 import { useAuthStore } from '@/store/authStore';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 import { CURRENCY_SYMBOL } from '@/constants/app';
 import { useState } from 'react';
 import { PurchaseRequestSheet } from '@/components/ui/PurchaseRequestSheet';
+import { PriceDropCountdown } from '@/components/ui/PriceDropCountdown';
 
 const { width } = Dimensions.get('window');
 const IMAGE_HEIGHT = width * 0.75;
@@ -34,6 +39,8 @@ export function ListingDetailScreen() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [contactingLoading, setContactingLoading] = useState(false);
+  const [failedUris, setFailedUris] = useState<Record<string, boolean>>({});
 
   const { data: listing, isLoading, isError } = useQuery({
     queryKey: ['listing', id],
@@ -49,11 +56,22 @@ export function ListingDetailScreen() {
   };
 
  const handleContactSeller = () => {
-    handleRestrictedAction(() => {
-      router.push({
-        pathname: '/(buyer)/(screens)/conversation/[id]',
-        params: { id: 'conv-001' },
-      });
+    handleRestrictedAction(async () => {
+      if (!listing || contactingLoading) return;
+      try {
+        setContactingLoading(true);
+        const listingId = String(listing.id);
+        const existing = await getConversationByListingId(listingId);
+        const conversation = existing ?? (await createConversation(listingId));
+        router.push({
+          pathname: '/(buyer)/(screens)/conversation/[id]',
+          params: { id: conversation.id },
+        });
+      } catch {
+        // Swallow — the seller card / retry via the button covers failure.
+      } finally {
+        setContactingLoading(false);
+      }
     });
   };
 
@@ -120,7 +138,7 @@ const handlePurchaseRequest = () => {
   const sellerName = listing.sellerBusinessName;
 
   const validImages = listing.images.filter(
-    (uri) => uri && !uri.startsWith('file://')
+    (uri) => uri && !uri.startsWith('file://') && !failedUris[uri]
   );
   const images: (string | null)[] =
     validImages.length > 0 ? validImages : [null];
@@ -190,6 +208,9 @@ const handlePurchaseRequest = () => {
                     source={{ uri: item }}
                     style={styles.image}
                     resizeMode="cover"
+                    onError={() =>
+                      setFailedUris((prev) => ({ ...prev, [item]: true }))
+                    }
                   />
                 ) : (
                   <View
@@ -261,6 +282,18 @@ const handlePurchaseRequest = () => {
             size="lg"
             containerStyle={styles.price}
           />
+
+          {/* Auto price-drop countdown */}
+          {listing.discountActive &&
+            listing.listingStatus === 'ACTIVE' &&
+            !!listing.discountIntervalDays &&
+            listing.currentPrice > listing.minimumAcceptablePrice && (
+              <PriceDropCountdown
+                createdAt={listing.createdAt}
+                intervalDays={listing.discountIntervalDays}
+                style={styles.countdown}
+              />
+            )}
 
           {/* Status badges */}
           <View style={styles.badgeRow}>
@@ -389,6 +422,7 @@ const handlePurchaseRequest = () => {
         <Button
           label="Contact Seller"
           onPress={handleContactSeller}
+          loading={contactingLoading}
           variant="outline"
           style={styles.actionButton}
         />
@@ -512,6 +546,9 @@ headerRight: {
     lineHeight: 30,
   },
   price: {
+    marginBottom: Spacing.md,
+  },
+  countdown: {
     marginBottom: Spacing.md,
   },
   badgeRow: {

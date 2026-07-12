@@ -8,12 +8,43 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/useTheme';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { logout } from '@/api/auth.api';
+import { getBuyerTransactions } from '@/api/transaction.api';
+import { getSellerRatingSummary } from '@/api/review.api';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
+
+function StatColumn({
+  label,
+  value,
+  colors,
+  star,
+}: {
+  label: string;
+  value: string | number;
+  colors: any;
+  star?: boolean;
+}) {
+  return (
+    <View style={styles.statColumn}>
+      <View style={styles.statValueRow}>
+        <Text style={[styles.statValue, { color: colors.foreground }]}>
+          {value}
+        </Text>
+        {star && value !== '—' && (
+          <Ionicons name="star" size={13} color={colors.gold} />
+        )}
+      </View>
+      <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>
+        {label}
+      </Text>
+    </View>
+  );
+}
 
 export default function SellerProfileScreen() {
   const { colors } = useTheme();
@@ -22,6 +53,29 @@ export default function SellerProfileScreen() {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const switchToBuyer = useModeStore((state) => state.switchToBuyer);
   const reset = useModeStore((state) => state.reset);
+
+  const { data: transactions } = useQuery({
+    queryKey: ['buyer-transactions'],
+    queryFn: getBuyerTransactions,
+  });
+
+  const { data: rating } = useQuery({
+    queryKey: ['seller-rating', user?.id],
+    queryFn: () => getSellerRatingSummary(String(user?.id)),
+    enabled: !!user?.id,
+  });
+
+  const completed = (transactions ?? []).filter(
+    (t) => t.transactionStatus === 'COMPLETED'
+  );
+  const boughtCount = completed.filter(
+    (t) => String(t.buyerUserId) === user?.id
+  ).length;
+  const soldCount = completed.filter(
+    (t) => String(t.sellerUserId) === user?.id
+  ).length;
+  const ratingLabel =
+    rating && rating.totalReviews > 0 ? rating.averageRating.toFixed(1) : '—';
 
   const handleLogout = async () => {
     await logout();
@@ -32,7 +86,7 @@ export default function SellerProfileScreen() {
 
   const handleSwitchToBuyer = () => {
     switchToBuyer();
-    router.replace('/(buyer)/home');
+    router.replace('/(buyer)/(tabs)/home');
   };
 
   return (
@@ -56,6 +110,20 @@ export default function SellerProfileScreen() {
           <Text style={[styles.userPhone, { color: colors.mutedForeground }]}>
             {user?.phoneNumber}
           </Text>
+
+          {/* Stat row */}
+          <View style={[styles.statRow, { borderTopColor: colors.border }]}>
+            <StatColumn label="Sold" value={soldCount} colors={colors} />
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <StatColumn label="Bought" value={boughtCount} colors={colors} />
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <StatColumn
+              label="Rating"
+              value={ratingLabel}
+              colors={colors}
+              star
+            />
+          </View>
         </View>
 
         <TouchableOpacity
@@ -89,9 +157,10 @@ export default function SellerProfileScreen() {
           >
             {[
               { icon: 'storefront-outline', label: 'Seller Profile', route: '/(seller)/(screens)/seller-profile' },
+              { icon: 'leaf-outline', label: 'Recovery Impact', route: '/(seller)/(screens)/recovery-impact' },
               { icon: 'swap-horizontal-outline', label: 'Transaction History', route: '/(seller)/(screens)/transactions' },
               { icon: 'person-outline', label: 'Edit Profile', route: '/(buyer)/(screens)/edit-profile' },
-              { icon: 'notifications-outline', label: 'Notifications', route: '/(buyer)/(screens)/notifications' },
+              { icon: 'settings-outline', label: 'Settings', route: '/(buyer)/(screens)/settings' },
             ].map((item, index) => (
               <TouchableOpacity
                 key={index}
@@ -115,7 +184,7 @@ export default function SellerProfileScreen() {
               onPress={handleLogout}
               style={styles.settingsRow}
             >
-              <View style={[styles.settingsIcon, { backgroundColor: '#fee2e2' }]}>
+              <View style={[styles.settingsIcon, { backgroundColor: colors.muted }]}>
                 <Ionicons name="log-out-outline" size={18} color={colors.destructive} />
               </View>
               <Text style={[styles.settingsLabel, { color: colors.destructive }]}>
@@ -144,6 +213,36 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   userPhone: { fontSize: FontSize.sm },
+  statRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    alignSelf: 'stretch',
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.lg,
+    borderTopWidth: 0.5,
+  },
+  statColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  statValue: {
+    fontSize: FontSize.lg,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    fontSize: FontSize.xs,
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 0.5,
+    height: 28,
+  },
   switchCard: {
     flexDirection: 'row',
     alignItems: 'center',

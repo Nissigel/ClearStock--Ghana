@@ -62,7 +62,7 @@ export default function BuyerTransactionDetailScreen() {
         <ScreenHeader
           showBack
           title="Transaction"
-          onBackPress={() => router.replace('/(buyer)/(screens)/transactions')}
+          onBackPress={() => router.back()}
         />
       </SafeAreaView>
     );
@@ -77,7 +77,7 @@ export default function BuyerTransactionDetailScreen() {
       <ScreenHeader
         showBack
         title="Transaction Details"
-        onBackPress={() => router.replace('/(buyer)/(screens)/transactions')}
+        onBackPress={() => router.back()}
       />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
