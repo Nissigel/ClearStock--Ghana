@@ -5,6 +5,9 @@ import {
   Modal,
   TouchableOpacity,
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -85,11 +88,17 @@ export function PurchaseRequestSheet({
         activeOpacity={1}
         onPress={onClose}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          style={[styles.sheet, { backgroundColor: colors.background }]}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <View style={[styles.handle, { backgroundColor: colors.border }]} />
+          {/* Tapping anywhere on the sheet (outside the input) dismisses the
+              numeric keyboard, which otherwise has no return key to close it. */}
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => Keyboard.dismiss()}
+            style={[styles.sheet, { backgroundColor: colors.background }]}
+          >
+            <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={colors.foreground} />
@@ -144,13 +153,14 @@ export function PurchaseRequestSheet({
             </View>
           )}
 
-          <Button
-            label="Send Purchase Request"
-            onPress={handleSubmit}
-            loading={isPending}
-            style={styles.button}
-          />
-        </TouchableOpacity>
+            <Button
+              label="Send Purchase Request"
+              onPress={handleSubmit}
+              loading={isPending}
+              style={styles.button}
+            />
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
       </TouchableOpacity>
     </Modal>
   );
