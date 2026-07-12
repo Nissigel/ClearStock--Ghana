@@ -226,6 +226,7 @@ export default function CreateListingScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {/* Step 1 — Basic Info */}
         {currentStep === 0 && (

@@ -33,6 +33,7 @@ export function KeyboardAvoidingWrapper({
           containerStyle,
         ]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         scrollEnabled={scrollEnabled}
         showsVerticalScrollIndicator={false}
       >

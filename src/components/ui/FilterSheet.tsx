@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Keyboard,
 } from 'react-native';
 import { Text } from '@/components/ui/Typography';
 import { useState } from 'react';
@@ -121,6 +122,7 @@ export function FilterSheet({
       >
         <TouchableOpacity
           activeOpacity={1}
+          onPress={() => Keyboard.dismiss()}
           style={[styles.sheet, { backgroundColor: colors.background }]}
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
