@@ -10,6 +10,7 @@ import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -63,11 +64,20 @@ public class DealAlertService {
         dealAlertRepository.save(alert);
     }
 
+    // Runs in a background thread so notifying buyers (which may send email
+    // over a slow/unreachable SMTP server) never blocks or fails the listing
+    // creation request. Each alert is isolated so one failure doesn't stop the
+    // rest.
+    @Async
     public void notifyMatchingAlerts(Listing listing) {
         List<DealAlert> activeAlerts = dealAlertRepository.findByIsActiveTrue();
         for (DealAlert alert : activeAlerts) {
-            if (matches(alert, listing)) {
-                sendAlertEmail(alert, listing);
+            try {
+                if (matches(alert, listing)) {
+                    sendAlertEmail(alert, listing);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to notify deal alert {}: {}", alert.getId(), e.getMessage());
             }
         }
     }
