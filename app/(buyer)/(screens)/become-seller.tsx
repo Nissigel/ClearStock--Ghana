@@ -35,6 +35,7 @@ export default function BecomeSellerScreen() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!sellerType) newErrors.sellerType = 'Please select a seller type';
+    if (!businessName.trim()) newErrors.businessName = 'Business or store name is required';
     if (!marketHub.trim()) newErrors.marketHub = 'Market hub is required';
     if (!businessDescription.trim()) newErrors.businessDescription = 'Business description is required';
     setErrors(newErrors);
@@ -148,10 +149,11 @@ export default function BecomeSellerScreen() {
           </View>
 
           <Input
-            label="Business Name (Optional)"
+            label="Business / Store Name"
             placeholder="e.g. Kofi Traders"
             value={businessName}
             onChangeText={setBusinessName}
+            error={errors.businessName}
             leftIcon="business-outline"
           />
 

@@ -48,7 +48,14 @@ export const becomeSeller = async (
       updatedAt: new Date().toISOString(),
     };
   }
-  const response = await apiClient.post('/seller/become', data);
+  // The backend SellerType enum is only INDIVIDUAL | BUSINESS, so collapse the
+  // app's richer list down to one of those two valid values.
+  const sellerType =
+    data.sellerType === 'Individual Seller' ? 'INDIVIDUAL' : 'BUSINESS';
+  const response = await apiClient.post('/seller/become', {
+    ...data,
+    sellerType,
+  });
   return response.data.data as SellerProfile;
 };
 
