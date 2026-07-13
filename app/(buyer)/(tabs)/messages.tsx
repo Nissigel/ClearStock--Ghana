@@ -4,6 +4,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,7 +13,10 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingGrid } from '@/components/ui/LoadingGrid';
-import { useConversations } from '@/hooks/useConversations';
+import {
+  useConversations,
+  useDeleteConversation,
+} from '@/hooks/useConversations';
 import { useNotificationStore } from '@/store/notificationStore';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
 import type { Conversation } from '@/types/messaging.types';
@@ -21,6 +25,7 @@ export default function ConversationsScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const { data: conversations, isLoading, refetch, isRefetching } = useConversations();
+  const { mutate: deleteConversation } = useDeleteConversation();
   const resetUnreadCount = useNotificationStore((state) => state.resetUnreadCount);
 
   const handleConversationPress = (conversation: Conversation) => {
@@ -29,6 +34,21 @@ export default function ConversationsScreen() {
       pathname: '/(buyer)/(screens)/conversation/[id]',
       params: { id: conversation.id },
     });
+  };
+
+  const handleConversationLongPress = (conversation: Conversation) => {
+    Alert.alert(
+      'Delete chat',
+      `Delete your conversation with ${conversation.otherParty.fullName}? It will be removed from your inbox.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteConversation(conversation.id),
+        },
+      ]
+    );
   };
 
   const formatTime = (dateString: string): string => {
@@ -77,6 +97,8 @@ export default function ConversationsScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => handleConversationPress(item)}
+            onLongPress={() => handleConversationLongPress(item)}
+            delayLongPress={300}
             style={[
               styles.conversationItem,
               { borderBottomColor: colors.border },

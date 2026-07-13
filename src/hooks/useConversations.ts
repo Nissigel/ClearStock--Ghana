@@ -5,6 +5,8 @@ import {
   getMessages,
   sendMessage,
   deleteMessage,
+  editMessage,
+  deleteConversation,
 } from '@/api/messaging.api';
 
 export const CONVERSATIONS_KEY = 'conversations';
@@ -61,6 +63,28 @@ export const useDeleteMessage = () => {
     mutationFn: (messageId: string) => deleteMessage(messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [MESSAGES_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CONVERSATIONS_KEY] });
+    },
+  });
+};
+
+export const useEditMessage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ messageId, content }: { messageId: string; content: string }) =>
+      editMessage(messageId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MESSAGES_KEY] });
+    },
+  });
+};
+
+export const useDeleteConversation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (conversationId: string) => deleteConversation(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CONVERSATIONS_KEY] });
     },
   });
 };

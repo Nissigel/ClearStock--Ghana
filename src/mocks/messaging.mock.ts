@@ -90,6 +90,7 @@ export const MOCK_MESSAGES: Record<string, Message[]> = {
       content: 'Hello, is this still available?',
       isRead: true,
       deletedAt: null,
+      editedAt: null,
       createdAt: '2026-06-24T09:00:00Z',
     },
     {
@@ -99,6 +100,7 @@ export const MOCK_MESSAGES: Record<string, Message[]> = {
       content: 'Yes it is available. Minimum order is 5 cartons.',
       isRead: true,
       deletedAt: null,
+      editedAt: null,
       createdAt: '2026-06-24T09:15:00Z',
     },
     {
@@ -108,6 +110,7 @@ export const MOCK_MESSAGES: Record<string, Message[]> = {
       content: 'Yes we can arrange that for you.',
       isRead: false,
       deletedAt: null,
+      editedAt: null,
       createdAt: '2026-06-24T10:30:00Z',
     },
   ],
@@ -119,6 +122,7 @@ export const MOCK_MESSAGES: Record<string, Message[]> = {
       content: 'Good afternoon. Are these phones brand new?',
       isRead: true,
       deletedAt: null,
+      editedAt: null,
       createdAt: '2026-06-23T14:00:00Z',
     },
     {
@@ -128,6 +132,7 @@ export const MOCK_MESSAGES: Record<string, Message[]> = {
       content: 'Yes all brand new in box with full warranty.',
       isRead: true,
       deletedAt: null,
+      editedAt: null,
       createdAt: '2026-06-23T14:30:00Z',
     },
     {
@@ -137,6 +142,7 @@ export const MOCK_MESSAGES: Record<string, Message[]> = {
       content: 'I am interested in 10 pieces.',
       isRead: true,
       deletedAt: null,
+      editedAt: null,
       createdAt: '2026-06-23T15:00:00Z',
     },
   ],
@@ -148,6 +154,7 @@ export const MOCK_MESSAGES: Record<string, Message[]> = {
       content: 'I would like to buy 3 boxes please.',
       isRead: true,
       deletedAt: null,
+      editedAt: null,
       createdAt: '2026-06-22T09:00:00Z',
     },
     {
@@ -157,6 +164,7 @@ export const MOCK_MESSAGES: Record<string, Message[]> = {
       content: 'Okay. Please send payment to 0201234567 MTN Momo.',
       isRead: true,
       deletedAt: null,
+      editedAt: null,
       createdAt: '2026-06-22T09:30:00Z',
     },
     {
@@ -166,6 +174,7 @@ export const MOCK_MESSAGES: Record<string, Message[]> = {
       content: 'Payment confirmed. Come pick up anytime.',
       isRead: true,
       deletedAt: null,
+      editedAt: null,
       createdAt: '2026-06-22T11:00:00Z',
     },
   ],

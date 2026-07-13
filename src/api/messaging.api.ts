@@ -26,6 +26,7 @@ interface RawMessage {
   seen: boolean;
   seenAt: string | null;
   createdAt: string;
+  editedAt: string | null;
 }
 
 interface RawConversation {
@@ -50,6 +51,7 @@ const mapMessage = (raw: RawMessage): Message => ({
   content: raw.messageContent,
   isRead: raw.seen,
   deletedAt: raw.deleted ? raw.seenAt ?? raw.createdAt : null,
+  editedAt: raw.editedAt ?? null,
   createdAt: raw.createdAt,
 });
 
@@ -169,6 +171,7 @@ export const sendMessage = async (
       content: data.content,
       isRead: false,
       deletedAt: null,
+      editedAt: null,
       createdAt: new Date().toISOString(),
     };
     if (MOCK_MESSAGES[conversationId]) {
@@ -190,4 +193,30 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
     return;
   }
   await apiClient.delete(`/messages/${messageId}`);
+};
+
+// Edit an own message. The backend only allows this within 3 minutes of sending.
+export const editMessage = async (
+  messageId: string,
+  content: string
+): Promise<Message> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    throw new Error('Not available in mock mode.');
+  }
+  const response = await apiClient.put(`/messages/${messageId}`, {
+    messageContent: content,
+  });
+  return mapMessage(response.data.data as RawMessage);
+};
+
+// "Delete for me" — hides the conversation from the current user's inbox only.
+export const deleteConversation = async (
+  conversationId: string
+): Promise<void> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    return;
+  }
+  await apiClient.delete(`/conversations/${conversationId}`);
 };

@@ -36,6 +36,7 @@ export interface Message {
   content: string;
   isRead: boolean;
   deletedAt: string | null;
+  editedAt: string | null;
   createdAt: string;
 }
 

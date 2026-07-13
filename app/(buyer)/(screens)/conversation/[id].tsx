@@ -7,13 +7,21 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useRef } from 'react';
+import type { AxiosError } from 'axios';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { useMessages, useSendMessage, useConversation } from '@/hooks/useConversations';
+import {
+  useMessages,
+  useSendMessage,
+  useConversation,
+  useEditMessage,
+  useDeleteMessage,
+} from '@/hooks/useConversations';
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
@@ -25,16 +33,49 @@ export default function ConversationScreen() {
   const { colors } = useTheme();
   const currentUserId = useAuthStore((state) => state.user?.id);
   const [messageText, setMessageText] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
+  const inputRef = useRef<TextInput>(null);
 
   const { data: conversation } = useConversation(id);
   const { data: messages, isLoading } = useMessages(id);
   const { mutate: send, isPending } = useSendMessage();
+  const { mutate: editMessage, isPending: isEditing } = useEditMessage();
+  const { mutate: deleteMessage } = useDeleteMessage();
+
+  const EDIT_WINDOW_MS = 3 * 60 * 1000;
+  const canEdit = (message: Message) =>
+    message.senderUserId === currentUserId &&
+    !message.deletedAt &&
+    Date.now() - new Date(message.createdAt).getTime() < EDIT_WINDOW_MS;
+
+  const busy = isPending || isEditing;
 
   const handleSend = () => {
-    if (!messageText.trim() || isPending) return;
+    const text = messageText.trim();
+    if (!text || busy) return;
+
+    if (editingId) {
+      editMessage(
+        { messageId: editingId, content: text },
+        {
+          onSuccess: () => {
+            setEditingId(null);
+            setMessageText('');
+          },
+          onError: (err) => {
+            const msg =
+              (err as AxiosError<{ message?: string }>).response?.data?.message ??
+              'Could not edit the message.';
+            Alert.alert('Edit failed', msg);
+          },
+        }
+      );
+      return;
+    }
+
     send(
-      { conversationId: id, content: messageText.trim() },
+      { conversationId: id, content: text },
       {
         onSuccess: () => {
           setMessageText('');
@@ -44,8 +85,51 @@ export default function ConversationScreen() {
     );
   };
 
+  const cancelEdit = () => {
+    setEditingId(null);
+    setMessageText('');
+  };
+
+  const handleLongPress = (message: Message) => {
+    if (message.senderUserId !== currentUserId || message.deletedAt) return;
+
+    const options: Parameters<typeof Alert.alert>[2] = [];
+    if (canEdit(message)) {
+      options.push({
+        text: 'Edit',
+        onPress: () => {
+          setEditingId(message.id);
+          setMessageText(message.content);
+          inputRef.current?.focus();
+        },
+      });
+    }
+    options.push({
+      text: 'Delete',
+      style: 'destructive',
+      onPress: () =>
+        Alert.alert('Delete message', 'Delete this message?', [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              if (editingId === message.id) cancelEdit();
+              deleteMessage(message.id);
+            },
+          },
+        ]),
+    });
+    options.push({ text: 'Cancel', style: 'cancel' });
+
+    Alert.alert('Message', undefined, options);
+  };
+
   const renderMessage = ({ item }: { item: Message }) => {
     const isOwn = item.senderUserId === currentUserId;
+    const isDeleted = !!item.deletedAt;
+    const textColor = isOwn ? colors.primaryForeground : colors.foreground;
+    const metaColor = isOwn ? colors.primaryForeground : colors.mutedForeground;
     return (
       <View
         style={[
@@ -53,7 +137,11 @@ export default function ConversationScreen() {
           isOwn ? styles.ownMessageRow : styles.otherMessageRow,
         ]}
       >
-        <View
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onLongPress={() => handleLongPress(item)}
+          delayLongPress={250}
+          disabled={!isOwn || isDeleted}
           style={[
             styles.messageBubble,
             {
@@ -65,28 +153,26 @@ export default function ConversationScreen() {
           <Text
             style={[
               styles.messageText,
-              { color: isOwn ? colors.primaryForeground : colors.foreground },
+              { color: textColor },
+              isDeleted && styles.deletedText,
             ]}
           >
             {item.content}
           </Text>
-          <Text
-            style={[
-              styles.messageTime,
-              {
-                color: isOwn
-                  ? colors.primaryForeground
-                  : colors.mutedForeground,
-                opacity: 0.7,
-              },
-            ]}
-          >
-            {new Date(item.createdAt).toLocaleTimeString('en-GH', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-        </View>
+          <View style={styles.metaRow}>
+            {!isDeleted && item.editedAt && (
+              <Text style={[styles.metaLabel, { color: metaColor }]}>
+                edited ·{' '}
+              </Text>
+            )}
+            <Text style={[styles.metaLabel, { color: metaColor }]}>
+              {new Date(item.createdAt).toLocaleTimeString('en-GH', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Text>
+          </View>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -156,6 +242,24 @@ export default function ConversationScreen() {
           </View>
         )}
 
+        {/* Editing banner */}
+        {editingId && (
+          <View
+            style={[
+              styles.editingBanner,
+              { backgroundColor: colors.secondary, borderColor: colors.border },
+            ]}
+          >
+            <Ionicons name="pencil" size={14} color={colors.primary} />
+            <Text style={[styles.editingText, { color: colors.primary }]}>
+              Editing message
+            </Text>
+            <TouchableOpacity onPress={cancelEdit} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close" size={18} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Message Input */}
         <View
           style={[
@@ -167,9 +271,10 @@ export default function ConversationScreen() {
           ]}
         >
           <TextInput
+            ref={inputRef}
             value={messageText}
             onChangeText={setMessageText}
-            placeholder="Type a message..."
+            placeholder={editingId ? 'Edit your message...' : 'Type a message...'}
             placeholderTextColor={colors.mutedForeground}
             multiline
             maxLength={MAX_MESSAGE_LENGTH}
@@ -184,7 +289,7 @@ export default function ConversationScreen() {
           />
           <TouchableOpacity
             onPress={handleSend}
-            disabled={!messageText.trim() || isPending}
+            disabled={!messageText.trim() || busy}
             style={[
               styles.sendButton,
               {
@@ -194,7 +299,7 @@ export default function ConversationScreen() {
             ]}
           >
             <Ionicons
-              name="send"
+              name={editingId ? 'checkmark' : 'send'}
               size={18}
               color={
                 messageText.trim()
@@ -239,10 +344,32 @@ const styles = StyleSheet.create({
     fontSize: FontSize.base,
     lineHeight: 22,
   },
-  messageTime: {
-    fontSize: FontSize.xs,
-    marginTop: 4,
+  deletedText: {
+    fontStyle: 'italic',
+    opacity: 0.7,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-end',
+    marginTop: 4,
+  },
+  metaLabel: {
+    fontSize: FontSize.xs,
+    opacity: 0.7,
+  },
+  editingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderTopWidth: 0.5,
+  },
+  editingText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    fontWeight: '600',
   },
   listingTag: {
     fontSize: FontSize.xs,
