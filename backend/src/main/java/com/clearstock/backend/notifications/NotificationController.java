@@ -40,6 +40,15 @@ public class NotificationController {
                 notificationService.markAsRead(user, id)));
     }
 
+    @PutMapping("/{id}/unread")
+    public ResponseEntity<ApiResponse<NotificationResponse>> markAsUnread(
+            Authentication authentication,
+            @PathVariable Long id) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success("Notification marked as unread",
+                notificationService.markAsUnread(user, id)));
+    }
+
     @PutMapping("/read-all")
     public ResponseEntity<ApiResponse<Void>> markAllAsRead(Authentication authentication) {
         User user = (User) authentication.getPrincipal();

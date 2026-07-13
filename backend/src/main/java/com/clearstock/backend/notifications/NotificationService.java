@@ -49,6 +49,17 @@ public class NotificationService {
     }
 
     @Transactional
+    public NotificationResponse markAsUnread(User user, Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found"));
+        if (!notification.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+        notification.setRead(false);
+        return NotificationResponse.from(notificationRepository.save(notification));
+    }
+
+    @Transactional
     public void markAllAsRead(User user) {
         notificationRepository.markAllReadForUser(user);
     }
