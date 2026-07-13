@@ -9,7 +9,9 @@ import { Button } from '@/components/ui/Button';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { FontSize, Spacing } from '@/constants/theme';
 import { PIN_LENGTH } from '@/constants/app';
-import { Text } from 'react-native';
+import { Text, Alert } from 'react-native';
+import type { AxiosError } from 'axios';
+import { changePin } from '@/api/user.api';
 
 export default function ChangePinScreen() {
   const { colors } = useTheme();
@@ -44,10 +46,20 @@ export default function ChangePinScreen() {
       }
       try {
         setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        await changePin(currentPin, newPin);
+        Alert.alert('PIN Changed', 'Your PIN has been updated successfully.');
         router.back();
-      } catch {
-        setError('Something went wrong. Please try again.');
+      } catch (err) {
+        const message =
+          (err as AxiosError<{ message?: string }>).response?.data?.message ??
+          'Something went wrong. Please try again.';
+        // A wrong current PIN comes back as a 400 — send the user back to
+        // re-enter it rather than leaving them stuck on the confirm step.
+        setError(message);
+        setStep('current');
+        setCurrentPin('');
+        setNewPin('');
+        setConfirmPin('');
       } finally {
         setLoading(false);
       }
