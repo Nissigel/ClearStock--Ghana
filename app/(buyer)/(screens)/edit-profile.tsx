@@ -1,5 +1,6 @@
 import {
   View,
+  Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -19,7 +20,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
 import { updateProfile } from '@/api/user.api';
 import { uploadImages } from '@/api/upload.api';
-import { Spacing, Radius } from '@/constants/theme';
+import { Spacing, Radius, FontSize } from '@/constants/theme';
 
 export default function EditProfileScreen() {
   const { colors } = useTheme();
@@ -61,6 +62,12 @@ export default function EditProfileScreen() {
     } finally {
       setUploadingPhoto(false);
     }
+  };
+
+  // Clear the photo locally; an empty string tells the backend to remove it
+  // (it only leaves fields untouched when they're null/absent).
+  const handleRemovePhoto = () => {
+    setPhotoUrl('');
   };
 
   const handleSave = async () => {
@@ -127,6 +134,20 @@ export default function EditProfileScreen() {
               )}
             </View>
           </TouchableOpacity>
+
+          {!!photoUrl && (
+            <TouchableOpacity
+              onPress={handleRemovePhoto}
+              disabled={uploadingPhoto}
+              style={styles.removePhotoButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.destructive} />
+              <Text style={[styles.removePhotoText, { color: colors.destructive }]}>
+                Remove photo
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Input
@@ -168,6 +189,17 @@ const styles = StyleSheet.create({
   avatarContainer: {
     alignItems: 'center',
     marginBottom: Spacing.xl,
+  },
+  removePhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.md,
+  },
+  removePhotoText: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
   },
   cameraBadge: {
     position: 'absolute',
