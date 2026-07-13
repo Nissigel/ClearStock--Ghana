@@ -39,6 +39,16 @@ public class Conversation {
     @Builder.Default
     private ConversationStatus status = ConversationStatus.ACTIVE;
 
+    // Per-participant "delete for me": hides the conversation from that user's
+    // inbox without affecting the other party. Reset when a new message arrives.
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean deletedForBuyer = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean deletedForSeller = false;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

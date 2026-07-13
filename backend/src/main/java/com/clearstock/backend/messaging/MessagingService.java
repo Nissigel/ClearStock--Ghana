@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class MessagingService {
 
     private static final String DELETED_PLACEHOLDER = "This message was deleted";
+    private static final int EDIT_WINDOW_MINUTES = 3;
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
@@ -55,7 +56,16 @@ public class MessagingService {
 
     public List<ConversationResponse> getInbox(User user) {
         return conversationRepository.findByBuyerOrSellerOrderByUpdatedAtDesc(user, user)
-                .stream().map(this::mapToConversationResponse).collect(Collectors.toList());
+                .stream()
+                .filter(c -> !isHiddenFor(c, user))
+                .map(this::mapToConversationResponse)
+                .collect(Collectors.toList());
+    }
+
+    /** True when the user has "deleted for me" this conversation. */
+    private boolean isHiddenFor(Conversation conversation, User user) {
+        boolean isBuyer = conversation.getBuyer().getId().equals(user.getId());
+        return isBuyer ? conversation.isDeletedForBuyer() : conversation.isDeletedForSeller();
     }
 
     public ConversationResponse getConversationByListing(User buyer, Long listingId) {
@@ -78,6 +88,13 @@ public class MessagingService {
         if (conversation.getStatus() == ConversationStatus.CLOSED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Cannot send messages in a closed conversation");
+        }
+
+        // A new message revives the conversation for anyone who had hidden it.
+        if (conversation.isDeletedForBuyer() || conversation.isDeletedForSeller()) {
+            conversation.setDeletedForBuyer(false);
+            conversation.setDeletedForSeller(false);
+            conversationRepository.save(conversation);
         }
 
         Message message = Message.builder()
@@ -113,13 +130,41 @@ public class MessagingService {
         if (message.getDeletedAt() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message already deleted");
         }
-        if (message.isSeen()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Cannot delete a message that has already been seen by the recipient");
-        }
 
+        // Soft delete — the bubble shows "This message was deleted" to both sides,
+        // so a sender can retract a mistake even after it has been seen.
         message.setDeletedAt(LocalDateTime.now());
         messageRepository.save(message);
+    }
+
+    @Transactional
+    public MessageResponse editMessage(User sender, Long messageId, String newContent) {
+        Message message = messageRepository.findByIdAndSender(messageId, sender)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found"));
+
+        if (message.getDeletedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot edit a deleted message");
+        }
+        if (message.getCreatedAt().isBefore(LocalDateTime.now().minusMinutes(EDIT_WINDOW_MINUTES))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Messages can only be edited within " + EDIT_WINDOW_MINUTES + " minutes of sending");
+        }
+
+        message.setMessageContent(newContent);
+        message.setEditedAt(LocalDateTime.now());
+        return mapToMessageResponse(messageRepository.save(message));
+    }
+
+    @Transactional
+    public void deleteConversation(User user, Long conversationId) {
+        Conversation conversation = findConversationForParticipant(user, conversationId);
+        // "Delete for me" — hide it from this user's inbox only.
+        if (conversation.getBuyer().getId().equals(user.getId())) {
+            conversation.setDeletedForBuyer(true);
+        } else {
+            conversation.setDeletedForSeller(true);
+        }
+        conversationRepository.save(conversation);
     }
 
     private Conversation findConversationForParticipant(User user, Long conversationId) {
@@ -165,6 +210,7 @@ public class MessagingService {
                 .seen(message.isSeen())
                 .seenAt(message.getSeenAt())
                 .createdAt(message.getCreatedAt())
+                .editedAt(isDeleted ? null : message.getEditedAt())
                 .build();
     }
 }

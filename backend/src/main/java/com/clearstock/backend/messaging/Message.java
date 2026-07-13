@@ -41,4 +41,6 @@ public class Message {
     private LocalDateTime createdAt;
 
     private LocalDateTime deletedAt;
+
+    private LocalDateTime editedAt;
 }

@@ -17,4 +17,5 @@ public class MessageResponse {
     private boolean seen;
     private LocalDateTime seenAt;
     private LocalDateTime createdAt;
+    private LocalDateTime editedAt;
 }
