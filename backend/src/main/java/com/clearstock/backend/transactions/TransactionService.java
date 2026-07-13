@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TransactionService {
 
-    private static final int AUTO_COMPLETE_DAYS = 3;
     private final Random random = new Random();
 
     private final TransactionRepository transactionRepository;
@@ -373,6 +372,51 @@ public class TransactionService {
         PurchaseRequest pr = transaction.getPurchaseRequest();
         pr.setStatus(PurchaseRequestStatus.COMPLETED);
         purchaseRequestRepository.save(pr);
+    }
+
+    /**
+     * Called when a buyer never confirms collection with the OTP in time. Rather
+     * than completing the sale, cancel it and put the item back on the market —
+     * the stock was never decremented (that only happens on completion), so the
+     * listing just needs to be active again.
+     */
+    @Transactional
+    public void releaseUnconfirmedTransaction(Transaction transaction) {
+        transaction.setOtpCode(null);
+        transaction.setTransactionStatus(TransactionStatus.CANCELLED);
+        // The buyer paid but never confirmed receipt; flag the payment so it can
+        // be reversed. (Actual refund is handled outside this flow.)
+        if (transaction.getPaymentStatus() == PaymentStatus.PAYMENT_SUCCESSFUL) {
+            transaction.setPaymentStatus(PaymentStatus.PAYMENT_CANCELLED);
+        }
+        transactionRepository.save(transaction);
+
+        Listing listing = transaction.getListing();
+        if (listing.getListingStatus() != ListingStatus.ACTIVE && listing.getQuantity() > 0) {
+            listing.setListingStatus(ListingStatus.ACTIVE);
+            listingRepository.save(listing);
+        }
+
+        PurchaseRequest pr = transaction.getPurchaseRequest();
+        pr.setStatus(PurchaseRequestStatus.EXPIRED);
+        purchaseRequestRepository.save(pr);
+
+        notificationService.send(
+                transaction.getSeller(),
+                "Order Released",
+                "The buyer didn't confirm collection of " + listing.getProductName()
+                        + " in time, so the order was cancelled and the item is back on sale.",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
+        notificationService.send(
+                transaction.getBuyer(),
+                "Order Cancelled",
+                "You didn't confirm collection of " + listing.getProductName()
+                        + " in time, so the order was cancelled. Any payment will be reversed.",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
     }
 
     private Transaction findTransactionForParticipant(User user, Long transactionId) {
