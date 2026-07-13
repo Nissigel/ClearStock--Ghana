@@ -19,10 +19,11 @@ import { PIN_LENGTH } from '@/constants/app';
 export default function ConfirmPinScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { tempToken, phoneNumber, pin } = useLocalSearchParams<{
+  const { tempToken, phoneNumber, pin, email } = useLocalSearchParams<{
     tempToken: string;
     phoneNumber: string;
     pin: string;
+    email?: string;
   }>();
 
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -52,6 +53,7 @@ export default function ConfirmPinScreen() {
       const authResponse = await createPin({
         tempToken,
         pin: confirmPin,
+        email: email || undefined,
       });
       setAuth(authResponse.user, authResponse.token);
       router.push({

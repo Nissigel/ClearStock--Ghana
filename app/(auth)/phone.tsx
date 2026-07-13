@@ -20,7 +20,9 @@ export default function PhoneEntryScreen() {
   const router = useRouter();
 
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const validate = (): boolean => {
@@ -33,6 +35,12 @@ export default function PhoneEntryScreen() {
       return false;
     }
     setError('');
+    // Email is optional, but if given it must look valid.
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setEmailError('Enter a valid email address');
+      return false;
+    }
+    setEmailError('');
     return true;
   };
 
@@ -40,16 +48,20 @@ export default function PhoneEntryScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
+      const trimmedEmail = email.trim();
       const { otp } = await sendOtp({
         phone: phoneNumber,
         purpose: 'REGISTRATION',
+        email: trimmedEmail || undefined,
       });
       router.push({
         pathname: '/(auth)/otp',
         params: {
           phoneNumber,
           purpose: 'REGISTRATION',
-          // No SMS gateway — the backend returns the code so we can prefill it.
+          email: trimmedEmail,
+          // Fallback code the backend returns only when it wasn't delivered by
+          // SMS or email — lets the flow still work with no delivery set up.
           devOtp: otp ?? '',
         },
       });
@@ -181,6 +193,22 @@ export default function PhoneEntryScreen() {
           >
             Enter your number without the country code
           </Text>
+
+          {/* Optional email — used to send the code by email too */}
+          <Input
+            label="Email (optional)"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (emailError) setEmailError('');
+            }}
+            placeholder="you@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            leftIcon="mail-outline"
+            error={emailError}
+            hint="We'll also send your code here"
+          />
 
           {/* Send OTP button */}
           <Button

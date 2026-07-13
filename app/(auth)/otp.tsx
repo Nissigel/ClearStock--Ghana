@@ -21,10 +21,11 @@ import type { OtpPurpose } from '@/types/auth.types';
 export default function OtpVerifyScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { phoneNumber, purpose, devOtp } = useLocalSearchParams<{
+  const { phoneNumber, purpose, devOtp, email } = useLocalSearchParams<{
     phoneNumber: string;
     purpose: OtpPurpose;
     devOtp?: string;
+    email?: string;
   }>();
 
   // No SMS gateway is configured, so the backend hands the code back in the
@@ -80,7 +81,7 @@ export default function OtpVerifyScreen() {
         });
         router.push({
           pathname: '/(auth)/create-pin',
-          params: { tempToken, phoneNumber },
+          params: { tempToken, phoneNumber, email: email ?? '' },
         });
       }
     } catch (err) {
@@ -97,6 +98,7 @@ export default function OtpVerifyScreen() {
       const { otp: newCode } = await sendOtp({
         phone: phoneNumber,
         purpose: purpose ?? 'REGISTRATION',
+        email: email || undefined,
       });
       setCountdown(OTP_RESEND_COOLDOWN_SECONDS);
       setCanResend(false);

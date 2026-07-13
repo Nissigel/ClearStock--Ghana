@@ -1,6 +1,8 @@
 export interface SendOtpRequest {
   phone: string;
   purpose: OtpPurpose;
+  // Optional at sign-up: when present the backend emails the code here.
+  email?: string;
 }
 
 export interface VerifyOtpRequest {
@@ -12,6 +14,8 @@ export interface VerifyOtpRequest {
 export interface CreatePinRequest {
   tempToken: string;
   pin: string;
+  // Optional email captured at sign-up, saved on the new account.
+  email?: string;
 }
 
 export interface LoginRequest {

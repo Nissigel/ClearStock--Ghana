@@ -17,9 +17,10 @@ import { PIN_LENGTH } from '@/constants/app';
 export default function CreatePinScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { tempToken, phoneNumber } = useLocalSearchParams<{
+  const { tempToken, phoneNumber, email } = useLocalSearchParams<{
     tempToken: string;
     phoneNumber: string;
+    email?: string;
   }>();
 
   const [pin, setPin] = useState('');
@@ -38,7 +39,7 @@ export default function CreatePinScreen() {
     if (!validate()) return;
     router.push({
       pathname: '/(auth)/confirm-pin',
-      params: { tempToken, phoneNumber, pin },
+      params: { tempToken, phoneNumber, pin, email: email ?? '' },
     });
   };
 
