@@ -5,8 +5,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
@@ -80,26 +82,42 @@ export default function SellerDashboardScreen() {
   const user = useAuthStore((state) => state.user);
   const switchToBuyer = useModeStore((state) => state.switchToBuyer);
 
-  const { data: listings } = useQuery({
+  const { data: listings, refetch: refetchListings } = useQuery({
     queryKey: ['seller-listings'],
     queryFn: getMyListings,
   });
 
-  const { data: requests } = useQuery({
+  const {
+    data: requests,
+    refetch: refetchRequests,
+    isRefetching: isRefetchingRequests,
+  } = useQuery({
     queryKey: ['seller-requests'],
     queryFn: getSellerPurchaseRequests,
   });
 
-  const { data: recovery } = useQuery({
+  const { data: recovery, refetch: refetchRecovery } = useQuery({
     queryKey: ['recovery-dashboard'],
     queryFn: getRecoveryDashboard,
   });
 
-  const { data: rating } = useQuery({
+  const { data: rating, refetch: refetchRating } = useQuery({
     queryKey: ['seller-rating', user?.id],
     queryFn: () => getSellerRatingSummary(String(user?.id)),
     enabled: !!user?.id,
   });
+
+  // Tab screens stay mounted and React Query doesn't refetch on focus in React
+  // Native, so without this a request a buyer submits after the dashboard first
+  // loaded would never appear until the app restarts. Refresh on every focus.
+  useFocusEffect(
+    useCallback(() => {
+      refetchRequests();
+      refetchListings();
+      refetchRecovery();
+      refetchRating();
+    }, [refetchRequests, refetchListings, refetchRecovery, refetchRating])
+  );
 
   const { mutate: reviewRequest } = useReviewPurchaseRequest();
 
@@ -220,6 +238,18 @@ export default function SellerDashboardScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetchingRequests}
+            onRefresh={() => {
+              refetchRequests();
+              refetchListings();
+              refetchRecovery();
+              refetchRating();
+            }}
+            tintColor={colors.primary}
+          />
+        }
       >
         {/* Featured stats */}
         <View style={styles.statsGrid}>

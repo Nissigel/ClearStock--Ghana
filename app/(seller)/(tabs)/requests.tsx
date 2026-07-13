@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -25,6 +26,14 @@ export default function SellerRequestsScreen() {
   const router = useRouter();
   const { data, isLoading, refetch, isRefetching } = useSellerPurchaseRequests();
   const { mutate: reviewRequest } = useReviewPurchaseRequest();
+
+  // Refresh whenever the screen regains focus so newly submitted requests show
+  // up without a manual pull-to-refresh or app restart.
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const handleAccept = (request: PurchaseRequest) => {
     Alert.alert(
