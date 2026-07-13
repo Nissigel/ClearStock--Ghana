@@ -57,6 +57,11 @@ public class TransactionService {
                     "A transaction already exists for this purchase request");
         }
 
+        // Reserve the stock the moment the seller accepts, so the listing count
+        // drops immediately. It's restored if the order is later cancelled or
+        // released, and consumed for good on completion.
+        reserveStock(pr.getListing(), pr.getRequestedQuantity());
+
         pr.setStatus(PurchaseRequestStatus.ACCEPTED);
         purchaseRequestRepository.save(pr);
 
@@ -245,6 +250,7 @@ public class TransactionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Completed transactions cannot be modified");
         }
 
+        TransactionStatus previousStatus = transaction.getTransactionStatus();
         TransactionStatus newStatus = request.getTransactionStatus();
 
         if (newStatus == TransactionStatus.READY_FOR_COLLECTION || newStatus == TransactionStatus.DELIVERED) {
@@ -257,10 +263,10 @@ public class TransactionService {
             transaction.setOtpGeneratedAt(LocalDateTime.now());
         }
 
-        if (newStatus == TransactionStatus.CANCELLED) {
-            if (transaction.getTransactionStatus() == TransactionStatus.COMPLETED) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot cancel a completed transaction");
-            }
+        // Cancelling frees the reserved stock back onto the listing (once only).
+        if (newStatus == TransactionStatus.CANCELLED
+                && previousStatus != TransactionStatus.CANCELLED) {
+            restoreReservedStock(transaction);
         }
 
         transaction.setTransactionStatus(newStatus);
@@ -354,13 +360,9 @@ public class TransactionService {
                 transaction.getId()
         );
 
+        // Stock was already reserved (decremented) when the seller accepted the
+        // request, so completion just finalises the sale — no further decrement.
         Listing listing = transaction.getListing();
-        int remaining = listing.getQuantity() - transaction.getQuantity();
-        listing.setQuantity(Math.max(remaining, 0));
-        if (listing.getQuantity() == 0) {
-            listing.setListingStatus(ListingStatus.OUT_OF_STOCK);
-        }
-        listingRepository.save(listing);
 
         conversationRepository.findByListingAndBuyerAndSeller(
                 listing, transaction.getBuyer(), transaction.getSeller())
@@ -377,8 +379,8 @@ public class TransactionService {
     /**
      * Called when a buyer never confirms collection with the OTP in time. Rather
      * than completing the sale, cancel it and put the item back on the market —
-     * the stock was never decremented (that only happens on completion), so the
-     * listing just needs to be active again.
+     * the stock reserved at acceptance is restored so the listing is available
+     * again.
      */
     @Transactional
     public void releaseUnconfirmedTransaction(Transaction transaction) {
@@ -392,10 +394,7 @@ public class TransactionService {
         transactionRepository.save(transaction);
 
         Listing listing = transaction.getListing();
-        if (listing.getListingStatus() != ListingStatus.ACTIVE && listing.getQuantity() > 0) {
-            listing.setListingStatus(ListingStatus.ACTIVE);
-            listingRepository.save(listing);
-        }
+        restoreReservedStock(transaction);
 
         PurchaseRequest pr = transaction.getPurchaseRequest();
         pr.setStatus(PurchaseRequestStatus.EXPIRED);
@@ -417,6 +416,29 @@ public class TransactionService {
                 NotificationType.TRANSACTION,
                 transaction.getId()
         );
+    }
+
+    /** Decrement listing stock when an order is accepted; block if short. */
+    private void reserveStock(Listing listing, int quantity) {
+        if (listing.getQuantity() < quantity) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only " + listing.getQuantity() + " unit(s) left in stock");
+        }
+        listing.setQuantity(listing.getQuantity() - quantity);
+        if (listing.getQuantity() == 0) {
+            listing.setListingStatus(ListingStatus.OUT_OF_STOCK);
+        }
+        listingRepository.save(listing);
+    }
+
+    /** Return an order's reserved stock to the listing when it's cancelled. */
+    private void restoreReservedStock(Transaction transaction) {
+        Listing listing = transaction.getListing();
+        listing.setQuantity(listing.getQuantity() + transaction.getQuantity());
+        if (listing.getListingStatus() == ListingStatus.OUT_OF_STOCK && listing.getQuantity() > 0) {
+            listing.setListingStatus(ListingStatus.ACTIVE);
+        }
+        listingRepository.save(listing);
     }
 
     private Transaction findTransactionForParticipant(User user, Long transactionId) {
