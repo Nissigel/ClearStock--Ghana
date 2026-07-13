@@ -1,6 +1,8 @@
 package com.clearstock.backend.user;
 
 import com.clearstock.backend.common.ApiResponse;
+import com.clearstock.backend.user.dto.ChangePhoneRequest;
+import com.clearstock.backend.user.dto.ChangePinRequest;
 import com.clearstock.backend.user.dto.ToggleNotificationsRequest;
 import com.clearstock.backend.user.dto.UpdateEmailRequest;
 import com.clearstock.backend.user.dto.UpdateProfileRequest;
@@ -47,5 +49,23 @@ public class UserController {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(ApiResponse.success("Notification preference updated",
                 userService.toggleEmailNotifications(user, request)));
+    }
+
+    @PutMapping("/pin")
+    public ResponseEntity<ApiResponse<Void>> changePin(
+            Authentication authentication,
+            @RequestBody @Valid ChangePinRequest request) {
+        User user = (User) authentication.getPrincipal();
+        userService.changePin(user, request.getCurrentPin(), request.getNewPin());
+        return ResponseEntity.ok(ApiResponse.success("PIN changed", null));
+    }
+
+    @PutMapping("/phone")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> changePhone(
+            Authentication authentication,
+            @RequestBody @Valid ChangePhoneRequest request) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success("Phone number changed",
+                userService.changePhone(user, request.getNewPhone(), request.getOtp())));
     }
 }
