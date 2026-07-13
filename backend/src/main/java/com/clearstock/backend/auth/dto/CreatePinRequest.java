@@ -1,5 +1,6 @@
 package com.clearstock.backend.auth.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
@@ -13,4 +14,8 @@ public class CreatePinRequest {
     @NotBlank(message = "PIN is required")
     @Pattern(regexp = "\\d{4}", message = "PIN must be exactly 4 digits")
     private String pin;
+
+    // Optional email captured at sign-up, saved on the new account.
+    @Email(message = "Invalid email format")
+    private String email;
 }

@@ -18,7 +18,7 @@ public class AuthController {
     @PostMapping("/send-otp")
     public ResponseEntity<ApiResponse<SendOtpResponse>> sendOtp(
             @RequestBody @Valid SendOtpRequest request) {
-        SendOtpResponse data = authService.sendOtp(request.getPhone());
+        SendOtpResponse data = authService.sendOtp(request.getPhone(), request.getEmail());
         return ResponseEntity.ok(ApiResponse.success("OTP sent successfully", data));
     }
 
@@ -32,7 +32,8 @@ public class AuthController {
     @PostMapping("/create-pin")
     public ResponseEntity<ApiResponse<AuthResponse>> createPin(
             @RequestBody @Valid CreatePinRequest request) {
-        AuthResponse data = authService.createPin(request.getTempToken(), request.getPin());
+        AuthResponse data = authService.createPin(
+                request.getTempToken(), request.getPin(), request.getEmail());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Account created", data));
     }
 

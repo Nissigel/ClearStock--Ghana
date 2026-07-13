@@ -3,6 +3,7 @@ package com.clearstock.backend.auth;
 import com.clearstock.backend.auth.dto.*;
 import com.clearstock.backend.common.EmailService;
 import com.clearstock.backend.common.JwtUtil;
+import com.clearstock.backend.common.SmsService;
 import com.clearstock.backend.otp.OtpPurpose;
 import com.clearstock.backend.otp.OtpService;
 import com.clearstock.backend.user.User;
@@ -26,16 +27,27 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final SmsService smsService;
 
-    public SendOtpResponse sendOtp(String phone) {
+    public SendOtpResponse sendOtp(String phone, String email) {
         String otp = otpService.generateAndSaveOtp(phone, OtpPurpose.SIGNUP);
-        return userRepository.findByPhone(phone)
-                .filter(u -> Boolean.TRUE.equals(u.getPreferEmail()) && StringUtils.hasText(u.getEmail()))
-                .map(u -> {
-                    boolean sent = emailService.sendOtpEmail(u.getEmail(), otp);
-                    return new SendOtpResponse(sent ? null : otp, LocalDateTime.now().plusMinutes(5), sent);
-                })
-                .orElse(new SendOtpResponse(otp, LocalDateTime.now().plusMinutes(5), false));
+
+        // Try real delivery: SMS to the phone, plus email if one is known.
+        boolean sms = smsService.sendOtpSms(phone, otp);
+
+        String targetEmail = StringUtils.hasText(email)
+                ? email
+                : userRepository.findByPhone(phone)
+                        .filter(u -> Boolean.TRUE.equals(u.getPreferEmail()) && StringUtils.hasText(u.getEmail()))
+                        .map(User::getEmail)
+                        .orElse(null);
+        boolean emailed = StringUtils.hasText(targetEmail) && emailService.sendOtpEmail(targetEmail, otp);
+
+        // Only fall back to returning the code on-screen when neither channel
+        // actually delivered it.
+        boolean delivered = sms || emailed;
+        return new SendOtpResponse(
+                delivered ? null : otp, LocalDateTime.now().plusMinutes(5), emailed);
     }
 
     public VerifyOtpResponse verifyOtp(String phone, String otp) {
@@ -54,7 +66,7 @@ public class AuthService {
         return new VerifyOtpResponse(true, false, tempToken);
     }
 
-    public AuthResponse createPin(String tempToken, String pin) {
+    public AuthResponse createPin(String tempToken, String pin, String email) {
         Claims claims;
         try {
             claims = jwtUtil.parseToken(tempToken);
@@ -74,14 +86,20 @@ public class AuthService {
                     "Account already exists. Please login with your PIN");
         }
 
-        User user = User.builder()
+        User.UserBuilder builder = User.builder()
                 .phone(phone)
                 .phoneAlt(phone)
                 .pinHash(passwordEncoder.encode(pin))
                 .name(phone)
                 .region("Ghana")
-                .cityTown("Unknown")
-                .build();
+                .cityTown("Unknown");
+
+        // Save the email collected at sign-up and route future OTPs to it.
+        if (StringUtils.hasText(email)) {
+            builder.email(email.strip()).preferEmail(true);
+        }
+
+        User user = builder.build();
 
         user = userRepository.save(user);
         if (StringUtils.hasText(user.getEmail())) {
@@ -107,11 +125,15 @@ public class AuthService {
         User user = userRepository.findByPhone(phone)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
         String otp = otpService.generateAndSaveOtp(phone, OtpPurpose.PIN_RESET);
-        if (Boolean.TRUE.equals(user.getPreferEmail()) && StringUtils.hasText(user.getEmail())) {
-            boolean sent = emailService.sendOtpEmail(user.getEmail(), otp);
-            return new SendOtpResponse(sent ? null : otp, LocalDateTime.now().plusMinutes(5), sent);
-        }
-        return new SendOtpResponse(otp, LocalDateTime.now().plusMinutes(5), false);
+
+        boolean sms = smsService.sendOtpSms(phone, otp);
+        boolean emailed = Boolean.TRUE.equals(user.getPreferEmail())
+                && StringUtils.hasText(user.getEmail())
+                && emailService.sendOtpEmail(user.getEmail(), otp);
+
+        boolean delivered = sms || emailed;
+        return new SendOtpResponse(
+                delivered ? null : otp, LocalDateTime.now().plusMinutes(5), emailed);
     }
 
     public AuthResponse resetPin(String phone, String otp, String newPin) {
