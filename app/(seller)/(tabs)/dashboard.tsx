@@ -16,10 +16,12 @@ import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { useQuery } from '@tanstack/react-query';
 import { getMyListings } from '@/api/listing.api';
-import { getSellerPurchaseRequests } from '@/api/transaction.api';
 import { getRecoveryDashboard } from '@/api/seller.api';
 import { getSellerRatingSummary } from '@/api/review.api';
-import { useReviewPurchaseRequest } from '@/hooks/usePurchaseRequests';
+import {
+  useReviewPurchaseRequest,
+  useSellerPurchaseRequests,
+} from '@/hooks/usePurchaseRequests';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
@@ -91,10 +93,7 @@ export default function SellerDashboardScreen() {
     data: requests,
     refetch: refetchRequests,
     isRefetching: isRefetchingRequests,
-  } = useQuery({
-    queryKey: ['seller-requests'],
-    queryFn: getSellerPurchaseRequests,
-  });
+  } = useSellerPurchaseRequests();
 
   const { data: recovery, refetch: refetchRecovery } = useQuery({
     queryKey: ['recovery-dashboard'],

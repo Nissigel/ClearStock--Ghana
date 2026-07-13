@@ -74,12 +74,11 @@ export const useReviewPurchaseRequest = () => {
     mutationFn: ({ id, action }) =>
       action === 'ACCEPT' ? acceptPurchaseRequest(id) : declinePurchaseRequest(id),
     onSuccess: () => {
-      // Refresh every view that reflects requests/transactions — the seller
-      // dashboard, the requests screen, and the transaction lists all use
-      // different query keys.
+      // Refresh every view that reflects requests/transactions. The seller
+      // dashboard and requests screen now share the [PURCHASE_REQUESTS_KEY]
+      // cache, so invalidating that prefix covers both.
       [
         [PURCHASE_REQUESTS_KEY],
-        ['seller-requests'],
         ['seller-transactions'],
         ['buyer-transactions'],
         ['seller-listings'],
