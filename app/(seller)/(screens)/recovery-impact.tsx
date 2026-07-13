@@ -144,6 +144,13 @@ export default function RecoveryImpactScreen() {
               ))}
             </View>
 
+            {/* Estimate disclaimer */}
+            <Text style={[styles.estimateNote, { color: colors.mutedForeground }]}>
+              Value recovered, items rehomed and buyers reached are counted from
+              your completed sales. “Saved from waste” and “CO₂ avoided” are
+              estimates derived from those sales.
+            </Text>
+
             {/* Impact bullets */}
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
               Your impact so far
@@ -243,6 +250,11 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: FontSize.xs,
+  },
+  estimateNote: {
+    fontSize: FontSize.xs,
+    lineHeight: 16,
+    marginTop: Spacing.md,
   },
   sectionTitle: {
     fontSize: FontSize.md,

@@ -158,6 +158,9 @@ export default function SellerTransactionDetailScreen() {
   }
 
   const isPendingFulfillment = transaction.transactionStatus === 'PENDING_FULFILLMENT';
+  // The backend refuses to mark an order ready until payment has succeeded, so
+  // gate the button rather than let the seller tap into a guaranteed failure.
+  const isPaid = transaction.paymentStatus === 'PAYMENT_SUCCESSFUL';
   const isReadyOrDelivered =
     transaction.transactionStatus === 'READY_FOR_COLLECTION' ||
     transaction.transactionStatus === 'DELIVERED';
@@ -294,10 +297,17 @@ export default function SellerTransactionDetailScreen() {
 
         {isPendingFulfillment && (
           <View style={styles.actions}>
+            {!isPaid && (
+              <Text style={[styles.waitingHint, { color: colors.mutedForeground }]}>
+                Waiting for the buyer to complete payment. You can mark this order
+                ready once payment succeeds.
+              </Text>
+            )}
             <Button
               label="Mark as Ready"
               onPress={handleMarkReady}
               loading={isPending}
+              disabled={!isPaid}
             />
             <Button
               label="Cancel Transaction"
@@ -389,6 +399,11 @@ const styles = StyleSheet.create({
   },
   actions: { gap: Spacing.sm },
   cancelButton: { marginTop: Spacing.xs },
+  waitingHint: {
+    fontSize: FontSize.sm,
+    lineHeight: 18,
+    marginBottom: Spacing.xs,
+  },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
