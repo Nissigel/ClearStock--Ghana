@@ -99,6 +99,20 @@ export const markNotificationAsRead = async (
   await apiClient.put(`/notifications/${id}/read`);
 };
 
+export const markNotificationAsUnread = async (
+  id: string
+): Promise<void> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const notification = MOCK_NOTIFICATIONS.find((n) => n.id === id);
+    if (notification) {
+      notification.status = 'UNREAD';
+    }
+    return;
+  }
+  await apiClient.put(`/notifications/${id}/unread`);
+};
+
 export const markAllNotificationsAsRead = async (): Promise<void> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 400));

@@ -5,8 +5,10 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -15,10 +17,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getNotifications,
   markNotificationAsRead,
+  markNotificationAsUnread,
   markAllNotificationsAsRead,
 } from '@/api/notifications.api';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
-import type { Notification } from '@/types/notification.types';
+import type {
+  Notification,
+  NotificationListResponse,
+} from '@/types/notification.types';
 
 const NOTIFICATIONS_KEY = 'notifications';
 
@@ -28,6 +34,99 @@ const CATEGORY_ICONS: Record<string, string> = {
   LISTING: 'cube-outline',
   TRANSACTION: 'swap-horizontal-outline',
 };
+
+interface NotificationRowProps {
+  item: Notification;
+  colors: ReturnType<typeof useTheme>['colors'];
+  onToggle: (item: Notification) => void;
+}
+
+// One notification row with a left-swipe action that toggles read/unread.
+function NotificationRow({ item, colors, onToggle }: NotificationRowProps) {
+  const swipeRef = useRef<Swipeable>(null);
+  const isUnread = item.status === 'UNREAD';
+
+  const renderRightActions = () => (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={() => {
+        onToggle(item);
+        swipeRef.current?.close();
+      }}
+      style={[
+        styles.swipeAction,
+        { backgroundColor: isUnread ? colors.primary : colors.muted },
+      ]}
+    >
+      <Ionicons
+        name={isUnread ? 'checkmark-done' : 'mail-unread-outline'}
+        size={20}
+        color={isUnread ? colors.primaryForeground : colors.foreground}
+      />
+      <Text
+        style={[
+          styles.swipeActionText,
+          { color: isUnread ? colors.primaryForeground : colors.foreground },
+        ]}
+      >
+        {isUnread ? 'Read' : 'Unread'}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <Swipeable
+      ref={swipeRef}
+      renderRightActions={renderRightActions}
+      overshootRight={false}
+      rightThreshold={40}
+    >
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => {
+          if (isUnread) onToggle(item);
+        }}
+        style={[
+          styles.notifItem,
+          {
+            backgroundColor: isUnread ? colors.secondary : colors.background,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
+          <Ionicons
+            name={(CATEGORY_ICONS[item.category] ?? 'notifications-outline') as any}
+            size={20}
+            color={colors.primary}
+          />
+        </View>
+        <View style={styles.notifContent}>
+          <Text style={[styles.notifTitle, { color: colors.foreground }]}>
+            {item.title}
+          </Text>
+          <Text
+            style={[styles.notifBody, { color: colors.mutedForeground }]}
+            numberOfLines={2}
+          >
+            {item.body}
+          </Text>
+          <Text style={[styles.notifTime, { color: colors.mutedForeground }]}>
+            {new Date(item.createdAt).toLocaleDateString('en-GH', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+        </View>
+        {isUnread && (
+          <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
+        )}
+      </TouchableOpacity>
+    </Swipeable>
+  );
+}
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
@@ -39,71 +138,67 @@ export default function NotificationsScreen() {
     queryFn: getNotifications,
   });
 
-const { mutate: markRead } = useMutation({
+  // Optimistically patch the cached list so the UI reflects the change instantly
+  // (and doesn't depend on a refetch round-trip that may lag), then reconcile.
+  const patch = (updater: (list: Notification[]) => Notification[]) =>
+    queryClient.setQueryData<NotificationListResponse>([NOTIFICATIONS_KEY], (old) =>
+      old ? { ...old, content: updater(old.content) } : old
+    );
+
+  const snapshot = async () => {
+    await queryClient.cancelQueries({ queryKey: [NOTIFICATIONS_KEY] });
+    return queryClient.getQueryData<NotificationListResponse>([NOTIFICATIONS_KEY]);
+  };
+  const rollback = (_e: unknown, _v: unknown, ctx: any) => {
+    if (ctx?.prev) queryClient.setQueryData([NOTIFICATIONS_KEY], ctx.prev);
+  };
+  const reconcile = () =>
+    queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
+
+  const { mutate: markRead } = useMutation({
     mutationFn: (id: string) => markNotificationAsRead(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] }),
+    onMutate: async (id) => {
+      const prev = await snapshot();
+      patch((list) =>
+        list.map((n) => (n.id === id ? { ...n, status: 'READ' as const } : n))
+      );
+      return { prev };
+    },
+    onError: rollback,
+    onSettled: reconcile,
   });
 
-const { mutate: markAllRead } = useMutation({
-    mutationFn: () => markAllNotificationsAsRead(),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] }),
+  const { mutate: markUnread } = useMutation({
+    mutationFn: (id: string) => markNotificationAsUnread(id),
+    onMutate: async (id) => {
+      const prev = await snapshot();
+      patch((list) =>
+        list.map((n) => (n.id === id ? { ...n, status: 'UNREAD' as const } : n))
+      );
+      return { prev };
+    },
+    onError: rollback,
+    onSettled: reconcile,
   });
+
+  const { mutate: markAllRead } = useMutation({
+    mutationFn: () => markAllNotificationsAsRead(),
+    onMutate: async () => {
+      const prev = await snapshot();
+      patch((list) => list.map((n) => ({ ...n, status: 'READ' as const })));
+      return { prev };
+    },
+    onError: rollback,
+    onSettled: reconcile,
+  });
+
+  const toggle = (item: Notification) => {
+    if (item.status === 'UNREAD') markRead(item.id);
+    else markUnread(item.id);
+  };
 
   const notifications: Notification[] = data?.content ?? [];
-const unreadCount = notifications.filter((n: Notification) => n.status === 'UNREAD').length;
-
-  const renderItem = ({ item }: { item: Notification }) => (
-    <TouchableOpacity
-      onPress={() => markRead(item.id)}
-      style={[
-        styles.notifItem,
-        {
-          backgroundColor:
-            item.status === 'UNREAD' ? colors.secondary : colors.background,
-          borderBottomColor: colors.border,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.iconContainer,
-          { backgroundColor: colors.card },
-        ]}
-      >
-        <Ionicons
-          name={(CATEGORY_ICONS[item.category] ?? 'notifications-outline') as any}
-          size={20}
-          color={colors.primary}
-        />
-      </View>
-      <View style={styles.notifContent}>
-        <Text style={[styles.notifTitle, { color: colors.foreground }]}>
-          {item.title}
-        </Text>
-        <Text
-          style={[styles.notifBody, { color: colors.mutedForeground }]}
-          numberOfLines={2}
-        >
-          {item.body}
-        </Text>
-        <Text style={[styles.notifTime, { color: colors.mutedForeground }]}>
-          {new Date(item.createdAt).toLocaleDateString('en-GH', {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </Text>
-      </View>
-      {item.status === 'UNREAD' && (
-        <View
-          style={[styles.unreadDot, { backgroundColor: colors.primary }]}
-        />
-      )}
-    </TouchableOpacity>
-  );
+  const unreadCount = notifications.filter((n) => n.status === 'UNREAD').length;
 
   return (
     <SafeAreaView
@@ -115,8 +210,13 @@ const unreadCount = notifications.filter((n: Notification) => n.status === 'UNRE
         onBackPress={() => router.back()}
         rightElement={
           unreadCount > 0 ? (
-            <TouchableOpacity onPress={() => markAllRead()}>
-              <Text style={[styles.markAll, { color: colors.primary }]}>
+            <TouchableOpacity
+              onPress={() => markAllRead(undefined)}
+              activeOpacity={0.8}
+              style={[styles.markAllPill, { backgroundColor: colors.secondary }]}
+            >
+              <Ionicons name="checkmark-done" size={14} color={colors.primary} />
+              <Text style={[styles.markAllText, { color: colors.primary }]}>
                 Mark all read
               </Text>
             </TouchableOpacity>
@@ -126,10 +226,19 @@ const unreadCount = notifications.filter((n: Notification) => n.status === 'UNRE
       <FlatList
         data={notifications}
         keyExtractor={(item) => item.id}
-        renderItem={renderItem}
+        renderItem={({ item }) => (
+          <NotificationRow item={item} colors={colors} onToggle={toggle} />
+        )}
         onRefresh={refetch}
         refreshing={isRefetching}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          notifications.length > 0 ? (
+            <Text style={[styles.hint, { color: colors.mutedForeground }]}>
+              Swipe a notification left to mark it read or unread.
+            </Text>
+          ) : null
+        }
         ListEmptyComponent={
           !isLoading ? (
             <EmptyState
@@ -146,6 +255,11 @@ const unreadCount = notifications.filter((n: Notification) => n.status === 'UNRE
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  hint: {
+    fontSize: FontSize.xs,
+    textAlign: 'center',
+    paddingVertical: Spacing.sm,
+  },
   notifItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -178,8 +292,26 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginTop: 4,
   },
-  markAll: {
-    fontSize: FontSize.sm,
+  swipeAction: {
+    width: 92,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  swipeActionText: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+  },
+  markAllPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: Radius.full,
+  },
+  markAllText: {
+    fontSize: FontSize.xs,
     fontWeight: '600',
   },
 });
