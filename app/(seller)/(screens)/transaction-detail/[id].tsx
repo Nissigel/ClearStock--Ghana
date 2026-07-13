@@ -10,6 +10,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { AxiosError } from 'axios';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -47,8 +48,13 @@ export default function SellerTransactionDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['transaction', id] });
       queryClient.invalidateQueries({ queryKey: ['seller-transactions'] });
     },
-    onError: () => {
-      Alert.alert('Error', 'Failed to update status. Please try again.');
+    onError: (err) => {
+      // Surface the backend reason (e.g. "Payment must succeed before
+      // fulfillment can proceed") instead of a generic failure message.
+      const message =
+        (err as AxiosError<{ message?: string }>).response?.data?.message ??
+        'Failed to update status. Please try again.';
+      Alert.alert('Could not update order', message);
     },
   });
 
@@ -212,6 +218,10 @@ export default function SellerTransactionDetailScreen() {
             {
               label: 'Fulfillment',
               value: transaction.fulfillmentMethod || 'Not set',
+            },
+            {
+              label: 'Payment',
+              value: (transaction.paymentStatus ?? 'PENDING_PAYMENT').replace(/_/g, ' '),
             },
           ].map((item, index, arr) => (
             <View
