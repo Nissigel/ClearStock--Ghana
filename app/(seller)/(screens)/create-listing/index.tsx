@@ -7,10 +7,11 @@ import {
   Switch,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AxiosError } from 'axios';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,7 +20,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useCreateListingStore } from '@/store/createListingStore';
-import { createListing } from '@/api/listing.api';
+import { createListing, updateListing, getListingById } from '@/api/listing.api';
 import { uploadImages } from '@/api/upload.api';
 import { useQueryClient } from '@tanstack/react-query';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
@@ -39,11 +40,56 @@ export default function CreateListingScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const isEditing = !!id;
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [hydrating, setHydrating] = useState(isEditing);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const store = useCreateListingStore();
+
+  // In edit mode, load the existing listing and prefill the wizard's store so
+  // the seller can change any field and re-submit as an update.
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    (async () => {
+      try {
+        const listing = await getListingById(id);
+        if (!active) return;
+        store.reset();
+        store.setField('productName', listing.productName);
+        store.setField('category', listing.category);
+        store.setField('description', listing.description);
+        store.setField('images', listing.images ?? []);
+        store.setField('quantity', String(listing.quantity));
+        store.setField('unitOfMeasurement', listing.unitOfMeasurement ?? '');
+        store.setField('originalPrice', String(listing.originalPrice));
+        store.setField('minimumPrice', String(listing.minimumAcceptablePrice));
+        store.setField('isExpirySensitive', listing.expirySensitive);
+        store.setField('expiryDate', listing.expiryDate ?? '');
+        store.setField('clearanceEndDate', listing.clearanceEndDate);
+        store.setField(
+          'discountStepPercent',
+          listing.discountStepPercent != null ? String(listing.discountStepPercent) : ''
+        );
+        store.setField(
+          'discountIntervalDays',
+          listing.discountIntervalDays != null ? String(listing.discountIntervalDays) : ''
+        );
+      } catch {
+        Alert.alert('Error', 'Could not load the listing to edit.');
+        router.back();
+      } finally {
+        if (active) setHydrating(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
@@ -96,6 +142,10 @@ export default function CreateListingScreen() {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+    } else if (isEditing) {
+      // Discard the prefilled edit so it doesn't leak into a later new listing.
+      store.reset();
+      router.back();
     } else {
       router.replace('/(seller)/(tabs)/dashboard');
     }
@@ -122,7 +172,7 @@ export default function CreateListingScreen() {
         return;
       }
 
-      await createListing({
+      const payload = {
         productName: store.productName,
         category: store.category!,
         description: store.description,
@@ -136,19 +186,33 @@ export default function CreateListingScreen() {
         discountStepPercent: store.discountStepPercent ? Number(store.discountStepPercent) : null,
         discountIntervalDays: store.discountIntervalDays ? Number(store.discountIntervalDays) : null,
         images: hostedImages,
-      });
+      };
+
+      if (isEditing && id) {
+        await updateListing(id, payload);
+      } else {
+        await createListing(payload);
+      }
       queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-listings'] });
+      if (isEditing && id) {
+        queryClient.invalidateQueries({ queryKey: ['listing', id] });
+      }
       store.reset();
-      Alert.alert('Success', 'Listing created successfully!', [
-        { text: 'OK', onPress: () => router.replace('/(seller)/(tabs)/listings') },
-      ]);
+      Alert.alert(
+        'Success',
+        isEditing ? 'Listing updated successfully!' : 'Listing created successfully!',
+        [{ text: 'OK', onPress: () => router.replace('/(seller)/(tabs)/listings') }]
+      );
     } catch (err) {
       // Surface the backend's validation message (e.g. "Unit of measurement is
       // required") instead of a generic failure.
       const axiosErr = err as AxiosError<{ message?: string }>;
       const message =
         axiosErr.response?.data?.message ??
-        'Failed to create listing. Please try again.';
+        (isEditing
+          ? 'Failed to update listing. Please try again.'
+          : 'Failed to create listing. Please try again.');
       Alert.alert('Error', message);
     } finally {
       setLoading(false);
@@ -170,6 +234,19 @@ export default function CreateListingScreen() {
     }
   };
 
+  if (hydrating) {
+    return (
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: colors.background }]}
+      >
+        <ScreenHeader showBack onBackPress={() => router.back()} title="Edit Listing" />
+        <View style={styles.hydratingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
@@ -177,7 +254,11 @@ export default function CreateListingScreen() {
       <ScreenHeader
         showBack
         onBackPress={handleBack}
-        title={`Step ${currentStep + 1} of ${STEPS.length}`}
+        title={
+          isEditing
+            ? `Edit · Step ${currentStep + 1} of ${STEPS.length}`
+            : `Step ${currentStep + 1} of ${STEPS.length}`
+        }
       />
 
       {/* Progress Bar */}
@@ -535,7 +616,13 @@ export default function CreateListingScreen() {
         ]}
       >
         <Button
-          label={currentStep === STEPS.length - 1 ? 'Publish Listing' : 'Next'}
+          label={
+            currentStep === STEPS.length - 1
+              ? isEditing
+                ? 'Save Changes'
+                : 'Publish Listing'
+              : 'Next'
+          }
           onPress={handleNext}
           loading={loading}
           style={styles.nextButton}
@@ -547,6 +634,11 @@ export default function CreateListingScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  hydratingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   progressContainer: {
     height: 4,
     width: '100%',

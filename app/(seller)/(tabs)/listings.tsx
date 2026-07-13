@@ -230,17 +230,31 @@ export default function SellerListingsScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity
-            style={styles.moreButton}
-            onPress={() => confirmDelete(item)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name="trash-outline"
-              size={20}
-              color={colors.destructive}
-            />
-          </TouchableOpacity>
+          <View style={styles.actionColumn}>
+            <TouchableOpacity
+              style={styles.moreButton}
+              onPress={() =>
+                router.push({
+                  pathname: '/(seller)/(screens)/create-listing',
+                  params: { id: String(item.id) },
+                })
+              }
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="create-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.moreButton}
+              onPress={() => confirmDelete(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="trash-outline"
+                size={20}
+                color={colors.destructive}
+              />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </TouchableOpacity>
