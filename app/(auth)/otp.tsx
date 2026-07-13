@@ -21,11 +21,16 @@ import type { OtpPurpose } from '@/types/auth.types';
 export default function OtpVerifyScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { phoneNumber, purpose } = useLocalSearchParams<{
+  const { phoneNumber, purpose, devOtp } = useLocalSearchParams<{
     phoneNumber: string;
     purpose: OtpPurpose;
+    devOtp?: string;
   }>();
 
+  // No SMS gateway is configured, so the backend hands the code back in the
+  // send-otp response. Surface it here (and prefill it) so the flow works with
+  // any real number until an SMS provider is wired up.
+  const [shownCode, setShownCode] = useState(devOtp ?? '');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,6 +48,13 @@ export default function OtpVerifyScreen() {
     }, 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
+
+  // Prefill the code the backend returned so the user can just tap Verify.
+  useEffect(() => {
+    if (shownCode && shownCode.length === 6) {
+      setOtp(shownCode);
+    }
+  }, [shownCode]);
 
   const handleVerify = async (code: string) => {
     if (code.length < 6) {
@@ -82,7 +94,7 @@ export default function OtpVerifyScreen() {
   const handleResend = async () => {
     try {
       setResendLoading(true);
-      await sendOtp({
+      const { otp: newCode } = await sendOtp({
         phone: phoneNumber,
         purpose: purpose ?? 'REGISTRATION',
       });
@@ -90,6 +102,7 @@ export default function OtpVerifyScreen() {
       setCanResend(false);
       setOtp('');
       setError('');
+      setShownCode(newCode ?? '');
     } catch (err) {
       setError('Failed to resend OTP. Please try again.');
     } finally {
@@ -143,6 +156,25 @@ export default function OtpVerifyScreen() {
           >
             The code expires in 2 minutes
           </Text>
+
+          {!!shownCode && (
+            <View
+              style={[
+                styles.demoBanner,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.demoText, { color: colors.mutedForeground }]}>
+                SMS delivery isn't set up yet, so your code is shown here:
+              </Text>
+              <Text style={[styles.demoCode, { color: colors.gold }]}>
+                {shownCode}
+              </Text>
+            </View>
+          )}
 
           <OtpInput
             value={otp}
@@ -235,6 +267,23 @@ const styles = StyleSheet.create({
   subheading: {
     fontSize: FontSize.sm,
     marginBottom: Spacing.xl,
+  },
+  demoBanner: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    alignItems: 'center',
+  },
+  demoText: {
+    fontSize: FontSize.xs,
+    textAlign: 'center',
+    marginBottom: Spacing.xs,
+  },
+  demoCode: {
+    fontSize: FontSize.xl,
+    fontWeight: 'bold',
+    letterSpacing: 4,
   },
   otpInput: {
     marginBottom: Spacing.xl,

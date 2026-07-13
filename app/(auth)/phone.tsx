@@ -40,7 +40,7 @@ export default function PhoneEntryScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
-      await sendOtp({
+      const { otp } = await sendOtp({
         phone: phoneNumber,
         purpose: 'REGISTRATION',
       });
@@ -49,6 +49,8 @@ export default function PhoneEntryScreen() {
         params: {
           phoneNumber,
           purpose: 'REGISTRATION',
+          // No SMS gateway — the backend returns the code so we can prefill it.
+          devOtp: otp ?? '',
         },
       });
     } catch (err) {

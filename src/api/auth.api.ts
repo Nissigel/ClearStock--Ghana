@@ -35,12 +35,19 @@ const buildAuthResponse = async (
   return { token: raw.token, user };
 };
 
-export const sendOtp = async (data: SendOtpRequest): Promise<void> => {
+// The backend has no SMS gateway, so for a new sign-up it returns the OTP in
+// the response body (otp is null only when it was emailed to an existing user
+// who opted into email). Surface it so registration works with real numbers.
+export const sendOtp = async (
+  data: SendOtpRequest
+): Promise<{ otp: string | null; emailSent: boolean }> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 800));
-    return;
+    return { otp: MOCK_OTP, emailSent: false };
   }
-  await apiClient.post('/auth/send-otp', data);
+  const response = await apiClient.post('/auth/send-otp', data);
+  const d = response.data.data as { otp: string | null; emailSent: boolean };
+  return { otp: d?.otp ?? null, emailSent: !!d?.emailSent };
 };
 
 export const verifyOtp = async (

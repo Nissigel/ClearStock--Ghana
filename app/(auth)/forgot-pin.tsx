@@ -39,7 +39,7 @@ export default function ForgotPinScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
-      await sendOtp({
+      const { otp } = await sendOtp({
         phone: phoneNumber,
         purpose: 'PIN_RESET',
       });
@@ -48,6 +48,8 @@ export default function ForgotPinScreen() {
         params: {
           phoneNumber,
           purpose: 'PIN_RESET',
+          // Null when it was emailed to the account instead of returned here.
+          devOtp: otp ?? '',
         },
       });
     } catch (err) {
