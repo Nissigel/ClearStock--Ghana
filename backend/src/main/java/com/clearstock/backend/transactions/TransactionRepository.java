@@ -21,6 +21,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByTransactionStatusInAndOtpGeneratedAtBefore(
             List<TransactionStatus> statuses, LocalDateTime cutoff);
 
+    List<Transaction> findByTransactionStatusAndPaymentStatusInAndCreatedAtBefore(
+            TransactionStatus transactionStatus, List<PaymentStatus> paymentStatuses,
+            LocalDateTime cutoff);
+
     long countBySellerIdAndTransactionStatus(Long sellerId, TransactionStatus transactionStatus);
 
     List<Transaction> findBySellerIdAndTransactionStatus(Long sellerId, TransactionStatus transactionStatus);

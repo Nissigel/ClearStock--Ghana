@@ -418,6 +418,42 @@ public class TransactionService {
         );
     }
 
+    /**
+     * Called when an accepted order is never paid for within the allowed window.
+     * Cancel it and return the reserved stock to the listing so the item doesn't
+     * stay locked behind a buyer who walked away.
+     */
+    @Transactional
+    public void cancelUnpaidOrder(Transaction transaction) {
+        transaction.setTransactionStatus(TransactionStatus.CANCELLED);
+        transactionRepository.save(transaction);
+
+        Listing listing = transaction.getListing();
+        restoreReservedStock(transaction);
+
+        PurchaseRequest pr = transaction.getPurchaseRequest();
+        pr.setStatus(PurchaseRequestStatus.EXPIRED);
+        purchaseRequestRepository.save(pr);
+
+        notificationService.send(
+                transaction.getSeller(),
+                "Order Cancelled",
+                "An order for " + listing.getProductName()
+                        + " was cancelled because the buyer didn't pay in time. "
+                        + "The item is back on sale.",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
+        notificationService.send(
+                transaction.getBuyer(),
+                "Order Cancelled",
+                "Your order for " + listing.getProductName()
+                        + " was cancelled because payment wasn't completed in time.",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
+    }
+
     /** Decrement listing stock when an order is accepted; block if short. */
     private void reserveStock(Listing listing, int quantity) {
         if (listing.getQuantity() < quantity) {
