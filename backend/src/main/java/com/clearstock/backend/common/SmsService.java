@@ -12,7 +12,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,12 +32,6 @@ public class SmsService {
 
     @Value("${arkesel.sender.id:ClearStock}")
     private String senderId;
-
-    // When true, Arkesel validates the request (key, sender, format) and returns
-    // success WITHOUT sending a real text or charging a credit — used to verify
-    // the integration before spending real SMS units.
-    @Value("${arkesel.sandbox:false}")
-    private boolean sandbox;
 
     private final RestTemplate restTemplate;
 
@@ -64,22 +57,20 @@ public class SmsService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("api-key", apiKey);
 
-            Map<String, Object> body = new HashMap<>();
-            body.put("sender", senderId);
-            body.put("message", message);
-            body.put("recipients", List.of(recipient));
-            if (sandbox) {
-                body.put("sandbox", true);
-            }
-
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(
+                    Map.of(
+                            "sender", senderId,
+                            "message", message,
+                            "recipients", List.of(recipient)
+                    ),
+                    headers);
 
             ResponseEntity<Map> response = restTemplate.postForEntity(SEND_URL, request, Map.class);
             boolean accepted = response.getStatusCode().is2xxSuccessful()
                     && response.getBody() != null
                     && "success".equalsIgnoreCase(String.valueOf(response.getBody().get("status")));
             if (accepted) {
-                log.info("Arkesel accepted OTP SMS for {} (sandbox={})", recipient, sandbox);
+                log.info("Arkesel accepted OTP SMS for {}", recipient);
             } else {
                 log.warn("SMS gateway did not accept OTP for {}: {}", recipient, response.getBody());
             }
