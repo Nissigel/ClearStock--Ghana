@@ -326,8 +326,8 @@ export default function SellerTransactionDetailScreen() {
               color={colors.primary}
             />
             <Text style={[styles.infoText, { color: colors.primary }]}>
-              The transaction will auto-complete after 3 days if the buyer
-              does not confirm with OTP
+              If the buyer doesn’t confirm collection with the OTP within 3
+              days, the order is cancelled and the item goes back on sale.
             </Text>
           </View>
         )}
