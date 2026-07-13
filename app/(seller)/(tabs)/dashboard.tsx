@@ -116,7 +116,18 @@ export default function SellerDashboardScreen() {
         {
           text: 'Accept',
           onPress: () =>
-            reviewRequest({ id: String(request.id), action: 'ACCEPT' }),
+            reviewRequest(
+              { id: String(request.id), action: 'ACCEPT' },
+              {
+                onSuccess: () =>
+                  Alert.alert(
+                    'Order Accepted',
+                    'The order was accepted and is now awaiting the buyer’s payment.'
+                  ),
+                onError: () =>
+                  Alert.alert('Error', 'Could not accept the request. Please try again.'),
+              }
+            ),
         },
       ]
     );
@@ -132,7 +143,13 @@ export default function SellerDashboardScreen() {
           text: 'Decline',
           style: 'destructive',
           onPress: () =>
-            reviewRequest({ id: String(request.id), action: 'DECLINE' }),
+            reviewRequest(
+              { id: String(request.id), action: 'DECLINE' },
+              {
+                onError: () =>
+                  Alert.alert('Error', 'Could not decline the request. Please try again.'),
+              }
+            ),
         },
       ]
     );

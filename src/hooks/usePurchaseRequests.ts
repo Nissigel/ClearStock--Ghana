@@ -74,9 +74,18 @@ export const useReviewPurchaseRequest = () => {
     mutationFn: ({ id, action }) =>
       action === 'ACCEPT' ? acceptPurchaseRequest(id) : declinePurchaseRequest(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [PURCHASE_REQUESTS_KEY],
-      });
+      // Refresh every view that reflects requests/transactions — the seller
+      // dashboard, the requests screen, and the transaction lists all use
+      // different query keys.
+      [
+        [PURCHASE_REQUESTS_KEY],
+        ['seller-requests'],
+        ['seller-transactions'],
+        ['buyer-transactions'],
+        ['seller-listings'],
+      ].forEach((queryKey) =>
+        queryClient.invalidateQueries({ queryKey })
+      );
     },
   });
 };
