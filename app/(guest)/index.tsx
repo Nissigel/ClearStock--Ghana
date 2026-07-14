@@ -6,14 +6,21 @@ import {
   FlatList,
   Dimensions,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/useTheme';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { ClearStockLogo } from '@/components/ui/ClearStockLogo';
-import { useListings, useSaveListing, useUrgentListings } from '@/hooks/useListings';
+import {
+  useListings,
+  useSaveListing,
+  useUrgentListings,
+  SAVED_LISTINGS_KEY,
+} from '@/hooks/useListings';
+import { getSavedListings } from '@/api/listing.api';
 import { useListingFilterStore } from '@/store/listingFilterStore';
 import { useAuthStore } from '@/store/authStore';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
@@ -54,6 +61,18 @@ export default function GuestHomeScreen() {
   const { data: urgentListings = [] } = useUrgentListings();
   const { mutate: toggleSave } = useSaveListing();
 
+  // Which listings this user has saved — powers the filled heart. Only fetched
+  // when logged in (the endpoint requires auth).
+  const { data: savedList = [] } = useQuery({
+    queryKey: [SAVED_LISTINGS_KEY],
+    queryFn: getSavedListings,
+    enabled: isAuthenticated,
+  });
+  const savedIds = useMemo(
+    () => new Set(savedList.map((l) => String(l.id))),
+    [savedList]
+  );
+
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [authPromptMessage, setAuthPromptMessage] = useState('');
   const [showFilter, setShowFilter] = useState(false);
@@ -78,7 +97,10 @@ export default function GuestHomeScreen() {
       setShowAuthPrompt(true);
       return;
     }
-    toggleSave({ listingId: String(listing.id), isSaved: false });
+    toggleSave({
+      listingId: String(listing.id),
+      isSaved: savedIds.has(String(listing.id)),
+    });
   };
 
   const handleLoginPress = () => {
@@ -186,9 +208,13 @@ export default function GuestHomeScreen() {
               style={[styles.saveButtonBg, { backgroundColor: colors.card }]}
             >
               <Ionicons
-                name="heart-outline"
+                name={savedIds.has(String(item.id)) ? 'heart' : 'heart-outline'}
                 size={16}
-                color={colors.mutedForeground}
+                color={
+                  savedIds.has(String(item.id))
+                    ? colors.destructive
+                    : colors.mutedForeground
+                }
               />
             </View>
           </TouchableOpacity>
