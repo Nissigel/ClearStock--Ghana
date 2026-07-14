@@ -25,6 +25,7 @@ interface ListingCardProps {
   listing: ListingSummary;
   onPress: () => void;
   onSave?: () => void;
+  isSaved?: boolean;
   style?: ViewStyle;
 }
 
@@ -32,6 +33,7 @@ export function ListingCard({
   listing,
   onPress,
   onSave,
+  isSaved = false,
   style,
 }: ListingCardProps) {
   const { colors } = useTheme();
@@ -127,9 +129,9 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
             ]}
           >
             <Ionicons
-              name="heart-outline"
+              name={isSaved ? 'heart' : 'heart-outline'}
               size={16}
-              color={colors.mutedForeground}
+              color={isSaved ? colors.destructive : colors.mutedForeground}
             />
           </View>
         </TouchableOpacity>

@@ -35,6 +35,7 @@ export default function SavedListingsScreen() {
   };
 
   const listings = data ?? [];
+  const savedIds = new Set(listings.map((l) => String(l.id)));
 
   return (
     <SafeAreaView
@@ -50,6 +51,7 @@ export default function SavedListingsScreen() {
         isRefreshing={isRefetching}
         onListingPress={handleListingPress}
         onSavePress={(listing) => removeSaved(String(listing.id))}
+        savedIds={savedIds}
         emptyTitle="No saved listings"
         emptySubtitle="Listings you save will appear here"
         emptyIcon="heart-outline"

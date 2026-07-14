@@ -10,6 +10,7 @@ import type { ListingFilters } from '@/types/listing.types';
 
 export const LISTINGS_KEY = 'listings';
 export const URGENT_LISTINGS_KEY = 'urgent-listings';
+export const SAVED_LISTINGS_KEY = 'savedListings';
 
 export const useListings = (filters?: ListingFilters) => {
   const storeFilters = useListingFilterStore((state) => state.filters);
@@ -36,6 +37,7 @@ export const useSaveListing = () => {
       isSaved ? unsaveListing(listingId) : saveListing(listingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [LISTINGS_KEY] });
+      queryClient.invalidateQueries({ queryKey: [SAVED_LISTINGS_KEY] });
     },
   });
 };

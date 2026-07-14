@@ -171,7 +171,10 @@ export const saveListing = async (listingId: string): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve, 400));
     return;
   }
-  await apiClient.post('/saved-listings', { listingId });
+  // Backend reads listingId as a query param (@RequestParam), not a JSON body.
+  await apiClient.post('/saved-listings', null, {
+    params: { listingId: Number(listingId) },
+  });
 };
 
 export const unsaveListing = async (listingId: string): Promise<void> => {

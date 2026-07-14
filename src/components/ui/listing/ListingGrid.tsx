@@ -19,6 +19,7 @@ interface ListingGridProps {
   onEndReached?: () => void;
   onListingPress: (listing: ListingSummary) => void;
   onSavePress?: (listing: ListingSummary) => void;
+  savedIds?: Set<string>;
   emptyTitle?: string;
   emptySubtitle?: string;
   emptyIcon?: string;
@@ -35,6 +36,7 @@ export function ListingGrid({
   onEndReached,
   onListingPress,
   onSavePress,
+  savedIds,
   emptyTitle = 'No listings found',
   emptySubtitle = 'Try adjusting your search or filters',
   containerStyle,
@@ -85,6 +87,7 @@ export function ListingGrid({
           listing={item}
           onPress={() => onListingPress(item)}
           onSave={() => onSavePress?.(item)}
+          isSaved={savedIds?.has(String(item.id))}
         />
       )}
     />
