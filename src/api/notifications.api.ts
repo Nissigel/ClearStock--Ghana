@@ -19,7 +19,10 @@ interface RawNotification {
   title: string;
   message: string;
   type: string;
-  isRead: boolean;
+  // Jackson serialises the boolean getter isRead() as "read" (it strips the "is"
+  // prefix), so accept either key rather than always reading undefined.
+  read?: boolean;
+  isRead?: boolean;
   relatedId: number | null;
   createdAt: string;
 }
@@ -46,7 +49,7 @@ const mapNotification = (raw: RawNotification): Notification => ({
   category: CATEGORY_BY_TYPE[raw.type] ?? 'TRANSACTION',
   title: raw.title,
   body: raw.message,
-  status: raw.isRead ? 'READ' : 'UNREAD',
+  status: (raw.read ?? raw.isRead) ? 'READ' : 'UNREAD',
   referenceType: REFERENCE_BY_TYPE[raw.type] ?? null,
   referenceId: raw.relatedId != null ? String(raw.relatedId) : null,
   createdAt: raw.createdAt,
