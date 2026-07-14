@@ -26,7 +26,11 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { Text } from 'react-native';
+import { applyGlobalFont } from '@/utils/globalFont';
+
+// Force the bundled Inter font on every Text/TextInput at import time, before
+// anything renders — otherwise text falls back to each device's system font.
+applyGlobalFont();
 
 const queryClient = new QueryClient({
   // Centralised error handling: react-query already captures query errors into
@@ -87,9 +91,6 @@ function AppContent() {
       </View>
     );
   }
-  // Apply Inter as default font globally
-  (Text as any).defaultProps = (Text as any).defaultProps ?? {};
-  (Text as any).defaultProps.style = { fontFamily: 'Inter_400Regular' };
 
   return (
     <>
