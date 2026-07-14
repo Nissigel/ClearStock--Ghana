@@ -208,20 +208,6 @@ export default function NotificationsScreen() {
         showBack
         title="Notifications"
         onBackPress={() => router.back()}
-        rightElement={
-          unreadCount > 0 ? (
-            <TouchableOpacity
-              onPress={() => markAllRead(undefined)}
-              activeOpacity={0.8}
-              style={[styles.markAllPill, { backgroundColor: colors.secondary }]}
-            >
-              <Ionicons name="checkmark-done" size={14} color={colors.primary} />
-              <Text style={[styles.markAllText, { color: colors.primary }]}>
-                Mark all read
-              </Text>
-            </TouchableOpacity>
-          ) : undefined
-        }
       />
       <FlatList
         data={notifications}
@@ -234,9 +220,27 @@ export default function NotificationsScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           notifications.length > 0 ? (
-            <Text style={[styles.hint, { color: colors.mutedForeground }]}>
-              Swipe a notification left to mark it read or unread.
-            </Text>
+            <View style={styles.listHeader}>
+              <Text style={[styles.hint, { color: colors.mutedForeground }]}>
+                Swipe left to mark read or unread
+              </Text>
+              {unreadCount > 0 && (
+                <TouchableOpacity
+                  onPress={() => markAllRead(undefined)}
+                  activeOpacity={0.8}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={[
+                    styles.markAllPill,
+                    { backgroundColor: colors.secondary },
+                  ]}
+                >
+                  <Ionicons name="checkmark-done" size={14} color={colors.primary} />
+                  <Text style={[styles.markAllText, { color: colors.primary }]}>
+                    Mark all read
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           ) : null
         }
         ListEmptyComponent={
@@ -255,10 +259,17 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  hint: {
-    fontSize: FontSize.xs,
-    textAlign: 'center',
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  hint: {
+    flex: 1,
+    fontSize: FontSize.xs,
   },
   notifItem: {
     flexDirection: 'row',
