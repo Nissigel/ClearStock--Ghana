@@ -4,13 +4,19 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
-import { getToken } from '@/api/client';
+import { getToken, clearTokens } from '@/api/client';
+import { getMyProfile } from '@/api/auth.api';
+import { getSellerProfile } from '@/api/seller.api';
+import { useAuthStore } from '@/store/authStore';
 import { FontFamily, FontSize, Spacing } from '@/constants/theme';
 import { ClearStockLogo } from '@/components/ui/ClearStockLogo';
 
 export default function SplashScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const setSellerProfile = useAuthStore((state) => state.setSellerProfile);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const logoOpacity = useRef<Animated.Value>(new Animated.Value(0)).current;
   const logoScale = useRef<Animated.Value>(new Animated.Value(0.7)).current;
@@ -27,8 +33,24 @@ export default function SplashScreen() {
     try {
       const token = await getToken();
       if (token) {
-        router.replace('/(buyer)/(tabs)/home');
-        return;
+        // The auth store isn't persisted, so a saved token alone leaves the app
+        // "logged in" with no user — every screen then falls back to "User"
+        // with no name. Rehydrate the session from the token before entering.
+        try {
+          const profile = await getMyProfile();
+          setAuth(profile, token);
+          try {
+            setSellerProfile(await getSellerProfile());
+          } catch {
+            // Buyer-only account — no seller profile is normal.
+          }
+          router.replace('/(buyer)/(tabs)/home');
+          return;
+        } catch {
+          // Token is stale or rejected — drop it and browse as a guest.
+          await clearTokens();
+          clearAuth();
+        }
       }
 
       // if user hasn't seen onboarding, show it first

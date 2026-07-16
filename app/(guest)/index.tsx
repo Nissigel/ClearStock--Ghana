@@ -44,6 +44,7 @@ export default function GuestHomeScreen() {
   const router = useRouter();
   const segments = useSegments();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const sellerProfile = useAuthStore((state) => state.sellerProfile);
 
   // This screen is rendered both at /(guest) (guest browsing, no tab bar)
   // and — via app/(buyer)/(tabs)/home.tsx re-exporting it — at /(buyer)/(tabs)/home
@@ -111,7 +112,14 @@ export default function GuestHomeScreen() {
     setColorScheme(isDark ? 'light' : 'dark');
   };
 
-  const listings = data?.content ?? [];
+  // Hide your own listings while browsing as a buyer — you can't buy your own
+  // stock. sellerId on a listing is the seller *profile* id, not the user id.
+  const mySellerId = sellerProfile ? String(sellerProfile.id) : null;
+  const notMine = (l: ListingSummary) =>
+    !mySellerId || String(l.sellerId) !== mySellerId;
+
+  const listings = (data?.content ?? []).filter(notMine);
+  const visibleUrgent = urgentListings.filter(notMine);
 
   const renderListingCard = ({ item }: { item: ListingSummary }) => {
     const isDiscounted = item.currentPrice < item.originalPrice;
@@ -437,7 +445,7 @@ export default function GuestHomeScreen() {
           onRefresh={refetch}
           refreshing={isRefetching}
           ListHeaderComponent={
-            urgentListings.length > 0 ? (
+            visibleUrgent.length > 0 ? (
               <TouchableOpacity
                 style={[
                   styles.flashBanner,

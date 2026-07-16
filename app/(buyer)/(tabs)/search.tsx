@@ -7,6 +7,7 @@ import { SearchBar } from '@/components/ui/SearchBar';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ListingGrid } from '@/components/ui/listing/ListingGrid';
 import { useListings } from '@/hooks/useListings';
+import { useAuthStore } from '@/store/authStore';
 import { Spacing } from '@/constants/theme';
 import type { ListingSummary } from '@/types/listing.types';
 
@@ -14,12 +15,20 @@ export default function SearchScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const sellerProfile = useAuthStore((state) => state.sellerProfile);
 
   const { data, isLoading, isError, refetch, isRefetching } = useListings({
     search,
     page: 0,
     size: 20,
   });
+
+  // Don't surface your own stock while shopping — sellerId is the seller
+  // *profile* id, not the user id.
+  const mySellerId = sellerProfile ? String(sellerProfile.id) : null;
+  const listings = (data?.content ?? []).filter(
+    (l) => !mySellerId || String(l.sellerId) !== mySellerId
+  );
 
   const handleListingPress = (listing: ListingSummary) => {
     Keyboard.dismiss();
@@ -59,7 +68,7 @@ export default function SearchScreen() {
       </View>
 
       <ListingGrid
-        listings={data?.content ?? []}
+        listings={listings}
         isLoading={isLoading}
         isError={isError}
         onRefresh={refetch}
