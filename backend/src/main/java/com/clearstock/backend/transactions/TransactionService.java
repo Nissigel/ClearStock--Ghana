@@ -3,8 +3,11 @@ package com.clearstock.backend.transactions;
 import com.clearstock.backend.listings.Listing;
 import com.clearstock.backend.listings.ListingRepository;
 import com.clearstock.backend.listings.ListingStatus;
+import com.clearstock.backend.messaging.Conversation;
 import com.clearstock.backend.messaging.ConversationRepository;
 import com.clearstock.backend.messaging.ConversationStatus;
+import com.clearstock.backend.messaging.Message;
+import com.clearstock.backend.messaging.MessageRepository;
 import com.clearstock.backend.notifications.NotificationService;
 import com.clearstock.backend.notifications.NotificationType;
 import com.clearstock.backend.transactions.dto.*;
@@ -35,6 +38,7 @@ public class TransactionService {
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final ListingRepository listingRepository;
     private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
     private final PaystackService paystackService;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
@@ -76,6 +80,13 @@ public class TransactionService {
 
         Transaction saved = transactionRepository.save(transaction);
 
+        // Open the buyer/seller thread on acceptance so the two can arrange
+        // payment and handover without hunting for a way to make contact.
+        openThreadWithSellerNote(pr,
+                "I've accepted your request for " + pr.getRequestedQuantity() + "x "
+                        + pr.getListing().getProductName()
+                        + ". Once payment goes through we'll arrange collection.");
+
         notificationService.send(
                 pr.getBuyer(),
                 "Purchase Request Accepted",
@@ -86,6 +97,29 @@ public class TransactionService {
         );
 
         return mapToResponse(saved);
+    }
+
+    /** Find or create the buyer/seller thread and post a note from the seller. */
+    private void openThreadWithSellerNote(PurchaseRequest pr, String text) {
+        Conversation conversation = conversationRepository
+                .findByListingAndBuyer(pr.getListing(), pr.getBuyer())
+                .orElseGet(() -> conversationRepository.save(Conversation.builder()
+                        .listing(pr.getListing())
+                        .buyer(pr.getBuyer())
+                        .seller(pr.getSeller())
+                        .status(ConversationStatus.ACTIVE)
+                        .build()));
+
+        conversation.setStatus(ConversationStatus.ACTIVE);
+        conversation.setDeletedForBuyer(false);
+        conversation.setDeletedForSeller(false);
+        conversationRepository.save(conversation);
+
+        messageRepository.save(Message.builder()
+                .conversation(conversation)
+                .sender(pr.getSeller())
+                .messageContent(text)
+                .build());
     }
 
     public List<TransactionResponse> getTransactions(User user) {
