@@ -251,6 +251,32 @@ export default function SellerTransactionDetailScreen() {
           ))}
         </View>
 
+        {/* Collection code — the buyer must type this to confirm handover, so
+            it has to be visible to the seller to read out at collection. */}
+        {isReadyOrDelivered && !!transaction.otpCode && (
+          <View
+            style={[
+              styles.otpCard,
+              {
+                backgroundColor: colors.secondary,
+                borderColor: colors.primary,
+                borderRadius: Radius.lg,
+              },
+            ]}
+          >
+            <Text style={[styles.otpTitle, { color: colors.foreground }]}>
+              Collection code
+            </Text>
+            <Text style={[styles.otpCode, { color: colors.primary }]}>
+              {transaction.otpCode}
+            </Text>
+            <Text style={[styles.otpDesc, { color: colors.mutedForeground }]}>
+              Give this code to the buyer when they collect. They enter it in
+              their app to confirm the order and complete the sale.
+            </Text>
+          </View>
+        )}
+
         {isActive && (
           <View
             style={[
@@ -396,6 +422,27 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  otpCard: {
+    padding: Spacing.base,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  otpTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    marginBottom: Spacing.xs,
+  },
+  otpCode: {
+    fontSize: FontSize['3xl'],
+    fontWeight: 'bold',
+    letterSpacing: 6,
+    marginBottom: Spacing.xs,
+  },
+  otpDesc: {
+    fontSize: FontSize.xs,
+    textAlign: 'center',
+    lineHeight: 16,
   },
   actions: { gap: Spacing.sm },
   cancelButton: { marginTop: Spacing.xs },
