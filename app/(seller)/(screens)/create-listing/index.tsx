@@ -220,17 +220,31 @@ export default function CreateListingScreen() {
   };
 
   const handlePickImage = async () => {
-    if (store.images.length >= MAX_LISTING_IMAGES) {
+    const remaining = MAX_LISTING_IMAGES - store.images.length;
+    if (remaining <= 0) {
       Alert.alert('Maximum images', `You can only add up to ${MAX_LISTING_IMAGES} images`);
       return;
     }
+
+    // Multi-select so the seller can grab several photos in one go. Cropping
+    // (allowsEditing) can't be combined with multiple selection, so it's off.
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
       quality: 0.8,
     });
-    if (!result.canceled && result.assets[0]) {
-      store.addImage(result.assets[0].uri);
+    if (result.canceled || !result.assets?.length) return;
+
+    // selectionLimit isn't enforced on every platform, so cap it here too.
+    const picked = result.assets.slice(0, remaining);
+    picked.forEach((asset) => store.addImage(asset.uri));
+
+    if (result.assets.length > remaining) {
+      Alert.alert(
+        'Some photos skipped',
+        `Only ${remaining} more photo${remaining === 1 ? '' : 's'} could be added — a listing holds up to ${MAX_LISTING_IMAGES}.`
+      );
     }
   };
 
@@ -383,7 +397,7 @@ export default function CreateListingScreen() {
               Product Images
             </Text>
             <Text style={[styles.stepSubtitle, { color: colors.mutedForeground }]}>
-              Add 1 to {MAX_LISTING_IMAGES} photos of your product
+              Add up to {MAX_LISTING_IMAGES} photos — you can select several at once
             </Text>
 
             {errors.images && (
