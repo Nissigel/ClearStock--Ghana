@@ -14,7 +14,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { logout } from '@/api/auth.api';
-import { getBuyerTransactions } from '@/api/transaction.api';
+import { getMyTransactions } from '@/api/transaction.api';
 import { getSellerRatingSummary } from '@/api/review.api';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 
@@ -56,7 +56,7 @@ export default function SellerProfileScreen() {
 
   const { data: transactions } = useQuery({
     queryKey: ['buyer-transactions'],
-    queryFn: getBuyerTransactions,
+    queryFn: getMyTransactions,
   });
 
   const { data: rating } = useQuery({

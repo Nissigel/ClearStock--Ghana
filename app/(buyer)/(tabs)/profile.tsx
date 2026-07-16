@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { logout } from '@/api/auth.api';
-import { getBuyerTransactions } from '@/api/transaction.api';
+import { getMyTransactions } from '@/api/transaction.api';
 import { getSellerRatingSummary } from '@/api/review.api';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 
@@ -140,7 +140,8 @@ export default function ProfileScreen() {
     queryKey: ['buyer-transactions'],
     queryFn: async () => {
       try {
-        return await getBuyerTransactions();
+        // Needs both roles — the sold/bought counters split this by user id.
+        return await getMyTransactions();
       } catch {
         return [];
       }

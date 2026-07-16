@@ -1,6 +1,7 @@
 import type { AxiosError } from 'axios';
 import ENV from '@/config/env';
 import apiClient from '@/api/client';
+import { useAuthStore } from '@/store/authStore';
 import {
   MOCK_PURCHASE_REQUESTS,
   MOCK_TRANSACTIONS,
@@ -16,6 +17,11 @@ import type {
   UpdateTransactionStatusRequest,
   VerifyTransactionOtpRequest,
 } from '@/types/transaction.types';
+
+// GET /transactions returns every transaction where the user is the buyer OR
+// the seller in a single list, so each side must be filtered by role — without
+// this, your own purchases show up on the seller page and vice versa.
+const currentUserId = () => String(useAuthStore.getState().user?.id ?? '');
 
 // ─── Purchase Requests (Buyer) ───────────────────────────────────────────────
 
@@ -162,13 +168,28 @@ export const declinePurchaseRequest = async (
 
 // ─── Transactions (Buyer) ────────────────────────────────────────────────────
 
-export const getBuyerTransactions = async (): Promise<Transaction[]> => {
+// Every transaction the user is party to, as either side. Use this only where
+// both roles are wanted (e.g. the profile's sold/bought counters) — the buyer
+// and seller screens should use the role-specific fetchers below.
+export const getMyTransactions = async (): Promise<Transaction[]> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 600));
     return MOCK_TRANSACTIONS;
   }
   const response = await apiClient.get('/transactions');
   return response.data.data as Transaction[];
+};
+
+export const getBuyerTransactions = async (): Promise<Transaction[]> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return MOCK_TRANSACTIONS;
+  }
+  const response = await apiClient.get('/transactions');
+  const me = currentUserId();
+  return (response.data.data as Transaction[]).filter(
+    (t) => String(t.buyerUserId) === me
+  );
 };
 
 export const getTransactionById = async (
@@ -218,7 +239,10 @@ export const getSellerTransactions = async (): Promise<Transaction[]> => {
     return MOCK_TRANSACTIONS;
   }
   const response = await apiClient.get('/transactions');
-  return response.data.data as Transaction[];
+  const me = currentUserId();
+  return (response.data.data as Transaction[]).filter(
+    (t) => String(t.sellerUserId) === me
+  );
 };
 
 export const updateTransactionStatus = async (
