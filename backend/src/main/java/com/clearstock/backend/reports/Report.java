@@ -8,8 +8,15 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
+/**
+ * Deliberately not mapped to "reports": an older, unused reports table already
+ * exists in the database with its own NOT NULL columns (target_id) that this
+ * entity never populates, so every insert there fails the constraint. Hibernate's
+ * schema update adds missing columns but never drops legacy ones, so this owns
+ * its own table rather than fighting that shape.
+ */
 @Entity
-@Table(name = "reports")
+@Table(name = "user_reports")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

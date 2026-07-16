@@ -41,13 +41,17 @@ public class Conversation {
 
     // Per-participant "delete for me": hides the conversation from that user's
     // inbox without affecting the other party. Reset when a new message arrives.
-    @Column(nullable = false)
+    //
+    // Nullable on purpose: these were added to a table that already had rows,
+    // and Postgres won't apply NOT NULL to a column full of nulls — that broke
+    // the schema update on every boot. A null simply means "not hidden".
+    @Column
     @Builder.Default
-    private boolean deletedForBuyer = false;
+    private Boolean deletedForBuyer = false;
 
-    @Column(nullable = false)
+    @Column
     @Builder.Default
-    private boolean deletedForSeller = false;
+    private Boolean deletedForSeller = false;
 
     @CreationTimestamp
     @Column(updatable = false)

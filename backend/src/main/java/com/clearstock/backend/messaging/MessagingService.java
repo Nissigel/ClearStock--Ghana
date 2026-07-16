@@ -65,7 +65,10 @@ public class MessagingService {
     /** True when the user has "deleted for me" this conversation. */
     private boolean isHiddenFor(Conversation conversation, User user) {
         boolean isBuyer = conversation.getBuyer().getId().equals(user.getId());
-        return isBuyer ? conversation.isDeletedForBuyer() : conversation.isDeletedForSeller();
+        // Null (rows that predate these columns) means "not hidden".
+        return isBuyer
+                ? Boolean.TRUE.equals(conversation.getDeletedForBuyer())
+                : Boolean.TRUE.equals(conversation.getDeletedForSeller());
     }
 
     public ConversationResponse getConversationByListing(User buyer, Long listingId) {
@@ -91,7 +94,8 @@ public class MessagingService {
         }
 
         // A new message revives the conversation for anyone who had hidden it.
-        if (conversation.isDeletedForBuyer() || conversation.isDeletedForSeller()) {
+        if (Boolean.TRUE.equals(conversation.getDeletedForBuyer())
+                || Boolean.TRUE.equals(conversation.getDeletedForSeller())) {
             conversation.setDeletedForBuyer(false);
             conversation.setDeletedForSeller(false);
             conversationRepository.save(conversation);
