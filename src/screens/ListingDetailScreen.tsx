@@ -161,6 +161,7 @@ const handlePurchaseRequest = () => {
                     params: {
                       targetId: String(listing?.id ?? ''),
                       reportType: 'LISTING',
+                      targetName: listing?.productName ?? '',
                     },
                   });
                 }

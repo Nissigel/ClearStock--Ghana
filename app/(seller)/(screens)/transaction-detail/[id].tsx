@@ -174,6 +174,23 @@ export default function SellerTransactionDetailScreen() {
         showBack
         title="Transaction Details"
         onBackPress={() => router.back()}
+        rightElement={
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: '/(buyer)/(screens)/report',
+                params: {
+                  targetId: String(transaction.buyerUserId),
+                  reportType: 'USER',
+                  targetName: transaction.buyerPhone ?? 'this buyer',
+                },
+              })
+            }
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="flag-outline" size={20} color={colors.foreground} />
+          </TouchableOpacity>
+        }
       />
       <ScrollView
         showsVerticalScrollIndicator={false}

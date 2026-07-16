@@ -3,6 +3,7 @@ import {
   Text,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
   Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -78,6 +79,23 @@ export default function BuyerTransactionDetailScreen() {
         showBack
         title="Transaction Details"
         onBackPress={() => router.back()}
+        rightElement={
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: '/(buyer)/(screens)/report',
+                params: {
+                  targetId: String(transaction.sellerUserId),
+                  reportType: 'USER',
+                  targetName: transaction.sellerPhone ?? 'this seller',
+                },
+              })
+            }
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="flag-outline" size={20} color={colors.foreground} />
+          </TouchableOpacity>
+        }
       />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
