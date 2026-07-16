@@ -5,17 +5,13 @@ import { Text } from '@/components/ui/Typography';
 import { useTheme } from '@/hooks/useTheme';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
 
-interface PriceDropCountdownProps {
-  /** Anchor the drop schedule off this timestamp (listing createdAt). */
-  createdAt: string;
-  /** Days between automatic price drops. */
-  intervalDays: number;
+interface SaleEndsCountdownProps {
+  /** When the clearance sale closes (listing clearanceEndDate). */
+  endsAt: string;
   /** Small chip form (icon + time only) for listing cards. */
   compact?: boolean;
   style?: ViewStyle;
 }
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -30,43 +26,38 @@ const formatRemaining = (ms: number) => {
     : `${pad(h)}:${pad(m)}:${pad(s)}`;
 };
 
-// The next drop is the first interval boundary (measured from createdAt)
-// that lies in the future.
-const nextDropFrom = (createdAt: string, intervalDays: number): number | null => {
-  const intervalMs = intervalDays * DAY_MS;
-  if (!(intervalMs > 0)) return null;
-  const anchor = new Date(createdAt).getTime();
-  if (Number.isNaN(anchor)) return null;
-  const periods = Math.floor((Date.now() - anchor) / intervalMs) + 1;
-  return anchor + periods * intervalMs;
-};
-
-export function PriceDropCountdown({
-  createdAt,
-  intervalDays,
+/**
+ * Counts down to the end of the sale. Deliberately shows only the closing
+ * time — never the next automatic price drop — so buyers aren't encouraged to
+ * hold out for a lower price instead of buying.
+ */
+export function SaleEndsCountdown({
+  endsAt,
   compact,
   style,
-}: PriceDropCountdownProps) {
+}: SaleEndsCountdownProps) {
   const { colors } = useTheme();
-  const nextDrop = useMemo(
-    () => nextDropFrom(createdAt, intervalDays),
-    [createdAt, intervalDays]
-  );
+
+  const endsAtMs = useMemo(() => {
+    const t = new Date(endsAt).getTime();
+    return Number.isNaN(t) ? null : t;
+  }, [endsAt]);
 
   const [remaining, setRemaining] = useState(() =>
-    nextDrop ? nextDrop - Date.now() : 0
+    endsAtMs ? endsAtMs - Date.now() : 0
   );
 
   useEffect(() => {
-    if (nextDrop == null) return;
-    setRemaining(nextDrop - Date.now());
+    if (endsAtMs == null) return;
+    setRemaining(endsAtMs - Date.now());
     const timer = setInterval(() => {
-      setRemaining(nextDrop - Date.now());
+      setRemaining(endsAtMs - Date.now());
     }, 1000);
     return () => clearInterval(timer);
-  }, [nextDrop]);
+  }, [endsAtMs]);
 
-  if (nextDrop == null) return null;
+  // Hide once the sale is over (or the date is unusable).
+  if (endsAtMs == null || remaining <= 0) return null;
 
   if (compact) {
     return (
@@ -98,14 +89,9 @@ export function PriceDropCountdown({
     >
       <Ionicons name="time-outline" size={16} color={colors.flame} />
       <Text size="sm" color={colors.mutedForeground} style={styles.label}>
-        Price drops again in
+        Sale ends in
       </Text>
-      <Text
-        size="sm"
-        weight="bold"
-        color={colors.flame}
-        style={styles.value}
-      >
+      <Text size="sm" weight="bold" color={colors.flame} style={styles.value}>
         {formatRemaining(remaining)}
       </Text>
     </View>

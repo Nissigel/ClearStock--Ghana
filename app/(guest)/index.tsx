@@ -33,7 +33,7 @@ import { FilterSheet } from '@/components/ui/FilterSheet';
 import { Image } from 'react-native';
 import { CURRENCY_SYMBOL } from '@/constants/app';
 import { Badge } from '@/components/ui/Badge';
-import { PriceDropCountdown } from '@/components/ui/PriceDropCountdown';
+import { SaleEndsCountdown } from '@/components/ui/SaleEndsCountdown';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - Spacing.base * 2 - Spacing.sm) / 2;
@@ -264,17 +264,13 @@ export default function GuestHomeScreen() {
             </Text>
           )}
 
-          {item.discountActive &&
-            item.listingStatus === 'ACTIVE' &&
-            !!item.discountIntervalDays &&
-            item.currentPrice > item.minimumAcceptablePrice && (
-              <PriceDropCountdown
-                createdAt={item.createdAt}
-                intervalDays={item.discountIntervalDays}
-                compact
-                style={styles.cardCountdown}
-              />
-            )}
+          {item.listingStatus === 'ACTIVE' && !!item.clearanceEndDate && (
+            <SaleEndsCountdown
+              endsAt={item.clearanceEndDate}
+              compact
+              style={styles.cardCountdown}
+            />
+          )}
 
           <View style={styles.sellerRow}>
             <Text

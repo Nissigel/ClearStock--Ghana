@@ -13,7 +13,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Radius, FontSize, Spacing, Shadow } from '@/constants/theme';
 import { PriceDisplay } from '@/components/ui/PriceDisplay';
 import { Badge } from '@/components/ui/Badge';
-import { PriceDropCountdown } from '@/components/ui/PriceDropCountdown';
+import { SaleEndsCountdown } from '@/components/ui/SaleEndsCountdown';
 import type { ListingSummary } from '@/types/listing.types';
 import { Heading, Label, Caption } from '@/components/ui/Typography';
 
@@ -165,18 +165,15 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
           containerStyle={styles.price}
         />
 
-        {/* Auto price-drop countdown */}
-        {listing.discountActive &&
-          listing.listingStatus === 'ACTIVE' &&
-          !!listing.discountIntervalDays &&
-          listing.currentPrice > listing.minimumAcceptablePrice && (
-            <PriceDropCountdown
-              createdAt={listing.createdAt}
-              intervalDays={listing.discountIntervalDays}
-              compact
-              style={styles.countdown}
-            />
-          )}
+        {/* Sale end countdown — never the price-drop schedule, so buyers
+            aren't nudged into waiting for the next markdown. */}
+        {listing.listingStatus === 'ACTIVE' && !!listing.clearanceEndDate && (
+          <SaleEndsCountdown
+            endsAt={listing.clearanceEndDate}
+            compact
+            style={styles.countdown}
+          />
+        )}
 
         {/* Seller info */}
         <Caption

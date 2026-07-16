@@ -28,7 +28,7 @@ import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 import { CURRENCY_SYMBOL } from '@/constants/app';
 import { useState } from 'react';
 import { PurchaseRequestSheet } from '@/components/ui/PurchaseRequestSheet';
-import { PriceDropCountdown } from '@/components/ui/PriceDropCountdown';
+import { SaleEndsCountdown } from '@/components/ui/SaleEndsCountdown';
 
 const { width } = Dimensions.get('window');
 const IMAGE_HEIGHT = width * 0.75;
@@ -283,17 +283,14 @@ const handlePurchaseRequest = () => {
             containerStyle={styles.price}
           />
 
-          {/* Auto price-drop countdown */}
-          {listing.discountActive &&
-            listing.listingStatus === 'ACTIVE' &&
-            !!listing.discountIntervalDays &&
-            listing.currentPrice > listing.minimumAcceptablePrice && (
-              <PriceDropCountdown
-                createdAt={listing.createdAt}
-                intervalDays={listing.discountIntervalDays}
-                style={styles.countdown}
-              />
-            )}
+          {/* Sale end countdown — deliberately not the price-drop schedule, so
+              buyers don't hold out for the next markdown. */}
+          {listing.listingStatus === 'ACTIVE' && !!listing.clearanceEndDate && (
+            <SaleEndsCountdown
+              endsAt={listing.clearanceEndDate}
+              style={styles.countdown}
+            />
+          )}
 
           {/* Status badges */}
           <View style={styles.badgeRow}>

@@ -45,18 +45,12 @@ export function PurchaseRequestSheet({
   const qty = Number(quantity) || 0;
   const totalAmount = qty * currentPrice;
 
-  const handleSubmit = () => {
-    if (!quantity.trim() || qty <= 0) {
-      setError('Please enter a valid quantity');
-      return;
-    }
-    if (qty > availableQuantity) {
-      setError(`Maximum available quantity is ${availableQuantity}`);
-      return;
-    }
+  const unitLabel = unitOfMeasurement ?? 'units';
+
+  const submitRequest = () => {
     setError('');
     createRequest(
-      { listingId, requestedQuantity: Number(quantity) || 1 },
+      { listingId, requestedQuantity: qty },
       {
         onSuccess: () => {
           Alert.alert(
@@ -73,6 +67,40 @@ export function PurchaseRequestSheet({
           Alert.alert('Error', message);
         },
       }
+    );
+  };
+
+  const handleSubmit = () => {
+    Keyboard.dismiss();
+
+    if (!quantity.trim() || qty <= 0) {
+      setError('Please enter a valid quantity');
+      return;
+    }
+
+    // Over-stock is a hard stop — say so loudly rather than only inline, since
+    // the request would be rejected anyway.
+    if (qty > availableQuantity) {
+      setError(`Only ${availableQuantity} ${unitLabel} available`);
+      Alert.alert(
+        'Not enough stock',
+        `Only ${availableQuantity} ${unitLabel} are available. Lower your quantity to ${availableQuantity} or less to continue.`
+      );
+      return;
+    }
+
+    setError('');
+
+    // Last check before it goes to the seller.
+    Alert.alert(
+      'Confirm your request',
+      `Request ${qty} ${unitLabel} of ${listingName} for ${CURRENCY_SYMBOL}${totalAmount.toFixed(
+        2
+      )}?`,
+      [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes, send it', onPress: submitRequest },
+      ]
     );
   };
 
