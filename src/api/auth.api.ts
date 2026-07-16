@@ -9,6 +9,7 @@ import {
 import type {
   SendOtpRequest,
   VerifyOtpRequest,
+  VerifyOtpResult,
   CreatePinRequest,
   LoginRequest,
   ResetPinRequest,
@@ -52,16 +53,23 @@ export const sendOtp = async (
 
 export const verifyOtp = async (
   data: VerifyOtpRequest
-): Promise<string> => {
+): Promise<VerifyOtpResult> => {
   if (ENV.USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 800));
     if (data.otp !== MOCK_OTP) {
       throw new Error('Invalid OTP. Please try again.');
     }
-    return 'mock-temp-token';
+    return { verified: true, userExists: false, tempToken: 'mock-temp-token' };
   }
   const response = await apiClient.post('/auth/verify-otp', data);
-  return response.data.data.tempToken;
+  const d = response.data.data as Partial<VerifyOtpResult>;
+  // userExists matters: the backend returns a null tempToken for a phone that
+  // already has an account, and the caller must route to login instead.
+  return {
+    verified: !!d?.verified,
+    userExists: !!d?.userExists,
+    tempToken: d?.tempToken ?? null,
+  };
 };
 
 export const createPin = async (

@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { PinInput } from '@/components/ui/PinInput';
@@ -23,12 +23,17 @@ import { PIN_LENGTH } from '@/constants/app';
 export default function LoginPinScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  // Prefilled when we redirect here from sign-up because the number already
+  // has an account.
+  const { phoneNumber: prefilledPhone } = useLocalSearchParams<{
+    phoneNumber?: string;
+  }>();
 
   const setAuth = useAuthStore((state) => state.setAuth);
   const setSellerProfile = useAuthStore((state) => state.setSellerProfile);
   const switchToSeller = useModeStore((state) => state.switchToSeller);
 
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(prefilledPhone ?? '');
   const [pin, setPin] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [pinError, setPinError] = useState('');

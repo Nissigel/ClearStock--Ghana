@@ -5,6 +5,14 @@ export interface SendOtpRequest {
   email?: string;
 }
 
+export interface VerifyOtpResult {
+  verified: boolean;
+  // True when the phone already has an account — the caller should send the
+  // user to login instead of creating a PIN (tempToken is null in that case).
+  userExists: boolean;
+  tempToken: string | null;
+}
+
 export interface VerifyOtpRequest {
   phone: string;
   otp: string;

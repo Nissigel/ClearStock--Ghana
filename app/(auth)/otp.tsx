@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -74,11 +75,32 @@ export default function OtpVerifyScreen() {
           params: { otp: code, phoneNumber },
         });
       } else {
-        const tempToken = await verifyOtp({
+        const { userExists, tempToken } = await verifyOtp({
           phone: phoneNumber,
           otp: code,
           purpose: purpose ?? 'REGISTRATION',
         });
+
+        // This phone already has an account — the backend gives no tempToken,
+        // so send them to log in rather than into a PIN screen that would fail.
+        if (userExists || !tempToken) {
+          Alert.alert(
+            'Account already exists',
+            'This number is already registered. Please log in with your PIN instead.',
+            [
+              {
+                text: 'Log in',
+                onPress: () =>
+                  router.replace({
+                    pathname: '/(auth)/login',
+                    params: { phoneNumber },
+                  }),
+              },
+            ]
+          );
+          return;
+        }
+
         router.push({
           pathname: '/(auth)/create-pin',
           params: { tempToken, phoneNumber, email: email ?? '' },
