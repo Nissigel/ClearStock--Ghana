@@ -1,9 +1,11 @@
 const ENV = {
   USE_MOCK: false,
   API_BASE_URL: 'https://clearstock-ghana.onrender.com',
-  // Render's free tier cold-starts (~30–60s) after idle, so allow a generous
-  // timeout. The client also warms the backend on launch and retries once.
-  API_TIMEOUT: 60000,
+  // Render's free tier cold-starts after idle and can take well over a minute
+  // to answer. Time out generously: aborting early doesn't stop the server
+  // finishing the work, it just leaves the app unsure whether it happened
+  // (which previously made sign-up look like it failed after it had succeeded).
+  API_TIMEOUT: 120000,
 
   // Cloudinary unsigned upload — lets picked images become real hosted URLs
   // that display on every device. Create a free account, add an *unsigned*

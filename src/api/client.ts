@@ -68,7 +68,14 @@ apiClient.interceptors.response.use(
     const isColdStart =
       !error.response &&
       (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK');
-    if (config && isColdStart && !config._retry) {
+
+    // A timeout only means we got no answer — not that nothing happened. The
+    // server may well have completed the work, so only replay requests that are
+    // safe to repeat. Re-sending a POST duplicates it, or collides with the
+    // record it already created (e.g. sign-up returning "account exists").
+    const isReplayable = ['GET', 'HEAD', 'OPTIONS'].includes(method);
+
+    if (config && isColdStart && isReplayable && !config._retry) {
       config._retry = true;
       return apiClient(config);
     }
