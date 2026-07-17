@@ -19,7 +19,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0c0f0c"
+        "backgroundColor": "#006d3b"
       },
       "package": "com.clearstock.ghana"
     },
