@@ -3,6 +3,7 @@ package com.clearstock.backend.auth;
 import com.clearstock.backend.auth.dto.*;
 import com.clearstock.backend.common.EmailService;
 import com.clearstock.backend.common.JwtUtil;
+import com.clearstock.backend.common.PhoneUtil;
 import com.clearstock.backend.common.SmsService;
 import com.clearstock.backend.otp.OtpPurpose;
 import com.clearstock.backend.otp.OtpService;
@@ -29,7 +30,8 @@ public class AuthService {
     private final EmailService emailService;
     private final SmsService smsService;
 
-    public SendOtpResponse sendOtp(String phone, String email) {
+    public SendOtpResponse sendOtp(String rawPhone, String email) {
+        String phone = PhoneUtil.normalize(rawPhone);
         String otp = otpService.generateAndSaveOtp(phone, OtpPurpose.SIGNUP);
 
         // Try real delivery: SMS to the phone, plus email if one is known.
@@ -50,7 +52,8 @@ public class AuthService {
                 delivered ? null : otp, LocalDateTime.now().plusMinutes(5), emailed);
     }
 
-    public VerifyOtpResponse verifyOtp(String phone, String otp) {
+    public VerifyOtpResponse verifyOtp(String rawPhone, String otp) {
+        String phone = PhoneUtil.normalize(rawPhone);
         boolean valid = otpService.verifyOtp(phone, otp, OtpPurpose.SIGNUP);
         if (!valid) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired OTP");
@@ -79,7 +82,9 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid token purpose");
         }
 
-        String phone = claims.getSubject();
+        // The subject was normalized before the token was issued; normalizing
+        // again covers tokens minted before that was true.
+        String phone = PhoneUtil.normalize(claims.getSubject());
 
         if (userRepository.existsByPhone(phone)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -109,8 +114,8 @@ public class AuthService {
         return new AuthResponse(token, user.getId(), user.getPhone(), user.getName());
     }
 
-    public AuthResponse login(String phone, String pin) {
-        User user = userRepository.findByPhone(phone)
+    public AuthResponse login(String rawPhone, String pin) {
+        User user = userRepository.findByPhone(PhoneUtil.normalize(rawPhone))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
 
         if (!passwordEncoder.matches(pin, user.getPinHash())) {
@@ -121,7 +126,8 @@ public class AuthService {
         return new AuthResponse(token, user.getId(), user.getPhone(), user.getName());
     }
 
-    public SendOtpResponse forgotPin(String phone) {
+    public SendOtpResponse forgotPin(String rawPhone) {
+        String phone = PhoneUtil.normalize(rawPhone);
         User user = userRepository.findByPhone(phone)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
         String otp = otpService.generateAndSaveOtp(phone, OtpPurpose.PIN_RESET);
@@ -136,7 +142,8 @@ public class AuthService {
                 delivered ? null : otp, LocalDateTime.now().plusMinutes(5), emailed);
     }
 
-    public AuthResponse resetPin(String phone, String otp, String newPin) {
+    public AuthResponse resetPin(String rawPhone, String otp, String newPin) {
+        String phone = PhoneUtil.normalize(rawPhone);
         boolean valid = otpService.verifyOtp(phone, otp, OtpPurpose.PIN_RESET);
         if (!valid) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired OTP");

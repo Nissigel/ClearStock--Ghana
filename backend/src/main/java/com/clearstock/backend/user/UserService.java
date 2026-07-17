@@ -1,5 +1,6 @@
 package com.clearstock.backend.user;
 
+import com.clearstock.backend.common.PhoneUtil;
 import com.clearstock.backend.otp.OtpPurpose;
 import com.clearstock.backend.otp.OtpService;
 import com.clearstock.backend.user.dto.ToggleNotificationsRequest;
@@ -62,7 +63,7 @@ public class UserService {
 
     @Transactional
     public UserProfileResponse changePhone(User user, String newPhone, String otp) {
-        String phone = newPhone == null ? "" : newPhone.strip();
+        String phone = newPhone == null ? "" : PhoneUtil.normalize(newPhone.strip());
         if (phone.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New phone number is required");
         }
