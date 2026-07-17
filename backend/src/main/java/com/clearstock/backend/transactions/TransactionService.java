@@ -297,10 +297,18 @@ public class TransactionService {
             transaction.setOtpGeneratedAt(LocalDateTime.now());
         }
 
-        // Cancelling frees the reserved stock back onto the listing (once only).
+        // Cancelling frees the reserved stock back onto the listing (once only)
+        // and closes the request behind it. Left ACCEPTED, a dead request keeps
+        // the listing from ever being archived.
         if (newStatus == TransactionStatus.CANCELLED
                 && previousStatus != TransactionStatus.CANCELLED) {
             restoreReservedStock(transaction);
+
+            PurchaseRequest pr = transaction.getPurchaseRequest();
+            if (pr != null && pr.getStatus() == PurchaseRequestStatus.ACCEPTED) {
+                pr.setStatus(PurchaseRequestStatus.CANCELLED);
+                purchaseRequestRepository.save(pr);
+            }
         }
 
         transaction.setTransactionStatus(newStatus);

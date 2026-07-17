@@ -17,7 +17,10 @@ public class UpdateListingRequest {
 
     private String description;
 
-    @Min(value = 1, message = "Quantity must be at least 1")
+    // Zero is a legitimate edit: it's how a seller says "these are gone", and
+    // the status follows the count. A new listing still has to start with at
+    // least one — see CreateListingRequest.
+    @Min(value = 0, message = "Quantity cannot be negative")
     private Integer quantity;
 
     private String unitOfMeasurement;
