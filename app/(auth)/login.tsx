@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { login } from '@/api/auth.api';
+import { useSlowRequestHint } from '@/hooks/useSlowRequestHint';
 import { getSellerProfile } from '@/api/seller.api';
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
@@ -38,6 +39,7 @@ export default function LoginPinScreen() {
   const [phoneError, setPhoneError] = useState('');
   const [pinError, setPinError] = useState('');
   const [loading, setLoading] = useState(false);
+  const isSlow = useSlowRequestHint(loading);
 
   const validate = (): boolean => {
     let valid = true;
@@ -190,6 +192,13 @@ export default function LoginPinScreen() {
             style={styles.button}
           />
 
+          {isSlow && (
+            <Text style={[styles.slowHint, { color: colors.mutedForeground }]}>
+              Waking up the server — this can take up to a minute the first time.
+              Please hold on.
+            </Text>
+          )}
+
           <View style={styles.registerContainer}>
             <Text
               style={[
@@ -270,6 +279,13 @@ const styles = StyleSheet.create({
   },
   button: {
     marginBottom: Spacing.lg,
+  },
+  slowHint: {
+    fontSize: FontSize.xs,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: -Spacing.sm,
+    marginBottom: Spacing.md,
   },
   registerContainer: {
     flexDirection: 'row',

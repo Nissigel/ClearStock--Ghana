@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { sendOtp } from '@/api/auth.api';
+import { useSlowRequestHint } from '@/hooks/useSlowRequestHint';
 import { Spacing, FontSize, Radius } from '@/constants/theme';
 
 export default function PhoneEntryScreen() {
@@ -24,6 +25,7 @@ export default function PhoneEntryScreen() {
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
+  const isSlow = useSlowRequestHint(loading);
 
   const validate = (): boolean => {
     if (!phoneNumber.trim()) {
@@ -218,6 +220,13 @@ export default function PhoneEntryScreen() {
             style={styles.button}
           />
 
+          {isSlow && (
+            <Text style={[styles.slowHint, { color: colors.mutedForeground }]}>
+              Waking up the server — this can take up to a minute the first time.
+              Please hold on.
+            </Text>
+          )}
+
           {/* Divider */}
           <View style={styles.orContainer}>
             <View
@@ -397,6 +406,13 @@ const styles = StyleSheet.create({
   },
   button: {
     marginBottom: Spacing.lg,
+  },
+  slowHint: {
+    fontSize: FontSize.xs,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: -Spacing.sm,
+    marginBottom: Spacing.md,
   },
   orContainer: {
     flexDirection: 'row',

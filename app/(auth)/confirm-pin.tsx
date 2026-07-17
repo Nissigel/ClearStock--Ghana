@@ -2,8 +2,10 @@ import {
   View,
   Text,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { useState } from 'react';
+import type { AxiosError } from 'axios';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
@@ -61,7 +63,47 @@ export default function ConfirmPinScreen() {
         params: { phoneNumber },
       });
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      const status = axiosErr.response?.status;
+      const message = axiosErr.response?.data?.message;
+
+      // The number got registered already (often an earlier attempt that looked
+      // like it failed but actually went through) — send them to log in.
+      if (status === 409) {
+        Alert.alert(
+          'Account already exists',
+          message ??
+            'This number is already registered. Please log in with your PIN instead.',
+          [
+            {
+              text: 'Log in',
+              onPress: () =>
+                router.replace({
+                  pathname: '/(auth)/login',
+                  params: { phoneNumber },
+                }),
+            },
+          ]
+        );
+        return;
+      }
+
+      // The verification only stays valid for 10 minutes.
+      if (status === 401) {
+        Alert.alert(
+          'Verification expired',
+          'Your verification code expired before the PIN was set. Please request a new code and try again.',
+          [
+            {
+              text: 'Start over',
+              onPress: () => router.replace('/(auth)/phone'),
+            },
+          ]
+        );
+        return;
+      }
+
+      setError(message ?? 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
