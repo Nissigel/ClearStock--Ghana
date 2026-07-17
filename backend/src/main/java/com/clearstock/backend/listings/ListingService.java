@@ -111,6 +111,16 @@ public class ListingService {
 
         if (request.getListingStatus() != null && request.getListingStatus() != ListingStatus.ARCHIVED) {
             listing.setListingStatus(request.getListingStatus());
+        } else if (request.getQuantity() != null) {
+            // Keep the status honest about the stock, the way accepting an order
+            // already does. Editing the count down to zero should read as sold
+            // out, and restocking a sold-out listing should put it back on the
+            // market — otherwise a listing sits at "0 available" while ACTIVE.
+            if (listing.getQuantity() == 0) {
+                listing.setListingStatus(ListingStatus.OUT_OF_STOCK);
+            } else if (listing.getListingStatus() == ListingStatus.OUT_OF_STOCK) {
+                listing.setListingStatus(ListingStatus.ACTIVE);
+            }
         }
 
         if (request.getMinimumAcceptablePrice() != null) {
