@@ -15,6 +15,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { updateProfile } from '@/api/user.api';
 import { useAuthStore } from '@/store/authStore';
 import { Spacing, FontSize, Radius } from '@/constants/theme';
 import {
@@ -40,7 +41,6 @@ export default function ProfileSetupScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
-  const user = useAuthStore((state) => state.user);
 
   const [form, setForm] = useState<FormState>({
     fullName: '',
@@ -91,15 +91,13 @@ export default function ProfileSetupScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
-      if (user) {
-        setUser({
-          ...user,
-          fullName: form.fullName,
-          email: form.email || null,
-          region: form.region,
-          cityTown: form.cityTown,
-        });
-      }
+      const saved = await updateProfile({
+        fullName: form.fullName.trim(),
+        email: form.email.trim() || undefined,
+        region: form.region,
+        cityTown: form.cityTown.trim(),
+      });
+      setUser(saved);
       router.replace('/(auth)/role-selection');
     } catch (err) {
       setErrors({ fullName: 'Something went wrong. Please try again.' });

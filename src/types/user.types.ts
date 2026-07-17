@@ -38,6 +38,8 @@ export interface UpdateProfileRequest {
   fullName: string;
   email?: string | null;
   profilePhotoUrl?: string | null;
+  region?: string | null;
+  cityTown?: string | null;
 }
 
 export interface UpdateSellerProfileRequest {

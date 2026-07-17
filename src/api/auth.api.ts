@@ -113,11 +113,10 @@ export const logout = async (): Promise<void> => {
   await clearTokens();
 };
 
-// Backend only returns { id, phone, name, email, profileImageUrl, createdAt } —
-// there's no role/seller field at all. Seller status is derived separately
+// There's no role/seller field at all. Seller status is derived separately
 // via GET /seller/profile (see src/api/seller.api.ts) after login.
-// region/cityTown/accountStatus are still genuinely absent from this
-// response; left unset rather than guessed — see INTEGRATION-AUDIT.md.
+// accountStatus is still genuinely absent from this response; left unset
+// rather than guessed — see INTEGRATION-AUDIT.md.
 export const mapRawUser = (raw: {
   id: number;
   phone: string;
@@ -125,6 +124,8 @@ export const mapRawUser = (raw: {
   email: string | null;
   profileImageUrl: string | null;
   preferEmail?: boolean;
+  region?: string | null;
+  cityTown?: string | null;
 }): AuthUser => ({
   id: String(raw.id),
   fullName: raw.name,
@@ -132,6 +133,8 @@ export const mapRawUser = (raw: {
   email: raw.email ?? null,
   profilePhotoUrl: raw.profileImageUrl ?? null,
   emailNotifications: raw.preferEmail ?? true,
+  region: raw.region ?? undefined,
+  cityTown: raw.cityTown ?? undefined,
 });
 
 export const getMyProfile = async (): Promise<AuthUser> => {
