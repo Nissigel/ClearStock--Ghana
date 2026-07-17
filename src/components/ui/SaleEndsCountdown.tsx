@@ -13,6 +13,9 @@ interface SaleEndsCountdownProps {
   style?: ViewStyle;
 }
 
+/** Only worth showing once the sale is genuinely close to ending. */
+const SHOW_WITHIN_MS = 3 * 24 * 60 * 60 * 1000;
+
 const pad = (n: number) => String(n).padStart(2, '0');
 
 const formatRemaining = (ms: number) => {
@@ -56,8 +59,12 @@ export function SaleEndsCountdown({
     return () => clearInterval(timer);
   }, [endsAtMs]);
 
-  // Hide once the sale is over (or the date is unusable).
-  if (endsAtMs == null || remaining <= 0) return null;
+  // Show nothing until the last few days: a countdown running for weeks is just
+  // noise, and it only creates urgency when the end is actually near. Also hide
+  // it once the sale is over, or if the date is unusable.
+  if (endsAtMs == null || remaining <= 0 || remaining > SHOW_WITHIN_MS) {
+    return null;
+  }
 
   if (compact) {
     return (
