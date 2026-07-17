@@ -29,6 +29,8 @@ public class UserService {
         if (request.getName() != null) user.setName(request.getName());
         if (request.getEmail() != null) user.setEmail(request.getEmail());
         if (request.getProfileImageUrl() != null) user.setProfileImageUrl(request.getProfileImageUrl());
+        if (request.getRegion() != null) user.setRegion(request.getRegion());
+        if (request.getCityTown() != null) user.setCityTown(request.getCityTown());
         return mapToResponse(userRepository.save(user));
     }
 
@@ -101,6 +103,8 @@ public class UserService {
                 .email(user.getEmail())
                 .preferEmail(user.getPreferEmail())
                 .profileImageUrl(user.getProfileImageUrl())
+                .region(user.getRegion())
+                .cityTown(user.getCityTown())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
