@@ -23,6 +23,7 @@ import {
   useSellerPurchaseRequests,
 } from '@/hooks/usePurchaseRequests';
 import { Badge } from '@/components/ui/Badge';
+import { NotificationBell } from '@/components/ui/NotificationBell';
 import { Button } from '@/components/ui/Button';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 import { CURRENCY_SYMBOL } from '@/constants/app';
@@ -219,19 +220,22 @@ export default function SellerDashboardScreen() {
             {user?.fullName ?? 'Your Store'}
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={handleSwitchToBuyer}
-          style={[styles.switchButton, { backgroundColor: colors.secondary }]}
-        >
-          <Ionicons
-            name="swap-horizontal-outline"
-            size={16}
-            color={colors.primary}
-          />
-          <Text style={[styles.switchText, { color: colors.primary }]}>
-            Buyer
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <NotificationBell />
+          <TouchableOpacity
+            onPress={handleSwitchToBuyer}
+            style={[styles.switchButton, { backgroundColor: colors.secondary }]}
+          >
+            <Ionicons
+              name="swap-horizontal-outline"
+              size={16}
+              color={colors.primary}
+            />
+            <Text style={[styles.switchText, { color: colors.primary }]}>
+              Buyer
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -424,6 +428,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
     marginRight: Spacing.md,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   greeting: {
     fontSize: FontSize.sm,

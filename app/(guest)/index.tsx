@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/useTheme';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { ClearStockLogo } from '@/components/ui/ClearStockLogo';
+import { NotificationBell } from '@/components/ui/NotificationBell';
 import {
   useListings,
   useSaveListing,
@@ -319,6 +320,8 @@ export default function GuestHomeScreen() {
                 </Text>
               </TouchableOpacity>
             )}
+            {/* Renders only once signed in — a guest has no notifications. */}
+            <NotificationBell />
             <TouchableOpacity
               onPress={toggleTheme}
               style={[

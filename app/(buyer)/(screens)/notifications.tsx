@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { NOTIFICATIONS_UNREAD_KEY } from '@/components/ui/NotificationBell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getNotifications,
@@ -152,8 +153,13 @@ export default function NotificationsScreen() {
   const rollback = (_e: unknown, _v: unknown, ctx: any) => {
     if (ctx?.prev) queryClient.setQueryData([NOTIFICATIONS_KEY], ctx.prev);
   };
-  const reconcile = () =>
+  const reconcile = () => {
     queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
+    // The home headers show an unread badge off a separate count endpoint, so
+    // it has to be refreshed alongside the list or it keeps showing the old
+    // number after you've read something.
+    queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_UNREAD_KEY] });
+  };
 
   const { mutate: markRead } = useMutation({
     mutationFn: (id: string) => markNotificationAsRead(id),
