@@ -15,7 +15,13 @@ public interface ListingRepository extends JpaRepository<Listing, Long>, JpaSpec
 
     List<Listing> findByListingStatus(ListingStatus status);
 
-    List<Listing> findBySeller(SellerProfile seller);
+    /**
+     * Newest first. Without an explicit order the database is free to return
+     * rows however it likes, which in practice meant oldest first — so a
+     * seller's newly created listing sank to the bottom and dropped out of the
+     * dashboard's short "your listings" preview.
+     */
+    List<Listing> findBySellerOrderByCreatedAtDesc(SellerProfile seller);
 
     List<Listing> findByListingStatusAndDiscountStepPercentIsNotNullAndDiscountIntervalDaysIsNotNull(
             ListingStatus status);

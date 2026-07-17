@@ -215,7 +215,7 @@ public class ListingService {
 
     public List<ListingResponse> getSellerListings(User user) {
         SellerProfile seller = requireSellerProfile(user);
-        return listingRepository.findBySeller(seller)
+        return listingRepository.findBySellerOrderByCreatedAtDesc(seller)
                 .stream().map(ListingResponse::from).collect(Collectors.toList());
     }
 
