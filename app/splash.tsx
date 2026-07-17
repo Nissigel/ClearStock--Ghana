@@ -29,28 +29,36 @@ export default function SplashScreen() {
   const dot2Scale = useRef<Animated.Value>(new Animated.Value(1)).current;
   const dot3Scale = useRef<Animated.Value>(new Animated.Value(1)).current;
 
+  // The auth store isn't persisted, so a saved token alone leaves the app
+  // "logged in" with no user and every screen falls back to a nameless "User".
+  // Refill it from the token — but never block navigation on this: the splash
+  // has already faded out by now, so awaiting a sleeping backend here would
+  // leave the user staring at a blank screen for a minute.
+  const restoreSessionInBackground = async (token: string) => {
+    try {
+      const profile = await getMyProfile();
+      setAuth(profile, token);
+      try {
+        setSellerProfile(await getSellerProfile());
+      } catch {
+        // Buyer-only account — no seller profile is normal.
+      }
+    } catch {
+      // Token is stale or rejected — drop it and fall back to guest browsing.
+      await clearTokens();
+      clearAuth();
+      router.replace('/(guest)');
+    }
+  };
+
   const navigateAfterSplash = async () => {
     try {
       const token = await getToken();
       if (token) {
-        // The auth store isn't persisted, so a saved token alone leaves the app
-        // "logged in" with no user — every screen then falls back to "User"
-        // with no name. Rehydrate the session from the token before entering.
-        try {
-          const profile = await getMyProfile();
-          setAuth(profile, token);
-          try {
-            setSellerProfile(await getSellerProfile());
-          } catch {
-            // Buyer-only account — no seller profile is normal.
-          }
-          router.replace('/(buyer)/(tabs)/home');
-          return;
-        } catch {
-          // Token is stale or rejected — drop it and browse as a guest.
-          await clearTokens();
-          clearAuth();
-        }
+        // Go straight in; the profile fills itself in a moment later.
+        router.replace('/(buyer)/(tabs)/home');
+        restoreSessionInBackground(token);
+        return;
       }
 
       // if user hasn't seen onboarding, show it first

@@ -30,12 +30,20 @@ export default function BuyerTransactionDetailScreen() {
   const { data: transaction, isLoading } = useQuery({
     queryKey: ['transaction', id],
     queryFn: () => getTransactionById(id),
+    // Always re-read on open: queries are cached for 5 minutes, which is long
+    // enough to reopen a finished order and still be shown the OTP box.
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const { mutate: verifyOtp, isPending } = useMutation({
     mutationFn: (otpCode: string) => verifyTransactionOtp(id, { otp: otpCode }),
     onSuccess: () => {
+      // Refresh this order too, not just the list — otherwise reopening it
+      // serves the pre-confirmation copy and shows the OTP box again.
+      queryClient.invalidateQueries({ queryKey: ['transaction', id] });
       queryClient.invalidateQueries({ queryKey: ['buyer-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-transactions'] });
       Alert.alert('Success', 'Transaction completed successfully!', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -69,9 +77,19 @@ export default function BuyerTransactionDetailScreen() {
     );
   }
 
+  const isCompleted = transaction.transactionStatus === 'COMPLETED';
+  const isCancelled = transaction.transactionStatus === 'CANCELLED';
+
   const showOtp =
     transaction.transactionStatus === 'READY_FOR_COLLECTION' ||
     transaction.transactionStatus === 'DELIVERED';
+
+  // Paying only makes sense on a live order — a cancelled or finished one can
+  // never be paid for, so don't offer it.
+  const canPay =
+    !isCompleted &&
+    !isCancelled &&
+    transaction.paymentStatus !== 'PAYMENT_SUCCESSFUL';
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -132,7 +150,7 @@ export default function BuyerTransactionDetailScreen() {
             </View>
           </View>
         )}
-        {transaction.paymentStatus !== 'PAYMENT_SUCCESSFUL' && (
+        {canPay && (
           <Button
             label="Pay Now"
             onPress={() =>
@@ -143,6 +161,51 @@ export default function BuyerTransactionDetailScreen() {
             }
             style={styles.payButton}
           />
+        )}
+
+        {/* Confirmed — replaces the OTP box once the order is finished. */}
+        {isCompleted && (
+          <View
+            style={[
+              styles.otpCard,
+              {
+                backgroundColor: colors.secondary,
+                borderColor: colors.primary,
+                borderRadius: Radius.lg,
+              },
+            ]}
+          >
+            <Ionicons name="checkmark-circle" size={32} color={colors.primary} />
+            <Text style={[styles.otpTitle, { color: colors.foreground }]}>
+              Collection confirmed
+            </Text>
+            <Text style={[styles.otpDesc, { color: colors.mutedForeground }]}>
+              You confirmed receipt of this order, so it's complete. Nothing
+              else to do here.
+            </Text>
+          </View>
+        )}
+
+        {isCancelled && (
+          <View
+            style={[
+              styles.otpCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderRadius: Radius.lg,
+              },
+            ]}
+          >
+            <Ionicons name="close-circle" size={32} color={colors.mutedForeground} />
+            <Text style={[styles.otpTitle, { color: colors.foreground }]}>
+              Order cancelled
+            </Text>
+            <Text style={[styles.otpDesc, { color: colors.mutedForeground }]}>
+              This order was cancelled, so there's nothing left to pay or
+              collect.
+            </Text>
+          </View>
         )}
 
         {showOtp && (
