@@ -149,6 +149,11 @@ public class PurchaseRequestService {
                 .sender(request.getSeller())
                 .messageContent(text)
                 .build());
+
+        // Record which thread this request belongs to, so the app can take the
+        // seller straight into it after declining to explain themselves.
+        request.setConversationId(String.valueOf(conversation.getId()));
+        purchaseRequestRepository.save(request);
     }
 
     public PurchaseRequestResponse cancelPurchaseRequest(User buyer, Long id) {
