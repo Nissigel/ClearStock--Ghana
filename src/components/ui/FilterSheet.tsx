@@ -195,7 +195,7 @@ export function FilterSheet({
             {/* Price Range */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Price Range (₵)
+                Price Range (GHS)
               </Text>
               <View style={styles.priceRow}>
                 <View style={styles.priceInputWrapper}>

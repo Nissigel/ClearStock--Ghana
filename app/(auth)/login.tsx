@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { Spacing, FontSize } from '@/constants/theme';
 import { PIN_LENGTH } from '@/constants/app';
+import { ClearStockLogo } from '@/components/ui/ClearStockLogo';
 
 export default function LoginPinScreen() {
   const { colors } = useTheme();
@@ -109,24 +110,27 @@ export default function LoginPinScreen() {
       >
         {/* TOP — Green section */}
         <View
-          style={[styles.topSection, { backgroundColor: colors.background }]}
+          style={[styles.topSection, { backgroundColor: colors.brandGreen }]}
         >
           <ScreenHeader
             showBack
             transparent
+            tint={colors.brandGreenForeground}
             containerStyle={styles.header}
           />
-          <Text style={[styles.topTitle, { color: colors.gold }]}>
-            Welcome back
-          </Text>
-          <Text
-            style={[
-              styles.topSubtitle,
-              { color: colors.mutedForeground },
-            ]}
-          >
-            Login to your ClearStock Ghana account
-          </Text>
+          {/* The real mark, so the sign-in screen carries the brand rather
+              than a generic placeholder icon. */}
+          <View style={styles.brandBlock}>
+            <ClearStockLogo size={64} radius={18} />
+            <Text style={[styles.topTitle, { color: colors.gold }]}>
+              Welcome back
+            </Text>
+            <Text
+              style={[styles.topSubtitle, { color: colors.brandGreenMuted }]}
+            >
+              Enter your details to continue
+            </Text>
+          </View>
         </View>
 
         {/* BOTTOM — Form section */}
@@ -136,10 +140,6 @@ export default function LoginPinScreen() {
             { backgroundColor: colors.background },
           ]}
         >
-          <Text style={[styles.heading, { color: colors.foreground }]}>
-            Enter your details
-          </Text>
-
           <Input
             label="Phone Number"
             placeholder="XX XXX XXXX"
@@ -155,10 +155,11 @@ export default function LoginPinScreen() {
             error={phoneError}
           />
 
-          <Text
-            style={[styles.pinLabel, { color: colors.foreground }]}
-          >
-            PIN
+          <Text style={[styles.pinLabel, { color: colors.foreground }]}>
+            Your PIN
+          </Text>
+          <Text style={[styles.pinHint, { color: colors.mutedForeground }]}>
+            Type your {PIN_LENGTH}-digit PIN to log in
           </Text>
 
           <PinInput
@@ -237,15 +238,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     paddingHorizontal: 0,
   },
+  // Centred around the mark, so the green band reads as a brand moment rather
+  // than a left-aligned heading with space above it.
+  brandBlock: {
+    alignItems: 'center',
+    paddingTop: Spacing.sm,
+  },
   topTitle: {
-    fontSize: FontSize.xl,
+    fontSize: FontSize['2xl'],
     fontWeight: 'bold',
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.md,
+    marginTop: Spacing.base,
+    textAlign: 'center',
   },
   topSubtitle: {
     fontSize: FontSize.sm,
-    opacity: 0.85,
+    marginTop: Spacing.xs,
+    textAlign: 'center',
   },
   bottomSection: {
     flex: 1,
@@ -256,15 +264,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingBottom: Spacing['2xl'],
   },
-  heading: {
-    fontSize: FontSize.xl,
-    fontWeight: 'bold',
-    marginBottom: Spacing.xl,
-  },
   pinLabel: {
     fontSize: FontSize.sm,
-    fontWeight: '500',
-    marginBottom: Spacing.sm,
+    fontWeight: '600',
+  },
+  pinHint: {
+    fontSize: FontSize.xs,
+    marginTop: 2,
+    marginBottom: Spacing.md,
   },
   pinInput: {
     marginBottom: Spacing.sm,

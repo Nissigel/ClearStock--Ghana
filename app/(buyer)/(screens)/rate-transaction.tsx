@@ -8,14 +8,14 @@ import {
 import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { Button } from '@/components/ui/Button';
 import { StarRating } from '@/components/ui/StarRating';
 import { createReview } from '@/api/review.api';
-import { FontSize, Spacing, Radius } from '@/constants/theme';
+import { FontSize, FontFamily, Spacing, Radius } from '@/constants/theme';
 
 export default function RateTransactionScreen() {
   const { transactionId, sellerId, sellerName } = useLocalSearchParams<{
@@ -25,6 +25,7 @@ export default function RateTransactionScreen() {
   }>();
   const { colors } = useTheme();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
@@ -38,6 +39,12 @@ export default function RateTransactionScreen() {
         comment: comment.trim() || undefined,
       }),
     onSuccess: () => {
+      // Refresh the order so the rate button gives way to the "reviewed"
+      // note, and the seller's rating picks up the new score.
+      queryClient.invalidateQueries({ queryKey: ['transaction', transactionId] });
+      queryClient.invalidateQueries({ queryKey: ['buyer-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-reviews', sellerId] });
+      queryClient.invalidateQueries({ queryKey: ['seller-rating', sellerId] });
       Alert.alert(
         'Review Submitted',
         'Thank you for your feedback!',
@@ -134,7 +141,7 @@ export default function RateTransactionScreen() {
                 color: colors.foreground,
                 borderColor: colors.input,
                 borderRadius: Radius.md,
-                fontFamily: 'Inter_400Regular',
+                fontFamily: FontFamily.regular,
               },
             ]}
           />

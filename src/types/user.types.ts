@@ -59,6 +59,26 @@ export interface BecomeSellerRequest {
   email?: string | null;
 }
 
+/**
+ * A seller's money: held while a buyer's collection is unconfirmed, then
+ * cleared once confirmed. ClearStock's commission is deducted before payout,
+ * so every stage is reported gross and net.
+ */
+export interface SellerEarnings {
+  /** Commission percentage ClearStock keeps, e.g. 7. */
+  commissionRate: number;
+  heldGross: number;
+  heldNet: number;
+  heldCount: number;
+  clearedGross: number;
+  clearedNet: number;
+  clearedCount: number;
+  totalGross: number;
+  totalCommission: number;
+  totalNet: number;
+  paidOut: number;
+}
+
 export interface RecoveryDashboard {
   totalGhsRecovered: number;
   totalTransactionsCompleted: number;

@@ -26,16 +26,45 @@ export function Text({
   const { colors } = useThemeStore();
 const fontFamily = FontFamily;
 
+  // A custom font carries no weights of its own — each weight is a separate
+  // file — so a `fontWeight` in a caller's style has to be translated into the
+  // matching font. Without this it was dropped and everything rendered
+  // regular, however bold the style said it was.
+  const flat = (StyleSheet.flatten(style) ?? {}) as {
+    fontWeight?: string | number;
+  };
+  const weightFromStyle = ((): AppTextProps['weight'] | null => {
+    switch (String(flat.fontWeight)) {
+      case '700':
+      case '800':
+      case '900':
+      case 'bold':
+        return 'bold';
+      case '600':
+        return 'semiBold';
+      case '500':
+        return 'medium';
+      case '400':
+      case 'normal':
+        return 'regular';
+      default:
+        return null;
+    }
+  })();
+
+  // An explicit style wins over the prop — it's the more specific instruction.
+  const resolvedWeight = weightFromStyle ?? weight;
+
   const getFontFamily = () => {
     if (display) {
-      switch (weight) {
+      switch (resolvedWeight) {
         case 'bold': return fontFamily.displayBold;
         case 'semiBold': return fontFamily.displaySemiBold;
         case 'medium': return fontFamily.displayMedium;
         default: return fontFamily.displayRegular;
       }
     }
-    switch (weight) {
+    switch (resolvedWeight) {
       case 'bold': return fontFamily.bold;
       case 'semiBold': return fontFamily.semiBold;
       case 'medium': return fontFamily.medium;
@@ -52,6 +81,13 @@ const fontFamily = FontFamily;
           fontSize: FontSize[size],
           color: color ?? colors.foreground,
         },
+        // Applied last so a caller's style actually wins. It used to be
+        // destructured and then dropped, which silently discarded every colour,
+        // size and weight passed in — leaving whole screens on the defaults.
+        style,
+        // The weight is expressed by the font file chosen above, so clear it
+        // here rather than let the platform synthesise a second bold on top.
+        { fontWeight: undefined },
       ]}
     >
       {children}

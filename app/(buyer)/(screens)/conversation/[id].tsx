@@ -9,12 +9,13 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useRef } from 'react';
 import type { AxiosError } from 'axios';
 import { useTheme } from '@/hooks/useTheme';
-import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { Avatar } from '@/components/ui/Avatar';
+import { QuickReplies } from '@/components/ui/QuickReplies';
 import {
   useMessages,
   useSendMessage,
@@ -30,6 +31,7 @@ import type { Message } from '@/types/messaging.types';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { colors } = useTheme();
   const currentUserId = useAuthStore((state) => state.user?.id);
   const [messageText, setMessageText] = useState('');
@@ -50,6 +52,29 @@ export default function ConversationScreen() {
     Date.now() - new Date(message.createdAt).getTime() < EDIT_WINDOW_MS;
 
   const busy = isPending || isEditing;
+
+  // Buyers ask questions, sellers answer them — so the one-tap messages differ.
+  const isBuyer = String(conversation?.buyerUserId) === String(currentUserId);
+
+  // Contact details stay hidden until a purchase request has been accepted.
+  // The backend already withholds them, but gate on the flag explicitly so the
+  // rule is visible here rather than resting on a value happening to be null.
+  const otherPhoneVisible = isBuyer
+    ? conversation?.sellerPhoneVisible
+    : conversation?.buyerPhoneVisible;
+
+  // Sends straight away rather than filling the box: the point is to skip
+  // typing entirely.
+  const handleQuickReply = (text: string) => {
+    if (busy) return;
+    send(
+      { conversationId: id, content: text },
+      {
+        onSuccess: () =>
+          flatListRef.current?.scrollToEnd({ animated: true }),
+      }
+    );
+  };
 
   const handleSend = () => {
     const text = messageText.trim();
@@ -179,28 +204,89 @@ export default function ConversationScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      style={[styles.safeArea, { backgroundColor: colors.brandGreen }]}
+      edges={['top']}
     >
-      <ScreenHeader
-        showBack
-        title={conversation?.otherParty.fullName ?? 'Conversation'}
-        rightElement={
-          conversation?.listingName ? (
+      {/* Green header, matching the rest of the app */}
+      <View style={[styles.header, { backgroundColor: colors.brandGreen }]}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons
+            name="chevron-back"
+            size={26}
+            color={colors.brandGreenForeground}
+          />
+        </TouchableOpacity>
+        <Avatar
+          uri={conversation?.otherParty.profilePhotoUrl}
+          name={conversation?.otherParty.fullName}
+          size="md"
+        />
+        <View style={styles.headerText}>
+          <Text
+            style={[styles.headerName, { color: colors.brandGreenForeground }]}
+            numberOfLines={1}
+          >
+            {conversation?.otherParty.fullName ?? 'Conversation'}
+          </Text>
+          {/* No number here — it appears once in the contact banner below,
+              and only after a purchase request has been accepted. */}
+          {!!conversation?.listingName && (
             <Text
-              style={[styles.listingTag, { color: colors.mutedForeground }]}
+              style={[styles.headerSub, { color: colors.brandGreenMuted }]}
               numberOfLines={1}
             >
-              {conversation.listingName}
+              {isBuyer ? 'Seller' : 'Buyer'}
             </Text>
-          ) : undefined
-        }
-      />
+          )}
+        </View>
+      </View>
 
       <KeyboardAvoidingView
-        style={styles.flex}
+        style={[styles.flex, { backgroundColor: colors.background }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
+        {/* Sits below the green band, on the conversation surface — tap it to
+            open the listing being discussed. */}
+        {!!conversation?.listingName && (
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: '/(buyer)/(tabs)/listing/[id]',
+                params: { id: String(conversation.listingId) },
+              })
+            }
+            activeOpacity={0.8}
+            style={[
+              styles.listingCard,
+              { backgroundColor: colors.secondary, borderColor: colors.border },
+            ]}
+          >
+            <Ionicons name="pricetag-outline" size={16} color={colors.primary} />
+            <View style={styles.listingCardText}>
+              <Text
+                style={[styles.listingCardLabel, { color: colors.mutedForeground }]}
+              >
+                Discussing listing
+              </Text>
+              <Text
+                style={[styles.listingCardName, { color: colors.primary }]}
+                numberOfLines={1}
+              >
+                {conversation.listingName}
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.mutedForeground}
+            />
+          </TouchableOpacity>
+        )}
+
         <FlatList
           ref={flatListRef}
           data={messages ?? []}
@@ -228,7 +314,10 @@ export default function ConversationScreen() {
         />
 
         {/* Phone reveal banner */}
-        {conversation?.buyerPhoneVisible && conversation?.otherParty.phoneNumber && (
+        {/* Contact is revealed only once a purchase request has been accepted.
+            Gated on the other party's flag — it previously always checked the
+            buyer's, which only worked because both flip together. */}
+        {otherPhoneVisible && conversation?.otherParty.phoneNumber && (
           <View
             style={[
               styles.phoneBanner,
@@ -258,6 +347,15 @@ export default function ConversationScreen() {
               <Ionicons name="close" size={18} color={colors.mutedForeground} />
             </TouchableOpacity>
           </View>
+        )}
+
+        {/* One-tap messages, so a deal doesn't depend on typing English. */}
+        {!editingId && (
+          <QuickReplies
+            role={isBuyer ? 'BUYER' : 'SELLER'}
+            onSelect={handleQuickReply}
+            disabled={busy}
+          />
         )}
 
         {/* Message Input */}
@@ -317,6 +415,45 @@ export default function ConversationScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.md,
+  },
+  headerText: {
+    flex: 1,
+  },
+  headerName: {
+    fontSize: FontSize.md,
+    fontWeight: 'bold',
+  },
+  headerSub: {
+    fontSize: FontSize.xs,
+    marginTop: 1,
+  },
+  listingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.base,
+    marginTop: Spacing.sm,
+    padding: Spacing.sm,
+    borderWidth: 0.5,
+    borderRadius: Radius.lg,
+  },
+  listingCardText: {
+    flex: 1,
+  },
+  listingCardLabel: {
+    fontSize: FontSize.xs,
+  },
+  listingCardName: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
   },
   flex: {
     flex: 1,

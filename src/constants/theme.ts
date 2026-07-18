@@ -62,6 +62,14 @@ export const LightColors = {
   gold: palette.gold400,
   goldForeground: palette.gold900,
 
+  // --- Brand green band ---
+  // The green behind the splash and the top of the home / auth screens.
+  // brandGreenForeground is what stays readable on top of it.
+  brandGreen: palette.green600,
+  brandGreenForeground: palette.white,
+  brandGreenMuted: 'rgba(255,255,255,0.78)',
+  brandGreenField: 'rgba(255,255,255,0.16)',
+
   // --- Backgrounds ---
   background: palette.offWhite,
   card: palette.white,
@@ -110,6 +118,14 @@ export const DarkColors = {
   // --- Gold Accent ---
   gold: palette.gold300,
   goldForeground: palette.warmGray900,
+
+  // --- Brand green band ---
+  // Deeper here so it reads as a band against a near-black page rather than
+  // glowing off it.
+  brandGreen: '#06482a',
+  brandGreenForeground: palette.white,
+  brandGreenMuted: 'rgba(255,255,255,0.75)',
+  brandGreenField: 'rgba(255,255,255,0.12)',
 
   // --- Backgrounds ---
   background: palette.dark300,

@@ -104,28 +104,36 @@ export default function SplashScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.brandGreen }]}>
       <View style={styles.center}>
-        {/* The logo tile stays a fixed dark badge in both themes — like an app
-            icon, it's built to sit on any background. */}
+        {/* The mark is designed on white, so it sits on a white tile in both
+            themes — like an app icon, it reads on any background. */}
         <Animated.View
           style={[
             styles.logoBox,
             { opacity: logoOpacity, transform: [{ scale: logoScale }] },
           ]}
         >
-          <ClearStockLogo size={56} />
+          <ClearStockLogo size={104} radius={26} />
         </Animated.View>
 
         <Animated.View style={{ opacity: textOpacity, alignItems: 'center' }}>
-          <Text style={[styles.brand, { color: colors.foreground }]}>
-            Clear<Text style={{ color: colors.primary }}>Stock</Text>
+          {/* Gold "Clear" with white "Stock" — the theme's green would be
+              invisible against the green backdrop. */}
+          <Text style={[styles.brand, { color: colors.gold }]}>
+            Clear<Text style={{ color: colors.brandGreenForeground }}>Stock</Text>
           </Text>
-          <Text style={[styles.brandTag, { color: colors.mutedForeground }]}>
-            GHANA · SURPLUS EXCHANGE
-          </Text>
+          {/* GHANA sits under the wordmark as it does in the logo, rather than
+              buried in a line of small print. */}
+          <View style={styles.regionRow}>
+            <View style={[styles.regionRule, { backgroundColor: colors.gold }]} />
+            <Text style={[styles.region, { color: colors.brandGreenForeground }]}>
+              GHANA
+            </Text>
+            <View style={[styles.regionRule, { backgroundColor: colors.gold }]} />
+          </View>
 
-          <Text style={[styles.tagline, { color: colors.mutedForeground }]}>
+          <Text style={[styles.tagline, { color: colors.brandGreenMuted }]}>
             Buy and sell surplus goods{'\n'}before they go to waste.
           </Text>
         </Animated.View>
@@ -145,18 +153,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   logoBox: {
-    width: 96,
-    height: 96,
     borderRadius: 26,
-    backgroundColor: '#0a2416',
-    borderWidth: 1,
-    borderColor: 'rgba(74, 222, 128, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
-    shadowColor: '#4ade80',
+    // A soft lift so the white tile doesn't float flat on a light background.
+    shadowColor: '#000',
     shadowOpacity: 0.18,
-    shadowRadius: 24,
+    shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
   },
@@ -165,10 +169,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: -0.5,
   },
-  brandTag: {
-    fontSize: 10,
-    letterSpacing: 2.5,
-    marginTop: 6,
+  regionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+  },
+  regionRule: {
+    width: 26,
+    height: 1,
+    opacity: 0.8,
+  },
+  region: {
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: 6,
   },
   tagline: {
     fontSize: 13,

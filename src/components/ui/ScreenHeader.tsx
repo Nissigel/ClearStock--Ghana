@@ -17,6 +17,11 @@ interface ScreenHeaderProps {
   rightElement?: React.ReactNode;
   containerStyle?: ViewStyle;
   transparent?: boolean;
+  /**
+   * Overrides the back arrow and title colour. Used by headers sitting on the
+   * brand green band, where the usual dark foreground would disappear.
+   */
+  tint?: string;
 }
 
 export function ScreenHeader({
@@ -26,6 +31,7 @@ export function ScreenHeader({
   rightElement,
   containerStyle,
   transparent = false,
+  tint,
 }: ScreenHeaderProps) {
   const { colors } = useTheme();
   const router = useRouter();
@@ -59,7 +65,7 @@ export function ScreenHeader({
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.foreground}
+              color={tint ?? colors.foreground}
             />
           </TouchableOpacity>
         )}
@@ -71,7 +77,7 @@ export function ScreenHeader({
             style={[
               styles.title,
               {
-                color: colors.foreground,
+                color: tint ?? colors.foreground,
                 fontSize: FontSize.md,
               },
             ]}

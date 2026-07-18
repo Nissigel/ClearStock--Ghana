@@ -94,7 +94,7 @@ export function PurchaseRequestSheet({
     // Last check before it goes to the seller.
     Alert.alert(
       'Confirm your request',
-      `Request ${qty} ${unitLabel} of ${listingName} for ${CURRENCY_SYMBOL}${totalAmount.toFixed(
+      `Request ${qty} ${unitLabel} of ${listingName} for ${CURRENCY_SYMBOL} ${totalAmount.toFixed(
         2
       )}?`,
       [
@@ -149,7 +149,7 @@ export function PurchaseRequestSheet({
               Price per {unitOfMeasurement ?? 'unit'}
             </Text>
             <Text style={[styles.price, { color: colors.primary }]}>
-              {CURRENCY_SYMBOL}{currentPrice.toFixed(2)}
+              {CURRENCY_SYMBOL} {currentPrice.toFixed(2)}
             </Text>
           </View>
 
@@ -176,7 +176,7 @@ export function PurchaseRequestSheet({
                 Total Amount
               </Text>
               <Text style={[styles.totalAmount, { color: colors.primary }]}>
-                {CURRENCY_SYMBOL}{totalAmount.toFixed(2)}
+                {CURRENCY_SYMBOL} {totalAmount.toFixed(2)}
               </Text>
             </View>
           )}

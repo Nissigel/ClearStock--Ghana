@@ -532,7 +532,7 @@ export default function CreateListingScreen() {
             </Text>
 
             <Input
-              label="Original Price (₵)"
+              label="Original Price (GHS)"
               placeholder="e.g. 500.00"
               value={store.originalPrice}
               onChangeText={(v) => store.setField('originalPrice', v)}
@@ -542,7 +542,7 @@ export default function CreateListingScreen() {
             />
 
             <Input
-              label="Minimum Acceptable Price (₵)"
+              label="Minimum Acceptable Price (GHS)"
               placeholder="e.g. 300.00"
               value={store.minimumPrice}
               onChangeText={(v) => store.setField('minimumPrice', v)}
@@ -680,7 +680,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacing.base,
-    paddingBottom: Spacing['4xl'],
+    // Deep enough that the last fields — the multi-line description especially
+    // — can still be scrolled clear of the keyboard.
+    paddingBottom: 320,
   },
   stepTitle: {
     fontSize: FontSize.xl,

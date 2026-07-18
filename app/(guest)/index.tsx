@@ -33,15 +33,19 @@ import { AuthPromptSheet } from '@/components/ui/AuthPromptSheet';
 import { FilterSheet } from '@/components/ui/FilterSheet';
 import { Image } from 'react-native';
 import { CURRENCY_SYMBOL } from '@/constants/app';
+import { isListingUrgent } from '@/utils/urgency';
 import { Badge } from '@/components/ui/Badge';
 import { SaleEndsCountdown } from '@/components/ui/SaleEndsCountdown';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - Spacing.base * 2 - Spacing.sm) / 2;
 const IMAGE_HEIGHT = CARD_WIDTH * 0.85;
+/** Below this many units, a card shows how little stock is left. */
+const LOW_STOCK_THRESHOLD = 30;
 
 export default function GuestHomeScreen() {
   const { colors, isDark, setColorScheme, colorScheme } = useTheme();
+  const headerGreen = colors.brandGreen;
   const router = useRouter();
   const segments = useSegments();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -239,7 +243,7 @@ export default function GuestHomeScreen() {
                   { backgroundColor: 'rgba(0,0,0,0.8)' },
                 ]}
               >
-                <Ionicons name="time-outline" size={10} color="white" />
+                <Ionicons name="time-outline" size={12} color="white" />
                 <Text style={styles.expiryText}>{expiryLabel}</Text>
               </View>
             </View>
@@ -255,16 +259,40 @@ export default function GuestHomeScreen() {
             {item.productName}
           </Text>
 
-          <Text style={[styles.currentPrice, { color: colors.destructive }]}>
+          {/* Red is reserved for listings genuinely running out — see
+              isListingUrgent. Nearly everything here is discounted, so
+              colouring every discount red made red mean nothing. */}
+          <Text
+            style={[
+              styles.currentPrice,
+              {
+                color: isListingUrgent(item)
+                  ? colors.destructive
+                  : colors.foreground,
+              },
+            ]}
+          >
             {CURRENCY_SYMBOL} {item.currentPrice.toFixed(2)}
           </Text>
 
+          {/* The old price with the line drawn as a View rather than with
+              textDecorationLine: Android drops the decoration once a custom
+              fontFamily is applied, which the global font patch does to every
+              Text — so the old price just sat there looking like a second price. */}
           {isDiscounted && (
-            <Text
-              style={[styles.originalPrice, { color: colors.mutedForeground }]}
-            >
-              {CURRENCY_SYMBOL}{item.originalPrice.toFixed(2)}
-            </Text>
+            <View style={styles.originalPriceWrap}>
+              <Text
+                style={[styles.originalPrice, { color: colors.mutedForeground }]}
+              >
+                {CURRENCY_SYMBOL} {item.originalPrice.toFixed(2)}
+              </Text>
+              <View
+                style={[
+                  styles.strikeThrough,
+                  { backgroundColor: colors.mutedForeground },
+                ]}
+              />
+            </View>
           )}
 
           {item.listingStatus === 'ACTIVE' && !!item.clearanceEndDate && (
@@ -283,17 +311,54 @@ export default function GuestHomeScreen() {
               {item.sellerBusinessName}
             </Text>
           </View>
+
+          {/* Scarcity cue: only once stock is genuinely running down, so it
+              stays meaningful instead of sitting on every card. */}
+          {item.listingStatus === 'ACTIVE' &&
+            item.quantity > 0 &&
+            item.quantity < LOW_STOCK_THRESHOLD && (
+              <View style={styles.stockWrap}>
+                <Text
+                  style={[styles.stockText, { color: colors.mutedForeground }]}
+                >
+                  {item.quantity} {item.quantity === 1 ? 'item' : 'items'} left
+                </Text>
+                <View
+                  style={[styles.stockTrack, { backgroundColor: colors.border }]}
+                >
+                  <View
+                    style={[
+                      styles.stockFill,
+                      {
+                        width: `${Math.max(
+                          6,
+                          (item.quantity / LOW_STOCK_THRESHOLD) * 100
+                        )}%`,
+                        backgroundColor:
+                          item.quantity <= 5
+                            ? colors.destructive
+                            : colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            )}
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
+    // The safe area carries the header colour so the status bar sits on the
+    // same green rather than a pale strip above it. Only the top edge is
+    // inset — padding the bottom too left a green band above the tab bar.
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      style={[styles.safeArea, { backgroundColor: headerGreen }]}
+      edges={['top']}
     >
       {/* GREEN HEADER SECTION */}
-      <View style={[styles.headerSection, { backgroundColor: colors.background }]}>
+      <View style={[styles.headerSection, { backgroundColor: headerGreen }]}>
         {/* Top Row — Logo + Login + Theme */}
         <View style={styles.topRow}>
           <View style={styles.logoRow}>
@@ -342,28 +407,30 @@ export default function GuestHomeScreen() {
 
         {/* Search Bar */}
         <View style={styles.searchRow}>
+          {/* Translucent rather than solid white: a stark white field on the
+              green band drew more attention than the goods below it. */}
           <View
             style={[
               styles.searchContainer,
               {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
+                backgroundColor: colors.brandGreenField,
+                borderColor: 'rgba(255,255,255,0.28)',
                 borderWidth: 0.5,
                 borderRadius: Radius.lg,
               },
             ]}
           >
-            <Ionicons name="search-outline" size={18} color={colors.mutedForeground} />
+            <Ionicons name="search-outline" size={18} color={colors.brandGreenMuted} />
             <TouchableOpacity
               style={styles.searchInput}
               onPress={() => router.push('/(buyer)/(tabs)/search')}
             >
-              <Text style={[styles.searchPlaceholder, { color: colors.mutedForeground }]}>
+              <Text style={[styles.searchPlaceholder, { color: colors.brandGreenMuted }]}>
                 Search goods, sellers...
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowFilter(true)}>
-              <Ionicons name="options-outline" size={18} color={colors.mutedForeground} />
+              <Ionicons name="options-outline" size={18} color={colors.brandGreenMuted} />
             </TouchableOpacity>
           </View>
         </View>
@@ -642,12 +709,12 @@ const styles = StyleSheet.create({
     left: Spacing.xs,
   },
   discountPill: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
+    paddingHorizontal: Spacing.xs + 2,
+    paddingVertical: 2,
     borderRadius: Radius.full,
   },
   discountText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
     color: 'white',
   },
@@ -678,9 +745,11 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   expiryText: {
-    fontSize: 9,
+    // 9px was too small to read at a glance, which looked like a contrast
+    // problem rather than a size one.
+    fontSize: 11,
     color: 'white',
-    fontWeight: '500',
+    fontWeight: '600',
     // A soft shadow keeps it legible even where the pill overlaps a bright
     // part of the photo.
     textShadowColor: 'rgba(0,0,0,0.6)',
@@ -690,21 +759,50 @@ const styles = StyleSheet.create({
   cardDetails: {
     padding: Spacing.sm,
   },
+  // A clear order of attention: price first, then what it is, then who's
+  // selling. Previously all three read at the same size and weight.
   productName: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontWeight: '400',
+    marginBottom: 3,
     lineHeight: 18,
   },
   currentPrice: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.lg,
     fontWeight: 'bold',
     marginBottom: 1,
   },
+  originalPriceWrap: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    marginBottom: Spacing.xs,
+  },
   originalPrice: {
     fontSize: FontSize.xs,
-    textDecorationLine: 'line-through',
-    marginBottom: Spacing.xs,
+  },
+  strikeThrough: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+    opacity: 0.9,
+  },
+  stockWrap: {
+    marginTop: Spacing.xs,
+    gap: 3,
+  },
+  stockText: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  stockTrack: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  stockFill: {
+    height: 4,
+    borderRadius: 2,
   },
   cardCountdown: {
     marginBottom: Spacing.xs,

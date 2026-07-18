@@ -61,7 +61,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     userId: 'user-001',
     category: 'LISTING',
     title: 'Listing Price Updated',
-    body: 'The price for Indomie Instant Noodles has been reduced to ₵45.00.',
+    body: 'The price for Indomie Instant Noodles has been reduced to GHS 45.00.',
     status: 'READ',
     referenceType: 'listing',
     referenceId: 'listing-001',

@@ -68,11 +68,12 @@ export default function ForgotPinScreen() {
       >
         {/* TOP — Green section */}
         <View
-          style={[styles.topSection, { backgroundColor: colors.background }]}
+          style={[styles.topSection, { backgroundColor: colors.brandGreen }]}
         >
           <ScreenHeader
             showBack
             transparent
+            tint={colors.brandGreenForeground}
             containerStyle={styles.header}
           />
           <Text style={[styles.topTitle, { color: colors.gold }]}>

@@ -25,10 +25,15 @@ export default function SellerPublicProfileScreen() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['seller-listings', id],
-    queryFn: () => getListings({ page: 0, size: 20 }),
+    // There's no per-seller listings endpoint, so pull a wide page and narrow
+    // it below. Without that, this screen showed the whole marketplace and took
+    // the shop's name from whichever listing happened to be first.
+    queryFn: () => getListings({ page: 0, size: 200 }),
   });
 
-  const listings = data?.content ?? [];
+  const listings = (data?.content ?? []).filter(
+    (l) => String(l.sellerUserId ?? l.sellerId) === String(id)
+  );
 
   const handleListingPress = (listing: ListingSummary) => {
     router.push({
@@ -38,6 +43,11 @@ export default function SellerPublicProfileScreen() {
   };
 
   const sellerName = listings[0]?.sellerBusinessName ?? 'Seller';
+  // Carried on the listings we already fetched, so the shop shows the seller's
+  // photo instead of falling back to their initials.
+  // `|| null` on purpose: sellers who never set a photo can come back as an
+  // empty string, which would otherwise be treated as a real image URL.
+  const sellerPhoto = listings[0]?.sellerProfileImageUrl || null;
 
 const { data: reviews } = useQuery({
     queryKey: ['seller-reviews', id],
@@ -61,7 +71,7 @@ const { data: reviews } = useQuery({
           },
         ]}
       >
-        <Avatar name={sellerName} size="xl" />
+        <Avatar uri={sellerPhoto} name={sellerName} size="xl" />
         <Text style={[styles.sellerName, { color: colors.foreground }]}>
           {sellerName}
         </Text>

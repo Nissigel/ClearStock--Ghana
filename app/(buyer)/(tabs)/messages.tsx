@@ -6,10 +6,11 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
-import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { BrandHeader } from '@/components/ui/BrandHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LoadingGrid } from '@/components/ui/LoadingGrid';
@@ -23,6 +24,7 @@ import type { Conversation } from '@/types/messaging.types';
 
 export default function ConversationsScreen() {
   const { colors } = useTheme();
+  const [search, setSearch] = useState('');
   const router = useRouter();
   const { data: conversations, isLoading, refetch, isRefetching } = useConversations();
   const { mutate: deleteConversation } = useDeleteConversation();
@@ -73,16 +75,41 @@ export default function ConversationsScreen() {
     });
   };
 
+  const all = conversations ?? [];
+  const totalUnread = all.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
+
+  // Filter on the party, the listing and the last message — the three things
+  // someone would actually remember a chat by.
+  const term = search.trim().toLowerCase();
+  const visible = term
+    ? all.filter((c) =>
+        [c.otherParty.fullName, c.listingName, c.lastMessage?.content]
+          .filter(Boolean)
+          .some((field) => String(field).toLowerCase().includes(term))
+      )
+    : all;
+
   if (isLoading) return <LoadingGrid />;
 
   return (
+    // Top edge only, so the green doesn't reappear above the tab bar.
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      style={[styles.safeArea, { backgroundColor: colors.brandGreen }]}
+      edges={['top']}
     >
-      <ScreenHeader showBack={false} title="Messages" />
+      <BrandHeader
+        title="Messages"
+        badge={totalUnread > 0 ? `${totalUnread} new` : null}
+        search={{
+          value: search,
+          onChangeText: setSearch,
+          placeholder: 'Search conversations...',
+        }}
+      />
 
+      <View style={[styles.list, { backgroundColor: colors.background }]}>
       <FlatList
-        data={conversations ?? []}
+        data={visible}
         keyExtractor={(item) => item.id}
         onRefresh={refetch}
         refreshing={isRefetching}
@@ -90,8 +117,12 @@ export default function ConversationsScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="chatbubble-outline"
-            title="No conversations yet"
-            subtitle="Contact a seller to start a conversation"
+            title={term ? 'No matches' : 'No conversations yet'}
+            subtitle={
+              term
+                ? `Nothing matches "${search}"`
+                : 'Contact a seller to start a conversation'
+            }
           />
         }
         renderItem={({ item }) => (
@@ -175,6 +206,7 @@ export default function ConversationsScreen() {
           </TouchableOpacity>
         )}
       />
+      </View>
     </SafeAreaView>
   );
 }
@@ -182,6 +214,13 @@ export default function ConversationsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  list: {
+    flex: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginTop: -8,
+    overflow: 'hidden',
   },
   conversationItem: {
     flexDirection: 'row',

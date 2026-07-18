@@ -15,7 +15,7 @@ import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 import { CURRENCY_SYMBOL } from '@/constants/app';
 
 const formatGhs = (n: number) =>
-  `${CURRENCY_SYMBOL}${Math.round(n).toLocaleString('en-GH')}`;
+  `${CURRENCY_SYMBOL} ${Math.round(n).toLocaleString('en-GH')}`;
 
 const formatCo2 = (kg: number) =>
   kg >= 1000 ? `${(kg / 1000).toFixed(1)} t` : `${Math.round(kg)} kg`;

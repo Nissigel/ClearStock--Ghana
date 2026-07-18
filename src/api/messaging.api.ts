@@ -37,6 +37,14 @@ interface RawConversation {
   sellerUserId: number;
   buyerPhone: string | null;
   sellerPhone: string | null;
+  buyerName: string | null;
+  sellerName: string | null;
+  buyerProfileImageUrl: string | null;
+  sellerProfileImageUrl: string | null;
+  lastMessageContent: string | null;
+  lastMessageAt: string | null;
+  lastMessageSenderId: number | null;
+  unreadCount: number | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -59,9 +67,12 @@ const mapConversation = (raw: RawConversation): Conversation => {
   const me = currentUserId();
   const isBuyer = String(raw.buyerUserId) === me;
   const otherId = isBuyer ? raw.sellerUserId : raw.buyerUserId;
-  // The backend doesn't return the other party's name — the phone is the best
-  // human-readable label we have.
   const otherPhone = isBuyer ? raw.sellerPhone : raw.buyerPhone;
+  // Prefer the other party's name — for a seller that's their shop name. Older
+  // accounts were created before sign-up saved a name, so the backend sends
+  // null for those and we fall back to the phone rather than showing nothing.
+  const otherName = isBuyer ? raw.sellerName : raw.buyerName;
+  const otherPhoto = isBuyer ? raw.sellerProfileImageUrl : raw.buyerProfileImageUrl;
   return {
     id: String(raw.id),
     listingId: String(raw.listingId),
@@ -71,15 +82,22 @@ const mapConversation = (raw: RawConversation): Conversation => {
     sellerUserId: String(raw.sellerUserId),
     otherParty: {
       id: String(otherId),
-      fullName: otherPhone || 'ClearStock user',
-      profilePhotoUrl: null,
+      fullName: otherName || otherPhone || 'ClearStock user',
+      profilePhotoUrl: otherPhoto || null,
       phoneNumber: otherPhone || null,
     },
     status: (raw.status as ConversationStatus) ?? 'ACTIVE',
     buyerPhoneVisible: !!raw.buyerPhone,
     sellerPhoneVisible: !!raw.sellerPhone,
-    lastMessage: null,
-    unreadCount: 0,
+    lastMessage: raw.lastMessageContent
+      ? {
+          id: `${raw.id}-last`,
+          content: raw.lastMessageContent,
+          senderUserId: String(raw.lastMessageSenderId ?? ''),
+          createdAt: raw.lastMessageAt ?? raw.updatedAt,
+        }
+      : null,
+    unreadCount: raw.unreadCount ?? 0,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };

@@ -1,6 +1,5 @@
 import {
   View,
-  Text,
   Image,
   TouchableOpacity,
   StyleSheet,
@@ -15,11 +14,14 @@ import { PriceDisplay } from '@/components/ui/PriceDisplay';
 import { Badge } from '@/components/ui/Badge';
 import { SaleEndsCountdown } from '@/components/ui/SaleEndsCountdown';
 import type { ListingSummary } from '@/types/listing.types';
-import { Heading, Label, Caption } from '@/components/ui/Typography';
+import { isListingUrgent } from '@/utils/urgency';
+import { Text, Caption } from '@/components/ui/Typography';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - Spacing.base * 2 - Spacing.sm) / 2;
 const IMAGE_HEIGHT = CARD_WIDTH * 0.85;
+/** Below this many units, a card shows how little stock is left. */
+const LOW_STOCK_THRESHOLD = 30;
 
 interface ListingCardProps {
   listing: ListingSummary;
@@ -150,18 +152,21 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
       </View>
       {/* Details */}
       <View style={styles.details}>
-       <Heading
+       {/* Deliberately not a Heading: the price is the headline on a card, and
+           a bold name at the same size competed with it. */}
+       <Text
           numberOfLines={2}
           style={styles.productName}
           color={colors.foreground}
         >
           {listing.productName}
-        </Heading>
+        </Text>
 
         <PriceDisplay
           currentPrice={listing.currentPrice}
           originalPrice={listing.originalPrice}
-          size="sm"
+          size="md"
+          urgent={isListingUrgent(listing)}
           containerStyle={styles.price}
         />
 
@@ -182,6 +187,32 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
         >
           {sellerName}
         </Caption>
+
+        {/* Scarcity cue, shown only once stock is genuinely running down. */}
+        {listing.listingStatus === 'ACTIVE' &&
+          listing.quantity > 0 &&
+          listing.quantity < LOW_STOCK_THRESHOLD && (
+            <View style={styles.stockWrap}>
+              <Text style={[styles.stockText, { color: colors.mutedForeground }]}>
+                {listing.quantity} {listing.quantity === 1 ? 'item' : 'items'} left
+              </Text>
+              <View style={[styles.stockTrack, { backgroundColor: colors.border }]}>
+                <View
+                  style={[
+                    styles.stockFill,
+                    {
+                      width: `${Math.max(
+                        6,
+                        (listing.quantity / LOW_STOCK_THRESHOLD) * 100
+                      )}%`,
+                      backgroundColor:
+                        listing.quantity <= 5 ? colors.destructive : colors.primary,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          )}
       </View>
     </TouchableOpacity>
   );
@@ -192,6 +223,23 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     borderWidth: 0.5,
     overflow: 'hidden',
+  },
+  stockWrap: {
+    marginTop: Spacing.xs,
+    gap: 3,
+  },
+  stockText: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  stockTrack: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  stockFill: {
+    height: 4,
+    borderRadius: 2,
   },
   imageContainer: {
     width: '100%',

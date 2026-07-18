@@ -92,7 +92,9 @@ const handlePurchaseRequest = () => {
   const handleViewSellerProfile = () => {
     router.push({
       pathname: '/(guest)/seller/[id]',
-      params: { id: String(listing?.sellerId ?? '') },
+      // The seller's *user* id: the shop screen looks up their ratings and
+      // reviews, and both are keyed by user rather than by seller profile.
+      params: { id: String(listing?.sellerUserId ?? listing?.sellerId ?? '') },
     });
   };
 
@@ -331,7 +333,7 @@ const handlePurchaseRequest = () => {
             />
             <DetailRow
               label="Original Price"
-              value={`${CURRENCY_SYMBOL}${listing.originalPrice.toFixed(2)}`}
+              value={`${CURRENCY_SYMBOL} ${listing.originalPrice.toFixed(2)}`}
               colors={colors}
             />
             <DetailRow

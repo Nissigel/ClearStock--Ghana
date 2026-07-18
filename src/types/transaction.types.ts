@@ -47,6 +47,8 @@ export interface Transaction {
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** True once the buyer has reviewed this order. */
+  reviewed?: boolean;
   evidence?: TransactionEvidence[];
 }
 

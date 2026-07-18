@@ -19,7 +19,7 @@ import {
   useReviewPurchaseRequest,
 } from '@/hooks/usePurchaseRequests';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
-import type { PurchaseRequest } from '@/types/transaction.types';
+import type { PurchaseRequest, Transaction } from '@/types/transaction.types';
 
 export default function SellerRequestsScreen() {
   const { colors } = useTheme();
@@ -50,17 +50,31 @@ export default function SellerRequestsScreen() {
     );
   };
 
+  // Declining opens the thread with the buyer and drops the seller straight
+  // into it, so they can say why rather than leaving the buyer guessing.
+  const openChatAfterDecline = (result: PurchaseRequest | Transaction) => {
+    const conversationId = (result as PurchaseRequest)?.conversationId;
+    if (!conversationId) return;
+    router.push({
+      pathname: '/(buyer)/(screens)/conversation/[id]',
+      params: { id: String(conversationId) },
+    });
+  };
+
   const handleDecline = (request: PurchaseRequest) => {
     Alert.alert(
       'Decline Request',
-      'Are you sure you want to decline this request?',
+      'Are you sure you want to decline this request? You can tell the buyer why in the chat.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Decline',
           style: 'destructive',
           onPress: () =>
-            reviewRequest({ id: String(request.id), action: 'DECLINE' }),
+            reviewRequest(
+              { id: String(request.id), action: 'DECLINE' },
+              { onSuccess: openChatAfterDecline }
+            ),
         },
       ]
     );

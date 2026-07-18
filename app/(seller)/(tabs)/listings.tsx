@@ -193,7 +193,7 @@ export default function SellerListingsScreen() {
           </Text>
           <View style={styles.priceRow}>
             <Text style={[styles.price, { color: colors.primary }]}>
-              {CURRENCY_SYMBOL}{item.currentPrice.toFixed(2)}
+              {CURRENCY_SYMBOL} {item.currentPrice.toFixed(2)}
             </Text>
             {item.currentPrice < item.originalPrice && (
               <Text
@@ -202,7 +202,7 @@ export default function SellerListingsScreen() {
                   { color: colors.mutedForeground },
                 ]}
               >
-                {CURRENCY_SYMBOL}{item.originalPrice.toFixed(2)}
+                {CURRENCY_SYMBOL} {item.originalPrice.toFixed(2)}
               </Text>
             )}
           </View>

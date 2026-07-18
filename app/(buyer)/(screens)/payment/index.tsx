@@ -19,7 +19,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Button } from '@/components/ui/Button';
 import { initiatePayment, verifyPayment } from '@/api/payment.api';
-import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
+import { FontSize, FontFamily, Spacing, Radius, Shadow } from '@/constants/theme';
 import { CURRENCY_SYMBOL } from '@/constants/app';
 import type { PaymentMethod, MoMoNetwork } from '@/types/payment.types';
 
@@ -128,7 +128,7 @@ export default function PaymentScreen() {
     if (!validate()) return;
     Alert.alert(
       'Confirm Payment',
-      `Pay ${CURRENCY_SYMBOL}${parseFloat(amount).toFixed(2)} to ${sellerName}?`,
+      `Pay ${CURRENCY_SYMBOL} ${parseFloat(amount).toFixed(2)} to ${sellerName}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Pay Now', onPress: () => processPayment() },
@@ -161,7 +161,7 @@ export default function PaymentScreen() {
             Total Amount
           </Text>
           <Text style={[styles.amount, { color: colors.gold }]}>
-            {CURRENCY_SYMBOL}{parseFloat(amount).toFixed(2)}
+            {CURRENCY_SYMBOL} {parseFloat(amount).toFixed(2)}
           </Text>
           <Text style={[styles.sellerName, { color: colors.primaryForeground }]}>
             To: {sellerName}
@@ -273,7 +273,7 @@ export default function PaymentScreen() {
                 placeholderTextColor={colors.mutedForeground}
                 keyboardType="phone-pad"
                 maxLength={10}
-                style={[styles.input, { color: colors.foreground, fontFamily: 'Inter_400Regular' }]}
+                style={[styles.input, { color: colors.foreground, fontFamily: FontFamily.regular }]}
               />
             </View>
           </View>
@@ -296,7 +296,7 @@ export default function PaymentScreen() {
                   backgroundColor: colors.card,
                   borderColor: colors.input,
                   borderRadius: Radius.md,
-                  fontFamily: 'Inter_400Regular',
+                  fontFamily: FontFamily.regular,
                 },
               ]}
             />
@@ -319,7 +319,7 @@ export default function PaymentScreen() {
                       backgroundColor: colors.card,
                       borderColor: colors.input,
                       borderRadius: Radius.md,
-                      fontFamily: 'Inter_400Regular',
+                      fontFamily: FontFamily.regular,
                     },
                   ]}
                 />
@@ -343,7 +343,7 @@ export default function PaymentScreen() {
                       backgroundColor: colors.card,
                       borderColor: colors.input,
                       borderRadius: Radius.md,
-                      fontFamily: 'Inter_400Regular',
+                      fontFamily: FontFamily.regular,
                     },
                   ]}
                 />
@@ -359,7 +359,7 @@ export default function PaymentScreen() {
         ) : null}
 
         <Button
-          label={`Pay ${CURRENCY_SYMBOL}${parseFloat(amount).toFixed(2)}`}
+          label={`Pay ${CURRENCY_SYMBOL} ${parseFloat(amount).toFixed(2)}`}
           onPress={handlePay}
           loading={isPaying || isVerifying}
         />

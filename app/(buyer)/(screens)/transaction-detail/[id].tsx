@@ -258,22 +258,32 @@ export default function BuyerTransactionDetailScreen() {
             />
           </View>
         )}
-        {transaction.transactionStatus === 'COMPLETED' && (
-          <Button
-            label="Rate this Seller"
-            onPress={() =>
-              router.push({
-                pathname: '/(buyer)/(screens)/rate-transaction',
-                params: {
-                  transactionId: String(transaction.id),
-                  sellerId: String(transaction.sellerUserId),
-                  sellerName: transaction.sellerPhone,
-                },
-              })
-            }
-            variant="outline"
-          />
-        )}
+        {/* Offered once per order — once the buyer has rated the seller there's
+            nothing left to do, so acknowledge it instead of asking again. */}
+        {transaction.transactionStatus === 'COMPLETED' &&
+          (transaction.reviewed ? (
+            <View style={styles.reviewedRow}>
+              <Ionicons name="star" size={16} color={colors.primary} />
+              <Text style={[styles.reviewedText, { color: colors.mutedForeground }]}>
+                You've reviewed this seller
+              </Text>
+            </View>
+          ) : (
+            <Button
+              label="Rate this Seller"
+              onPress={() =>
+                router.push({
+                  pathname: '/(buyer)/(screens)/rate-transaction',
+                  params: {
+                    transactionId: String(transaction.id),
+                    sellerId: String(transaction.sellerUserId),
+                    sellerName: transaction.sellerPhone,
+                  },
+                })
+              }
+              variant="outline"
+            />
+          ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -293,6 +303,14 @@ const styles = StyleSheet.create({
   phoneLabel: { fontSize: FontSize.xs },
   phoneNumber: { fontSize: FontSize.md, fontWeight: 'bold' },
   payButton: { marginBottom: Spacing.md },
+  reviewedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.md,
+  },
+  reviewedText: { fontSize: FontSize.sm },
   otpCard: { padding: Spacing.base, borderWidth: 0.5 },
   otpTitle: { fontSize: FontSize.lg, fontWeight: 'bold', marginBottom: Spacing.sm },
   otpDesc: { fontSize: FontSize.sm, lineHeight: 20, marginBottom: Spacing.lg },

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { ClearStockLogo } from '@/components/ui/ClearStockLogo';
 import { sendOtp } from '@/api/auth.api';
 import { useSlowRequestHint } from '@/hooks/useSlowRequestHint';
 import { Spacing, FontSize, Radius } from '@/constants/theme';
@@ -103,18 +104,11 @@ export default function PhoneEntryScreen() {
         />
 
         {/* TOP — Green section */}
-        <View style={[styles.topSection, { backgroundColor: colors.background }]}>
-          {/* Logo icon */}
+        <View style={[styles.topSection, { backgroundColor: colors.brandGreen }]}>
+          {/* The real mark — this was a hand-drawn "%" and arrow placeholder,
+              which barely read against the green band. */}
           <View style={styles.logoContainer}>
-            <View
-              style={[
-                styles.logoIcon,
-                { backgroundColor: colors.primaryDark },
-              ]}
-            >
-              <Text style={styles.logoPercent}>%</Text>
-              <Text style={styles.logoArrow}>↓</Text>
-            </View>
+            <ClearStockLogo size={64} radius={18} />
           </View>
 
           {/* App name -->*/}
@@ -127,7 +121,7 @@ export default function PhoneEntryScreen() {
           <Text style={[styles.appRegion, { color: colors.gold }]}>
             GHANA
           </Text>
-          <Text style={[styles.tagline, { color: colors.mutedForeground }]}>
+          <Text style={[styles.tagline, { color: colors.brandGreenMuted }]}>
             Fast Deals on Stock That Can't Wait.
           </Text>
         </View>
@@ -313,29 +307,6 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     marginBottom: Spacing.md,
-  },
-  logoIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: Radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#e0af3b',
-  },
-  logoPercent: {
-    fontSize: 14,
-    color: '#e0af3b',
-    fontWeight: 'bold',
-    position: 'absolute',
-    top: 12,
-    right: 14,
-  },
-  logoArrow: {
-    fontSize: 28,
-    color: '#e0af3b',
-    fontWeight: 'bold',
-    marginTop: 8,
   },
   appName: {
     fontSize: FontSize['2xl'],

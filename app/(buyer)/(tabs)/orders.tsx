@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { Badge } from '@/components/ui/Badge';
+import { BrandHeader } from '@/components/ui/BrandHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useQuery } from '@tanstack/react-query';
 import { getBuyerTransactions } from '@/api/transaction.api';
@@ -98,50 +99,50 @@ export default function BuyerOrdersScreen() {
   );
 
   return (
+    // Top edge only, so the green doesn't reappear above the tab bar.
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      style={[styles.safeArea, { backgroundColor: colors.brandGreen }]}
       edges={['top']}
     >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground }]}>
-          My Orders
-        </Text>
-      </View>
-
-      {/* Filter tabs */}
-      <View style={styles.filterRow}>
-        {FILTERS.map((f) => {
-          const isActive = filter === f.key;
-          return (
-            <TouchableOpacity
-              key={f.key}
-              onPress={() => setFilter(f.key)}
-              style={[
-                styles.filterChip,
-                {
-                  backgroundColor: isActive ? colors.primary : colors.secondary,
-                  borderRadius: Radius.full,
-                },
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text
+      <BrandHeader title="My Orders">
+        {/* Filter tabs live in the band, as the category chips do on home. */}
+        <View style={styles.filterRow}>
+          {FILTERS.map((f) => {
+            const isActive = filter === f.key;
+            return (
+              <TouchableOpacity
+                key={f.key}
+                onPress={() => setFilter(f.key)}
                 style={[
-                  styles.filterLabel,
+                  styles.filterChip,
                   {
-                    color: isActive
-                      ? colors.primaryForeground
-                      : colors.mutedForeground,
+                    backgroundColor: isActive
+                      ? colors.gold
+                      : colors.brandGreenField,
+                    borderRadius: Radius.full,
                   },
                 ]}
+                activeOpacity={0.8}
               >
-                {f.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                <Text
+                  style={[
+                    styles.filterLabel,
+                    {
+                      color: isActive
+                        ? colors.goldForeground
+                        : colors.brandGreenForeground,
+                    },
+                  ]}
+                >
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </BrandHeader>
 
+      <View style={[styles.content, { backgroundColor: colors.background }]}>
       <FlatList
         data={orders}
         keyExtractor={(item) => String(item.id)}
@@ -160,26 +161,24 @@ export default function BuyerOrdersScreen() {
           ) : null
         }
       />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  header: {
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-  },
-  title: {
-    fontSize: FontSize['2xl'],
-    fontWeight: 'bold',
+  content: {
+    flex: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginTop: -8,
+    overflow: 'hidden',
   },
   filterRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    paddingHorizontal: Spacing.base,
-    paddingBottom: Spacing.sm,
+    // No horizontal padding: the band already provides it.
   },
   filterChip: {
     paddingHorizontal: Spacing.base,

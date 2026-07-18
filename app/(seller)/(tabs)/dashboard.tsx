@@ -16,7 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { useQuery } from '@tanstack/react-query';
 import { getMyListings } from '@/api/listing.api';
-import { getRecoveryDashboard } from '@/api/seller.api';
+import { getRecoveryDashboard, getSellerEarnings } from '@/api/seller.api';
 import { getSellerRatingSummary } from '@/api/review.api';
 import {
   useReviewPurchaseRequest,
@@ -31,7 +31,7 @@ import type { PurchaseRequest } from '@/types/transaction.types';
 import type { ListingSummary } from '@/types/listing.types';
 
 const formatGhs = (n: number) =>
-  `${CURRENCY_SYMBOL}${Math.round(n).toLocaleString('en-GH')}`;
+  `${CURRENCY_SYMBOL} ${Math.round(n).toLocaleString('en-GH')}`;
 
 interface StatCardProps {
   label: string;
@@ -101,6 +101,11 @@ export default function SellerDashboardScreen() {
     queryFn: getRecoveryDashboard,
   });
 
+  const { data: earnings, refetch: refetchEarnings } = useQuery({
+    queryKey: ['seller-earnings'],
+    queryFn: getSellerEarnings,
+  });
+
   const { data: rating, refetch: refetchRating } = useQuery({
     queryKey: ['seller-rating', user?.id],
     queryFn: () => getSellerRatingSummary(String(user?.id)),
@@ -115,8 +120,15 @@ export default function SellerDashboardScreen() {
       refetchRequests();
       refetchListings();
       refetchRecovery();
+      refetchEarnings();
       refetchRating();
-    }, [refetchRequests, refetchListings, refetchRecovery, refetchRating])
+    }, [
+      refetchRequests,
+      refetchListings,
+      refetchRecovery,
+      refetchEarnings,
+      refetchRating,
+    ])
   );
 
   const { mutate: reviewRequest } = useReviewPurchaseRequest();
@@ -154,7 +166,7 @@ export default function SellerDashboardScreen() {
   const handleDecline = (request: PurchaseRequest) => {
     Alert.alert(
       'Decline Request',
-      'Are you sure you want to decline this request?',
+      'Are you sure you want to decline this request? You can tell the buyer why in the chat.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -164,6 +176,17 @@ export default function SellerDashboardScreen() {
             reviewRequest(
               { id: String(request.id), action: 'DECLINE' },
               {
+                // Drop the seller into the buyer's thread so they can explain,
+                // rather than leaving the buyer with just the auto-message.
+                onSuccess: (result) => {
+                  const conversationId = (result as PurchaseRequest)
+                    ?.conversationId;
+                  if (!conversationId) return;
+                  router.push({
+                    pathname: '/(buyer)/(screens)/conversation/[id]',
+                    params: { id: String(conversationId) },
+                  });
+                },
                 onError: () =>
                   Alert.alert('Error', 'Could not decline the request. Please try again.'),
               }
@@ -265,11 +288,11 @@ export default function SellerDashboardScreen() {
             onPress={() => router.push('/(seller)/(screens)/recovery-impact')}
           />
           <StatCard
-            label="Saved from waste"
-            value={formatGhs(recovery?.estimatedGhsSavedFromWaste ?? 0)}
-            icon="leaf-outline"
+            label="Your earnings"
+            value={formatGhs(earnings?.totalNet ?? 0)}
+            icon="wallet-outline"
             colors={colors}
-            onPress={() => router.push('/(seller)/(screens)/recovery-impact')}
+            onPress={() => router.push('/(seller)/(screens)/earnings')}
           />
           <StatCard
             label="Active listings"

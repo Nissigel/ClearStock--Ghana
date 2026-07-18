@@ -52,7 +52,7 @@ export default function PaymentFailedScreen() {
         </Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
           {amount && sellerName
-            ? `Your payment of ${CURRENCY_SYMBOL}${parseFloat(amount).toFixed(2)} to ${sellerName} could not be processed.`
+            ? `Your payment of ${CURRENCY_SYMBOL} ${parseFloat(amount).toFixed(2)} to ${sellerName} could not be processed.`
             : 'Your payment could not be processed.'}
         </Text>
 

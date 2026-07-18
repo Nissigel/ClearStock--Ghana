@@ -2,7 +2,7 @@ export const APP_NAME = 'ClearStock Ghana';
 export const APP_VERSION = '1.0.0';
 
 export const CURRENCY = 'GHS';
-export const CURRENCY_SYMBOL = '₵';
+export const CURRENCY_SYMBOL = 'GHS';
 
 export const MAX_LISTING_IMAGES = 5;
 export const MIN_LISTING_IMAGES = 1;

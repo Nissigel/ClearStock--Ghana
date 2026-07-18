@@ -152,16 +152,17 @@ export default function OtpVerifyScreen() {
       >
 
         {/* TOP — Green section */}
-        <View style={[styles.topSection, { backgroundColor: colors.background }]}>
+        <View style={[styles.topSection, { backgroundColor: colors.brandGreen }]}>
           <ScreenHeader
             showBack
             transparent
+            tint={colors.brandGreenForeground}
             containerStyle={styles.header}
           />
           <Text style={[styles.topTitle, { color: colors.gold }]}>
             Verify your number
           </Text>
-          <Text style={[styles.topSubtitle, { color: colors.mutedForeground }]}>
+          <Text style={[styles.topSubtitle, { color: colors.brandGreenMuted }]}>
             Enter the 6-digit code sent to
           </Text>
           <Text style={[styles.phoneDisplay, { color: colors.gold }]}>

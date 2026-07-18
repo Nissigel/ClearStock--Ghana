@@ -48,7 +48,7 @@ export default function PaymentSuccessScreen() {
         </Text>
         {amount && (
           <Text style={[styles.amount, { color: colors.primary }]}>
-            {CURRENCY_SYMBOL}{parseFloat(amount).toFixed(2)}
+            {CURRENCY_SYMBOL} {parseFloat(amount).toFixed(2)}
           </Text>
         )}
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>

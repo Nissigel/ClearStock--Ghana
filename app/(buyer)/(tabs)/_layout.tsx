@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Keyboard, type ColorValue } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize } from '@/constants/theme';
+import { FontSize, FontFamily } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { useNotificationStore } from '@/store/notificationStore';
 
@@ -121,7 +121,7 @@ export default function BuyerLayout() {
 const styles = StyleSheet.create({
   tabBarLabel: {
     fontSize: FontSize.xs,
-    fontFamily: 'Inter_500Medium',
+    fontFamily: FontFamily.medium,
   },
   iconContainer: {
     position: 'relative',

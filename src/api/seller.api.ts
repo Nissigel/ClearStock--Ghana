@@ -6,6 +6,7 @@ import type {
   BecomeSellerRequest,
   UpdateSellerProfileRequest,
   RecoveryDashboard,
+  SellerEarnings,
 } from '@/types/user.types';
 
 // Returns null when the user has no seller profile (backend responds 404 —
@@ -84,4 +85,25 @@ export const getRecoveryDashboard = async (): Promise<RecoveryDashboard> => {
   }
   const response = await apiClient.get('/seller/recovery-dashboard');
   return response.data.data as RecoveryDashboard;
+};
+
+export const getSellerEarnings = async (): Promise<SellerEarnings> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return {
+      commissionRate: 7,
+      heldGross: 900,
+      heldNet: 837,
+      heldCount: 2,
+      clearedGross: 1500,
+      clearedNet: 1395,
+      clearedCount: 3,
+      totalGross: 2400,
+      totalCommission: 168,
+      totalNet: 2232,
+      paidOut: 0,
+    };
+  }
+  const response = await apiClient.get('/seller/earnings');
+  return response.data.data as SellerEarnings;
 };

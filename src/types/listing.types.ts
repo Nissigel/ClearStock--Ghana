@@ -7,7 +7,11 @@ import type { Category } from '@/constants/categories';
 export interface ListingSummary {
   id: number;
   sellerId: number;
+  /** The seller's *user* id — what ratings and reviews are keyed by. */
+  sellerUserId?: number | null;
   sellerBusinessName: string;
+  /** The seller's photo — absent if they haven't set one. */
+  sellerProfileImageUrl?: string | null;
   productName: string;
   category: Category;
   description: string;
