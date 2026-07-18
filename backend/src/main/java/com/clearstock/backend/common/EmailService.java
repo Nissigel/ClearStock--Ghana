@@ -15,31 +15,6 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    /**
-     * Attempts a send and reports exactly why it failed.
-     *
-     * Delivery has been failing silently and the reason only appears in the
-     * host's logs, so this surfaces the underlying exception — including the
-     * root cause, which is what distinguishes "the password was rejected" from
-     * "we can't reach the mail server at all".
-     */
-    public String probe(String to) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject("ClearStock delivery test");
-            message.setText("Delivery test — if this arrived, email is working.");
-            mailSender.send(message);
-            return "OK";
-        } catch (Exception e) {
-            Throwable root = e;
-            while (root.getCause() != null) root = root.getCause();
-            log.error("Email probe failed", e);
-            return e.getClass().getSimpleName() + ": " + e.getMessage()
-                    + " || root: " + root.getClass().getName() + ": " + root.getMessage();
-        }
-    }
-
     public boolean sendOtpEmail(String to, String otp) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
