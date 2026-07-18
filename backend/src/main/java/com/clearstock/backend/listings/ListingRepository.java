@@ -15,6 +15,10 @@ public interface ListingRepository extends JpaRepository<Listing, Long>, JpaSpec
 
     List<Listing> findByListingStatus(ListingStatus status);
 
+    List<Listing> findAllByOrderByCreatedAtDesc();
+
+    long countByListingStatus(ListingStatus status);
+
     /**
      * Newest first. Without an explicit order the database is free to return
      * rows however it likes, which in practice meant oldest first — so a

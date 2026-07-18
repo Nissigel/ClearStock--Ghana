@@ -13,4 +13,8 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     /** Complaints made *about* a user — used for their conduct history. */
     List<Report> findByReportedUserOrderByCreatedAtDesc(User reportedUser);
+
+    List<Report> findAllByOrderByCreatedAtDesc();
+
+    long countByStatus(ReportStatus status);
 }

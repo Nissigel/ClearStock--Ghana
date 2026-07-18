@@ -33,6 +33,23 @@ public class JwtUtil {
                 .compact();
     }
 
+    /**
+     * Token for a dashboard admin. The {@code purpose} claim keeps these
+     * distinct from trader tokens, so the auth filter can never mistake one
+     * kind of token for the other.
+     */
+    public String generateAdminToken(Long adminId, String email, String role) {
+        return Jwts.builder()
+                .subject(adminId.toString())
+                .claim("purpose", "ADMIN")
+                .claim("email", email)
+                .claim("role", role)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
     /** Short-lived token used only to authorize the /auth/create-pin endpoint. */
     public String generateTempToken(String phone) {
         return Jwts.builder()

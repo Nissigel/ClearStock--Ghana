@@ -1,0 +1,356 @@
+package com.clearstock.backend.admin;
+
+import com.clearstock.backend.admin.dto.*;
+import com.clearstock.backend.listings.Listing;
+import com.clearstock.backend.listings.ListingRepository;
+import com.clearstock.backend.listings.ListingStatus;
+import com.clearstock.backend.reports.Report;
+import com.clearstock.backend.reports.ReportRepository;
+import com.clearstock.backend.reports.ReportStatus;
+import com.clearstock.backend.reports.ReportType;
+import com.clearstock.backend.seller.SellerProfile;
+import com.clearstock.backend.seller.SellerRepository;
+import com.clearstock.backend.seller.VerificationStatus;
+import com.clearstock.backend.transactions.PurchaseRequestRepository;
+import com.clearstock.backend.transactions.TransactionRepository;
+import com.clearstock.backend.transactions.TransactionStatus;
+import com.clearstock.backend.user.AccountStatus;
+import com.clearstock.backend.user.User;
+import com.clearstock.backend.user.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+
+/**
+ * Everything the dashboard does to the marketplace.
+ *
+ * Every method that changes something writes an audit entry, because the whole
+ * point of a staff tool is being able to answer "who did this, and why".
+ */
+@Service
+@RequiredArgsConstructor
+public class AdminService {
+
+    private final UserRepository userRepository;
+    private final SellerRepository sellerRepository;
+    private final ListingRepository listingRepository;
+    private final ReportRepository reportRepository;
+    private final TransactionRepository transactionRepository;
+    private final PurchaseRequestRepository purchaseRequestRepository;
+    private final AuditLogRepository auditLogRepository;
+    private final AuditLogService auditLogService;
+
+    // ---------------------------------------------------------------- stats
+
+    public AdminStatsResponse getStats() {
+        return AdminStatsResponse.builder()
+                .totalUsers(userRepository.count())
+                .totalSellers(sellerRepository.count())
+                .verifiedSellers(sellerRepository.countByVerificationStatus(VerificationStatus.VERIFIED))
+                .pendingVerifications(sellerRepository.countByVerificationStatus(VerificationStatus.PENDING))
+                .totalListings(listingRepository.count())
+                .activeListings(listingRepository.countByListingStatus(ListingStatus.ACTIVE))
+                .archivedListings(listingRepository.countByListingStatus(ListingStatus.ARCHIVED))
+                .suspendedListings(listingRepository.countByListingStatus(ListingStatus.SUSPENDED))
+                .openReports(reportRepository.countByStatus(ReportStatus.OPEN))
+                .purchaseRequests(purchaseRequestRepository.count())
+                .completedTransactions(transactionRepository.count())
+                .build();
+    }
+
+    // -------------------------------------------------------- verifications
+
+    /** Oldest first: someone who has waited longest should be reviewed first. */
+    public List<AdminVerificationResponse> listVerifications(VerificationStatus status) {
+        List<SellerProfile> profiles = status == null
+                ? sellerRepository.findAllByOrderByCreatedAtDesc()
+                : sellerRepository.findByVerificationStatus(status);
+
+        return profiles.stream()
+                .filter(p -> p.getDocumentsSubmittedAt() != null
+                        || p.getVerificationStatus() != VerificationStatus.UNVERIFIED)
+                .sorted((a, b) -> {
+                    if (a.getDocumentsSubmittedAt() == null) return 1;
+                    if (b.getDocumentsSubmittedAt() == null) return -1;
+                    return a.getDocumentsSubmittedAt().compareTo(b.getDocumentsSubmittedAt());
+                })
+                .map(this::toVerificationResponse)
+                .toList();
+    }
+
+    public AdminVerificationResponse getVerification(Long sellerProfileId) {
+        return toVerificationResponse(findSellerOr404(sellerProfileId));
+    }
+
+    public AdminVerificationResponse approveVerification(Admin actor, Long sellerProfileId) {
+        SellerProfile profile = findSellerOr404(sellerProfileId);
+
+        if (profile.getVerificationStatus() != VerificationStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only a shop awaiting review can be approved");
+        }
+
+        profile.setVerificationStatus(VerificationStatus.VERIFIED);
+        profile.setRejectionReason(null);
+        sellerRepository.save(profile);
+
+        auditLogService.record(actor, AuditAction.APPROVED_VERIFICATION, "VERIFICATION",
+                profile.getId(), sellerNameOf(profile), null);
+
+        return toVerificationResponse(profile);
+    }
+
+    public AdminVerificationResponse rejectVerification(
+            Admin actor, Long sellerProfileId, String reason) {
+        SellerProfile profile = findSellerOr404(sellerProfileId);
+
+        if (profile.getVerificationStatus() != VerificationStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only a shop awaiting review can be rejected");
+        }
+        // Without a reason the seller has no idea what to correct, and would
+        // just resubmit the same documents.
+        if (reason == null || reason.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Give a reason so the seller knows what to fix");
+        }
+
+        profile.setVerificationStatus(VerificationStatus.REJECTED);
+        profile.setRejectionReason(reason.strip());
+        sellerRepository.save(profile);
+
+        auditLogService.record(actor, AuditAction.REJECTED_VERIFICATION, "VERIFICATION",
+                profile.getId(), sellerNameOf(profile), reason.strip());
+
+        return toVerificationResponse(profile);
+    }
+
+    // ----------------------------------------------------------------- users
+
+    public List<AdminUserResponse> listUsers() {
+        return userRepository.findAll().stream()
+                .sorted((a, b) -> b.getId().compareTo(a.getId()))
+                .map(this::toUserResponse)
+                .toList();
+    }
+
+    public AdminUserResponse setUserStatus(Admin actor, Long userId,
+                                           AccountStatus status, String reason) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "User not found"));
+
+        user.setAccountStatus(status);
+        userRepository.save(user);
+
+        auditLogService.record(actor,
+                status == AccountStatus.SUSPENDED
+                        ? AuditAction.SUSPENDED_USER : AuditAction.REACTIVATED_USER,
+                "USER", user.getId(), user.getName(), reason);
+
+        return toUserResponse(user);
+    }
+
+    // -------------------------------------------------------------- listings
+
+    public List<AdminListingResponse> listListings() {
+        return listingRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toListingResponse)
+                .toList();
+    }
+
+    public AdminListingResponse getListing(Long listingId) {
+        return toListingResponse(findListingOr404(listingId));
+    }
+
+    public AdminListingResponse setListingStatus(Admin actor, Long listingId,
+                                                 ListingStatus status, String reason) {
+        Listing listing = findListingOr404(listingId);
+
+        if (status == ListingStatus.SUSPENDED && (reason == null || reason.isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Give a reason for suspending this listing");
+        }
+
+        listing.setListingStatus(status);
+        listingRepository.save(listing);
+
+        AuditAction action = switch (status) {
+            case SUSPENDED -> AuditAction.SUSPENDED_LISTING;
+            case ARCHIVED -> AuditAction.ARCHIVED_LISTING;
+            default -> AuditAction.RESTORED_LISTING;
+        };
+        auditLogService.record(actor, action, "LISTING",
+                listing.getId(), listing.getProductName(), reason);
+
+        return toListingResponse(listing);
+    }
+
+    // --------------------------------------------------------------- reports
+
+    public List<AdminReportResponse> listReports() {
+        return reportRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toReportResponse)
+                .toList();
+    }
+
+    public AdminReportResponse setReportStatus(Admin actor, Long reportId,
+                                               ReportStatus status, String note) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Report not found"));
+
+        report.setStatus(status);
+        reportRepository.save(report);
+
+        auditLogService.record(actor,
+                status == ReportStatus.DISMISSED
+                        ? AuditAction.DISMISSED_REPORT : AuditAction.ACTIONED_REPORT,
+                "REPORT", report.getId(), targetLabelOf(report), note);
+
+        return toReportResponse(report);
+    }
+
+    // ------------------------------------------------------------ audit logs
+
+    public List<AuditLogResponse> listAuditLogs() {
+        return auditLogRepository.findTop200ByOrderByCreatedAtDesc().stream()
+                .map(log -> AuditLogResponse.builder()
+                        .id(log.getId())
+                        .action(log.getAction())
+                        .adminName(log.getAdmin().getName())
+                        .adminId(log.getAdmin().getId())
+                        .targetType(log.getTargetType())
+                        .targetId(log.getTargetId())
+                        .targetLabel(log.getTargetLabel())
+                        .note(log.getNote())
+                        .createdAt(log.getCreatedAt())
+                        .build())
+                .toList();
+    }
+
+    // --------------------------------------------------------------- mapping
+
+    private SellerProfile findSellerOr404(Long id) {
+        return sellerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Seller profile not found"));
+    }
+
+    private Listing findListingOr404(Long id) {
+        return listingRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Listing not found"));
+    }
+
+    /** The shop name where there is one, otherwise the person's own name. */
+    private String sellerNameOf(SellerProfile profile) {
+        String business = profile.getBusinessName();
+        return business != null && !business.isBlank()
+                ? business : profile.getUser().getName();
+    }
+
+    private AdminVerificationResponse toVerificationResponse(SellerProfile profile) {
+        User user = profile.getUser();
+        return AdminVerificationResponse.builder()
+                .sellerProfileId(profile.getId())
+                .userId(user.getId())
+                .sellerName(user.getName())
+                .businessName(profile.getBusinessName())
+                .sellerType(profile.getSellerType() == null
+                        ? null : profile.getSellerType().name())
+                .region(user.getRegion())
+                .cityTown(user.getCityTown())
+                .marketHub(profile.getMarketHub())
+                .businessDescription(profile.getBusinessDescription())
+                .ghanaCardNumber(profile.getGhanaCardNumber())
+                .ghanaCardPhotoUrl(profile.getGhanaCardPhotoUrl())
+                .businessRegUrl(profile.getBusinessRegUrl())
+                .verificationStatus(profile.getVerificationStatus())
+                .rejectionReason(profile.getRejectionReason())
+                .documentsSubmittedAt(profile.getDocumentsSubmittedAt())
+                .build();
+    }
+
+    private AdminUserResponse toUserResponse(User user) {
+        boolean isSeller = sellerRepository.findByUser(user).isPresent();
+        return AdminUserResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .region(user.getRegion())
+                .cityTown(user.getCityTown())
+                .role(isSeller ? "SELLER" : "BUYER")
+                // Rows created before this column existed are null, which
+                // means active.
+                .accountStatus(user.getAccountStatus() == null
+                        ? AccountStatus.ACTIVE : user.getAccountStatus())
+                .createdAt(user.getCreatedAt())
+                .build();
+    }
+
+    private AdminListingResponse toListingResponse(Listing listing) {
+        SellerProfile seller = listing.getSeller();
+        return AdminListingResponse.builder()
+                .id(listing.getId())
+                .title(listing.getProductName())
+                .description(listing.getDescription())
+                .category(listing.getCategory())
+                .sellerName(seller == null ? null : sellerNameOf(seller))
+                .sellerUserId(seller == null ? null : seller.getUser().getId())
+                .originalPrice(listing.getOriginalPrice())
+                .currentPrice(listing.getCurrentPrice())
+                .quantity(listing.getQuantity())
+                .unit(listing.getUnitOfMeasurement())
+                .listingStatus(listing.getListingStatus())
+                .expiryDate(listing.getExpiryDate())
+                .imageUrls(listing.getImages())
+                .createdAt(listing.getCreatedAt())
+                .build();
+    }
+
+    /** What the complaint is about, as the dashboard's "Reported" column. */
+    private String targetLabelOf(Report report) {
+        if (report.getReportType() == ReportType.LISTING && report.getListing() != null) {
+            return report.getListing().getProductName();
+        }
+        if (report.getReportedUser() != null) {
+            return report.getReportedUser().getName();
+        }
+        return "Unknown";
+    }
+
+    private AdminReportResponse toReportResponse(Report report) {
+        boolean isListing = report.getReportType() == ReportType.LISTING;
+
+        String targetType;
+        Long targetId;
+        if (isListing) {
+            targetType = "LISTING";
+            targetId = report.getListing() == null ? null : report.getListing().getId();
+        } else {
+            // A reported person is shown as a seller or a buyer depending on
+            // whether they run a shop — that is what a moderator needs to know.
+            User reported = report.getReportedUser();
+            boolean isSeller = reported != null
+                    && sellerRepository.findByUser(reported).isPresent();
+            targetType = isSeller ? "SELLER" : "BUYER";
+            targetId = reported == null ? null : reported.getId();
+        }
+
+        return AdminReportResponse.builder()
+                .id(report.getId())
+                .targetType(targetType)
+                .targetLabel(targetLabelOf(report))
+                .targetId(targetId)
+                .category(report.getReason())
+                .reporterName(report.getReporter().getName())
+                .status(report.getStatus())
+                .createdAt(report.getCreatedAt())
+                .build();
+    }
+}

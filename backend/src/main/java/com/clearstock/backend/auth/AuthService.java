@@ -7,6 +7,7 @@ import com.clearstock.backend.common.PhoneUtil;
 import com.clearstock.backend.common.SmsService;
 import com.clearstock.backend.otp.OtpPurpose;
 import com.clearstock.backend.otp.OtpService;
+import com.clearstock.backend.user.AccountStatus;
 import com.clearstock.backend.user.User;
 import com.clearstock.backend.user.UserRepository;
 import io.jsonwebtoken.Claims;
@@ -120,6 +121,14 @@ public class AuthService {
 
         if (!passwordEncoder.matches(pin, user.getPinHash())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid PIN");
+        }
+
+        // Checked after the PIN, so a wrong PIN cannot be used to discover
+        // whether an account is suspended. Without this, suspending someone
+        // from the dashboard would change a label and nothing else.
+        if (user.getAccountStatus() == AccountStatus.SUSPENDED) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "This account has been suspended. Please contact ClearStock support.");
         }
 
         String token = jwtUtil.generateToken(user.getId(), user.getPhone());
