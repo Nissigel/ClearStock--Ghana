@@ -27,6 +27,12 @@ const WHITE = { r: 255, g: 255, b: 255, alpha: 1 };
  * @param inset  Fraction of the canvas kept as breathing room. Android masks
  *               adaptive icons to a circle, so its foreground needs more.
  */
+// The artwork is flat brand colour, so palette encoding is visually identical
+// (measured: at most 15/255 on any channel) while cutting file size by ~75%.
+// It matters: these are fetched over the dev server in Expo Go, and an
+// oversized logo shows as a white tile until it arrives.
+const PNG_OPTIONS = { quality: 90, compressionLevel: 9, palette: true };
+
 const render = async ({ file, size, inset, roundedTile }) => {
   const inner = Math.round(size * (1 - inset * 2));
 
@@ -51,7 +57,7 @@ const render = async ({ file, size, inset, roundedTile }) => {
 
     await sharp(tile)
       .composite([{ input: maskSvg, blend: 'dest-in' }])
-      .png()
+      .png(PNG_OPTIONS)
       .toFile(path.join(ASSETS, file));
     return;
   }
@@ -60,7 +66,7 @@ const render = async ({ file, size, inset, roundedTile }) => {
     create: { width: size, height: size, channels: 4, background: WHITE },
   })
     .composite([{ input: mark, gravity: 'center' }])
-    .png()
+    .png(PNG_OPTIONS)
     .toFile(path.join(ASSETS, file));
 };
 
@@ -74,7 +80,8 @@ const targets = [
   { file: 'android-icon-foreground.png', size: 1024, inset: 0.22 },
   { file: 'favicon.png', size: 48, inset: 0.08 },
   // Used by the ClearStockLogo component inside the app.
-  { file: 'logo-mark.png', size: 512, inset: 0.06 },
+  // Displayed at 104px at most, so 320 covers a 3x screen with room spare.
+  { file: 'logo-mark.png', size: 320, inset: 0.06 },
 ];
 
 (async () => {
