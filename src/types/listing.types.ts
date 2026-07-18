@@ -10,6 +10,8 @@ export interface ListingSummary {
   /** The seller's *user* id — what ratings and reviews are keyed by. */
   sellerUserId?: number | null;
   sellerBusinessName: string;
+  /** Shop verified by ClearStock — drives the badge buyers see. */
+  sellerVerified?: boolean;
   /** The seller's photo — absent if they haven't set one. */
   sellerProfileImageUrl?: string | null;
   productName: string;

@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Text } from '@/components/ui/Typography';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Avatar } from '@/components/ui/Avatar';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { ListingGrid } from '@/components/ui/listing/ListingGrid';
 import { useQuery } from '@tanstack/react-query';
 import { getListings } from '@/api/listing.api';
@@ -75,6 +76,7 @@ const { data: reviews } = useQuery({
         <Text style={[styles.sellerName, { color: colors.foreground }]}>
           {sellerName}
         </Text>
+        <VerifiedBadge verified={listings[0]?.sellerVerified} />
         {ratingSummary && (
           <View style={styles.ratingRow}>
             <StarRating rating={ratingSummary.averageRating} size={16} />

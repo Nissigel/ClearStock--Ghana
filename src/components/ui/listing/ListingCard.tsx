@@ -9,6 +9,7 @@ import {
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Radius, FontSize, Spacing, Shadow } from '@/constants/theme';
 import { PriceDisplay } from '@/components/ui/PriceDisplay';
 import { Badge } from '@/components/ui/Badge';
@@ -180,13 +181,14 @@ const isUrgent = daysUntilExpiry !== null && daysUntilExpiry <= 21;
           />
         )}
 
-        {/* Seller info */}
-        <Caption
-          numberOfLines={1}
-          style={styles.sellerName}
-        >
-          {sellerName}
-        </Caption>
+        {/* Seller info. The tick is compact here — a full "Verified" pill
+            would crowd a card that already carries price and urgency. */}
+        <View style={styles.sellerRow}>
+          <Caption numberOfLines={1} style={styles.sellerName}>
+            {sellerName}
+          </Caption>
+          <VerifiedBadge verified={listing.sellerVerified} compact size={13} />
+        </View>
 
         {/* Scarcity cue, shown only once stock is genuinely running down. */}
         {listing.listingStatus === 'ACTIVE' &&
@@ -296,6 +298,7 @@ const styles = StyleSheet.create({
   sellerRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   sellerName: {
     fontSize: FontSize.xs,

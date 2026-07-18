@@ -34,6 +34,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   PURCHASE_REQUEST: 'document-text-outline',
   LISTING: 'cube-outline',
   TRANSACTION: 'swap-horizontal-outline',
+  ACCOUNT: 'shield-checkmark-outline',
 };
 
 interface NotificationRowProps {

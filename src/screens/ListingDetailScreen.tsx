@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { PriceDisplay } from '@/components/ui/PriceDisplay';
 import { Avatar } from '@/components/ui/Avatar';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { useQuery } from '@tanstack/react-query';
 import { getListingById } from '@/api/listing.api';
 import {
@@ -399,6 +400,9 @@ const handlePurchaseRequest = () => {
               >
                 {sellerName}
               </Text>
+              {/* The strongest trust signal a buyer has before paying, so it
+                  sits with the seller's name rather than further down. */}
+              <VerifiedBadge verified={listing.sellerVerified} />
             </View>
             <Ionicons
               name="chevron-forward"
