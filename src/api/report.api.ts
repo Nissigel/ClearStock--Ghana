@@ -37,6 +37,7 @@ export const createReport = async (
     reportType: data.reportType,
     targetId: Number(data.targetId),
     reason: data.reason,
+    category: data.category,
   });
   return mapReport(response.data.data as RawReport);
 };

@@ -76,6 +76,9 @@ export interface AdminListing {
   unit: string;
   listingStatus: ListingStatus;
   expiryDate: string | null;
+  clearanceEndDate: string | null;
+  minimumAcceptablePrice: number | null;
+  expirySensitive: boolean | null;
   imageUrls: string[];
   createdAt: string;
 }

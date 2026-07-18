@@ -18,4 +18,6 @@ export interface CreateReportRequest {
   /** Listing id for LISTING reports, user id for USER reports. */
   targetId: string;
   reason: string;
+  /** Short label chosen from a list, shown to moderators for triage. */
+  category?: string;
 }

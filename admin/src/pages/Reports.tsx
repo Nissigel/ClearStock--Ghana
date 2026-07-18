@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import type { AdminReport } from '../lib/types';
 import {
@@ -14,14 +15,11 @@ import {
 type Filter = 'ALL' | 'OPEN' | 'RESOLVED' | 'DISMISSED' | 'SELLER' | 'BUYER' | 'LISTING';
 
 export default function Reports() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<Filter>('OPEN');
-  const [reloadKey, setReloadKey] = useState(0);
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const [actionError, setActionError] = useState<unknown>(null);
 
   const { data, error, loading } = useLoad(
-    () => api.get<AdminReport[]>('/admin/reports'),
-    reloadKey
+    () => api.get<AdminReport[]>('/admin/reports')
   );
 
   if (loading) return <Loading what="reports" />;
@@ -36,26 +34,11 @@ export default function Reports() {
     return report.targetType === filter;
   });
 
-  const act = async (report: AdminReport, action: 'action' | 'dismiss') => {
-    setBusyId(report.id);
-    setActionError(null);
-    try {
-      await api.put(`/admin/reports/${report.id}/${action}`, {});
-      setReloadKey((key) => key + 1);
-    } catch (caught) {
-      setActionError(caught);
-    } finally {
-      setBusyId(null);
-    }
-  };
-
   const count = (predicate: (r: AdminReport) => boolean) =>
     all.filter(predicate).length;
 
   return (
     <>
-      {actionError != null && <ErrorNote error={actionError} />}
-
       <Chips<Filter>
         value={filter}
         onChange={setFilter}
@@ -83,45 +66,25 @@ export default function Reports() {
                 <th>Reporter</th>
                 <th>Date</th>
                 <th>Status</th>
-                <th />
               </tr>
             </thead>
             <tbody>
-              {rows.map((report) => {
-                const open = report.status === 'OPEN' || report.status === 'REVIEWING';
-                return (
-                  <tr key={report.id}>
-                    <td className="strong">{report.targetLabel}</td>
-                    <td>{label(report.targetType)}</td>
-                    <td>{report.category}</td>
-                    <td>{report.reporterName}</td>
-                    <td className="muted">{formatDate(report.createdAt)}</td>
-                    <td>
-                      <ReportBadge status={report.status} />
-                    </td>
-                    <td>
-                      {open && (
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            className="btn-sm btn-outline"
-                            disabled={busyId === report.id}
-                            onClick={() => act(report, 'dismiss')}
-                          >
-                            Dismiss
-                          </button>
-                          <button
-                            className="btn-sm btn-gold"
-                            disabled={busyId === report.id}
-                            onClick={() => act(report, 'action')}
-                          >
-                            Action
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+              {rows.map((report) => (
+                <tr
+                  key={report.id}
+                  className="clickable"
+                  onClick={() => navigate(`/reports/${report.id}`)}
+                >
+                  <td className="strong">{report.targetLabel}</td>
+                  <td>{label(report.targetType)}</td>
+                  <td>{report.category}</td>
+                  <td>{report.reporterName}</td>
+                  <td className="muted">{formatDate(report.createdAt)}</td>
+                  <td>
+                    <ReportBadge status={report.status} />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

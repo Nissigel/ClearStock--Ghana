@@ -9,8 +9,10 @@ import Users from './pages/Users';
 import Listings from './pages/Listings';
 import ListingDetail from './pages/ListingDetail';
 import Reports from './pages/Reports';
+import ReportDetail from './pages/ReportDetail';
 import Admins from './pages/Admins';
 import AuditLogs from './pages/AuditLogs';
+import Settings from './pages/Settings';
 
 function Routed() {
   const { admin, loading } = useAuth();
@@ -32,6 +34,8 @@ function Routed() {
         <Route path="/listings" element={<Listings />} />
         <Route path="/listings/:id" element={<ListingDetail />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/reports/:id" element={<ReportDetail />} />
+        <Route path="/settings" element={<Settings />} />
         {/* Guarded on the server too — this only hides a door that is
             already locked. */}
         <Route

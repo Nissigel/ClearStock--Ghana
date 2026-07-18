@@ -12,6 +12,25 @@ const PAGES = [
   { to: '/reports', label: 'Reports', title: 'Reports', sub: 'Handle complaints about sellers, buyers, listings and reviews' },
   { to: '/admins', label: 'Admins', title: 'Admins', sub: 'Manage admin accounts' },
   { to: '/audit-logs', label: 'Audit logs', title: 'Audit logs', sub: 'A record of every admin action' },
+  { to: '/settings', label: 'Settings', title: 'Settings', sub: 'Manage your account' },
+];
+
+const DETAIL_PAGES = [
+  {
+    match: /^\/verifications\/\d+/,
+    title: 'Verification details',
+    sub: "Review this seller's application",
+  },
+  {
+    match: /^\/listings\/\d+/,
+    title: 'Listing details',
+    sub: 'Review and moderate this product',
+  },
+  {
+    match: /^\/reports\/\d+/,
+    title: 'Report details',
+    sub: 'Review this complaint and take action',
+  },
 ];
 
 export default function Layout() {
@@ -28,7 +47,13 @@ export default function Layout() {
       .catch(() => setPending(null));
   }, [location.pathname]);
 
+  // A detail route gets its own heading rather than inheriting the list's,
+  // which otherwise reads "Reports · Handle complaints…" while you are looking
+  // at one specific complaint.
+  const detail = DETAIL_PAGES.find((d) => d.match.test(location.pathname));
+
   const page =
+    detail ??
     PAGES.find((p) => p.to !== '/' && location.pathname.startsWith(p.to)) ??
     PAGES[0];
 

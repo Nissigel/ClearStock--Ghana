@@ -18,6 +18,7 @@ export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [reloadKey, setReloadKey] = useState(0);
+  const [shown, setShown] = useState(0);
   const [mode, setMode] = useState<'suspend' | 'archive' | null>(null);
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
@@ -60,7 +61,20 @@ export default function ListingDetail() {
     }
   };
 
+  const images = data.imageUrls ?? [];
   const isLive = data.listingStatus === 'ACTIVE';
+
+  // How far the price has fallen from its original towards the floor the
+  // seller set. With no floor, measure against zero so the bar still means
+  // something rather than disappearing.
+  const original = Number(data.originalPrice);
+  const current = Number(data.currentPrice);
+  const floor = data.minimumAcceptablePrice != null
+    ? Number(data.minimumAcceptablePrice)
+    : 0;
+  const span = original - floor;
+  const dropped = span > 0 ? Math.min(100, Math.max(0, ((original - current) / span) * 100)) : 0;
+  const discounted = current < original;
 
   return (
     <>
@@ -79,21 +93,86 @@ export default function ListingDetail() {
           <ListingBadge status={data.listingStatus} />
         </div>
 
-        {data.imageUrls?.length > 0 ? (
-          <img className="doc-image" src={data.imageUrls[0]} alt={data.title} />
+        {images.length > 0 ? (
+          <>
+            <img
+              className="gallery-main"
+              src={images[shown]}
+              alt={data.title}
+            />
+            {images.length > 1 && (
+              <>
+                <div className="thumbs">
+                  {images.map((url, index) => (
+                    <button
+                      key={url + index}
+                      className={`thumb ${index === shown ? 'on' : ''}`}
+                      onClick={() => setShown(index)}
+                      aria-label={`Image ${index + 1}`}
+                      style={{
+                        backgroundImage: `url(${url})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="thumb-count">
+                  {shown + 1} of {images.length} images
+                </div>
+              </>
+            )}
+          </>
         ) : (
           <div className="doc-missing">No image</div>
         )}
 
         <p style={{ marginTop: 14 }}>{data.description ?? '—'}</p>
+      </div>
 
-        <div className="detail-grid" style={{ marginTop: 14 }}>
-          <Field label="Current price" value={`GHS ${data.currentPrice}`} />
-          <Field label="Original price" value={`GHS ${data.originalPrice}`} />
-          <Field label="Quantity" value={`${data.quantity} ${data.unit}`} />
-          <Field label="Seller" value={data.sellerName ?? '—'} />
-          <Field label="Expiry date" value={formatDate(data.expiryDate)} />
-          <Field label="Listed on" value={formatDate(data.createdAt)} />
+      <div className="detail-card">
+        <h3 style={{ marginTop: 0 }}>
+          {discounted ? 'Clearance price' : 'Price'}
+        </h3>
+
+        <div className="price-ends">
+          <span>Original GHS {data.originalPrice}</span>
+          {data.minimumAcceptablePrice != null && (
+            <span>Floor GHS {data.minimumAcceptablePrice}</span>
+          )}
+        </div>
+        <div className="price-track">
+          <div className="price-fill" style={{ width: `${dropped}%` }} />
+        </div>
+        <div className="price-now">GHS {data.currentPrice}</div>
+
+        <div className="detail-grid" style={{ marginTop: 16 }}>
+          <div>
+            <div className="detail-label">Quantity</div>
+            <div>
+              {data.quantity} {data.unit}
+            </div>
+          </div>
+          <div>
+            <div className="detail-label">Seller</div>
+            <div>{data.sellerName ?? '—'}</div>
+          </div>
+          <div>
+            <div className="detail-label">Expiry sensitive</div>
+            <div>{data.expirySensitive ? 'Yes' : 'No'}</div>
+          </div>
+          <div>
+            <div className="detail-label">Expiry date</div>
+            <div>{formatDate(data.expiryDate)}</div>
+          </div>
+          <div>
+            <div className="detail-label">Clearance ends</div>
+            <div>{formatDate(data.clearanceEndDate)}</div>
+          </div>
+          <div>
+            <div className="detail-label">Listed on</div>
+            <div>{formatDate(data.createdAt)}</div>
+          </div>
         </div>
       </div>
 
@@ -149,21 +228,12 @@ export default function ListingDetail() {
                 Cancel
               </button>
               <button className="btn-danger" onClick={act} disabled={busy || !reason}>
-                {mode === 'suspend' ? 'Suspend' : 'Archive'}
+                {busy ? 'Working…' : mode === 'suspend' ? 'Suspend' : 'Archive'}
               </button>
             </div>
           </div>
         </div>
       )}
     </>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="detail-label">{label}</div>
-      <div>{value}</div>
-    </div>
   );
 }
