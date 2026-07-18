@@ -16,7 +16,16 @@ import { useModeStore } from '@/store/modeStore';
 import { logout } from '@/api/auth.api';
 import { getMyTransactions } from '@/api/transaction.api';
 import { getSellerRatingSummary } from '@/api/review.api';
+import { getSellerProfile } from '@/api/seller.api';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
+
+/** Shown beside the Verification row so the state is visible without tapping. */
+const VERIFICATION_HINT = {
+  UNVERIFIED: 'Not verified',
+  PENDING: 'Under review',
+  VERIFIED: 'Verified',
+  REJECTED: 'Action needed',
+} as const;
 
 function StatColumn({
   label,
@@ -50,9 +59,18 @@ export default function SellerProfileScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const storedSellerProfile = useAuthStore((state) => state.sellerProfile);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const switchToBuyer = useModeStore((state) => state.switchToBuyer);
   const reset = useModeStore((state) => state.reset);
+
+  // The store isn't persisted, so fetch the profile rather than showing a
+  // stale 'Not verified' hint to a seller who is actually verified.
+  const { data: fetchedSellerProfile } = useQuery({
+    queryKey: ['seller-profile'],
+    queryFn: getSellerProfile,
+  });
+  const sellerProfile = fetchedSellerProfile ?? storedSellerProfile;
 
   const { data: transactions } = useQuery({
     queryKey: ['buyer-transactions'],
@@ -157,6 +175,14 @@ export default function SellerProfileScreen() {
           >
             {[
               { icon: 'storefront-outline', label: 'Seller Profile', route: '/(seller)/(screens)/seller-profile' },
+              {
+                icon: 'shield-checkmark-outline',
+                label: 'Verification',
+                route: '/(seller)/(screens)/verification',
+                hint: VERIFICATION_HINT[
+                  sellerProfile?.verificationStatus ?? 'UNVERIFIED'
+                ],
+              },
               { icon: 'leaf-outline', label: 'Recovery Impact', route: '/(seller)/(screens)/recovery-impact' },
               { icon: 'swap-horizontal-outline', label: 'Transaction History', route: '/(seller)/(screens)/transactions' },
               { icon: 'person-outline', label: 'Edit Profile', route: '/(buyer)/(screens)/edit-profile' },
@@ -176,6 +202,13 @@ export default function SellerProfileScreen() {
                 <Text style={[styles.settingsLabel, { color: colors.foreground }]}>
                   {item.label}
                 </Text>
+                {'hint' in item && item.hint && (
+                  <Text
+                    style={[styles.settingsHint, { color: colors.mutedForeground }]}
+                  >
+                    {item.hint}
+                  </Text>
+                )}
                 <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
               </TouchableOpacity>
             ))}
@@ -277,6 +310,10 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  settingsHint: {
+    fontSize: FontSize.sm,
+    marginRight: Spacing.xs,
   },
   settingsLabel: {
     fontSize: FontSize.base,
