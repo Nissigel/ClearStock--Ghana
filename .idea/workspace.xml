@@ -6,6 +6,28 @@
   <component name="ChangeListManager">
     <list default="true" id="7c0c86cc-014d-4364-8964-609d8437f0c9" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/app.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/otp.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/otp.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/phone.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/phone.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/profile-setup.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/profile-setup.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/(screens)/edit-profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/edit-profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/(screens)/payment/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/payment/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/(screens)/rate-transaction.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/rate-transaction.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/(screens)/report.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/report.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(buyer)/(screens)/transaction-detail/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(buyer)/(screens)/transaction-detail/[id].tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(guest)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(guest)/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/(screens)/create-listing/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/(screens)/create-listing/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(seller)/(screens)/seller-profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(seller)/(screens)/seller-profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/splash.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/splash.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/adaptive-icon.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/adaptive-icon.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/android-icon-foreground.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/android-icon-foreground.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/favicon.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/favicon.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/icon.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/icon.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/splash-icon.png" beforeDir="false" afterPath="$PROJECT_DIR$/assets/splash-icon.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/generate-icons.js" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/generate-icons.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui/ClearStockLogo.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui/ClearStockLogo.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui/KeyboardAvoidingWrapper.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui/KeyboardAvoidingWrapper.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/store/themeStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/store/themeStore.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

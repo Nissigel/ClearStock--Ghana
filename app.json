@@ -5,21 +5,22 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0c0f0c"
+      "backgroundColor": "#0d0d0d"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.clearstock.ghana"
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#006d3b"
+        "backgroundColor": "#0a2416"
       },
       "package": "com.clearstock.ghana"
     },

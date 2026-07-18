@@ -6,12 +6,15 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Button } from '@/components/ui/Button';
@@ -37,6 +40,7 @@ export default function PaymentScreen() {
   }>();
   const { colors } = useTheme();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('MOMO');
   const [momoNetwork, setMomoNetwork] = useState<MoMoNetwork>('MTN');
@@ -61,6 +65,11 @@ export default function PaymentScreen() {
       try {
         const result = await verifyPayment(paymentReference);
         if (result.paymentStatus === 'PAYMENT_SUCCESSFUL') {
+          // Refresh the order and the lists so the detail screen shows "Paid"
+          // and drops the Pay button when the buyer returns to it.
+          queryClient.invalidateQueries({ queryKey: ['transaction', transactionId] });
+          queryClient.invalidateQueries({ queryKey: ['buyer-transactions'] });
+          queryClient.invalidateQueries({ queryKey: ['seller-transactions'] });
           router.replace({
             pathname: '/(buyer)/(screens)/payment/success',
             params: { reference: paymentReference, amount, sellerName },
@@ -131,6 +140,10 @@ export default function PaymentScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScreenHeader showBack title="Make Payment" />
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -364,6 +377,7 @@ export default function PaymentScreen() {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

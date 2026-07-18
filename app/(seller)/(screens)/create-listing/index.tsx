@@ -8,6 +8,8 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useEffect, useState } from 'react';
 import type { AxiosError } from 'axios';
@@ -317,6 +319,10 @@ export default function CreateListingScreen() {
         ))}
       </View>
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -642,6 +648,7 @@ export default function CreateListingScreen() {
           style={styles.nextButton}
         />
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

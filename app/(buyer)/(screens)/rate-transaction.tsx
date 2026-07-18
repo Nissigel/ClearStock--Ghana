@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { Button } from '@/components/ui/Button';
 import { StarRating } from '@/components/ui/StarRating';
 import { createReview } from '@/api/review.api';
@@ -73,7 +74,7 @@ export default function RateTransactionScreen() {
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <ScreenHeader showBack title="Rate Seller" />
-      <View style={styles.content}>
+      <KeyboardAvoidingWrapper containerStyle={styles.content}>
         <View
           style={[
             styles.card,
@@ -157,7 +158,7 @@ export default function RateTransactionScreen() {
           onPress={() => router.back()}
           variant="ghost"
         />
-      </View>
+      </KeyboardAvoidingWrapper>
     </SafeAreaView>
   );
 }

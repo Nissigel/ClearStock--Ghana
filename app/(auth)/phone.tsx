@@ -4,7 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
@@ -25,6 +25,8 @@ export default function PhoneEntryScreen() {
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Blocks a second send-otp firing before the first resolves.
+  const sending = useRef(false);
   const isSlow = useSlowRequestHint(loading);
 
   const validate = (): boolean => {
@@ -47,8 +49,13 @@ export default function PhoneEntryScreen() {
   };
 
   const handleSendOtp = async () => {
+    // Each send-otp invalidates every earlier code for this number, so a second
+    // send while the first is still in flight (easy to trigger during a slow
+    // cold start) would silently kill the code the user ends up looking at.
+    if (sending.current) return;
     if (!validate()) return;
     try {
+      sending.current = true;
       setLoading(true);
       const trimmedEmail = email.trim();
       const { otp } = await sendOtp({
@@ -71,6 +78,7 @@ export default function PhoneEntryScreen() {
       setError('Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
+      sending.current = false;
     }
   };
 

@@ -18,11 +18,11 @@ const getColors = (isDark: boolean): ThemeColors => {
 };
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  // Design ships dark-first: default to dark regardless of the device
-  // setting. Users can switch to light or system from Settings.
-  colorScheme: 'dark',
-  isDark: true,
-  colors: DarkColors,
+  // Default to light regardless of the device setting. Users can switch to
+  // dark or system from Settings.
+  colorScheme: 'light',
+  isDark: false,
+  colors: LightColors,
 
   setColorScheme: (scheme) => {
     if (scheme === 'system') {

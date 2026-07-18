@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -132,6 +134,10 @@ export default function ProfileSetupScreen() {
           { backgroundColor: colors.background },
         ]}
       >
+        <KeyboardAvoidingView
+          style={styles.kav}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -294,6 +300,7 @@ export default function ProfileSetupScreen() {
             style={styles.button}
           />
         </ScrollView>
+        </KeyboardAvoidingView>
       </View>
 
       {/* Region Picker Modal */}
@@ -402,6 +409,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     marginTop: -24,
+  },
+  kav: {
+    flex: 1,
   },
   scrollContent: {
     paddingTop: Spacing['2xl'],

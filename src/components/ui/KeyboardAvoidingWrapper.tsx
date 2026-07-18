@@ -23,8 +23,12 @@ export function KeyboardAvoidingWrapper({
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      // On Android the window already resizes for the keyboard
+      // (softwareKeyboardLayoutMode: "resize"), so the 'height' behaviour on top
+      // of that made the layout jump. Let the resize handle it and only pad on
+      // iOS, where there's no automatic resize.
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
     >
       <ScrollView
         contentContainerStyle={[

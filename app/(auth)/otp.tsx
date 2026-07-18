@@ -107,8 +107,13 @@ export default function OtpVerifyScreen() {
         });
       }
     } catch (err) {
-      setError('Invalid OTP. Please check and try again.');
+      // The code may simply be stale — an earlier send for this number gets
+      // wiped the moment a newer one goes out. Let them pull a fresh one right
+      // away instead of waiting out the resend countdown.
+      setError("That code didn't work. Tap Resend to get a new one.");
       setOtp('');
+      setCountdown(0);
+      setCanResend(true);
     } finally {
       setLoading(false);
     }
@@ -142,11 +147,10 @@ export default function OtpVerifyScreen() {
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background }}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingWrapper
+        containerStyle={{ backgroundColor: colors.background }}
       >
-        
+
         {/* TOP — Green section */}
         <View style={[styles.topSection, { backgroundColor: colors.background }]}>
           <ScreenHeader
@@ -246,7 +250,7 @@ export default function OtpVerifyScreen() {
             )}
           </View>
         </View>
-     </ScrollView>
+     </KeyboardAvoidingWrapper>
     </SafeAreaView>
   );
 }

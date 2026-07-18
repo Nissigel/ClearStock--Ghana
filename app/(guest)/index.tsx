@@ -234,7 +234,9 @@ export default function GuestHomeScreen() {
               <View
                 style={[
                   styles.expiryPill,
-                  { backgroundColor: 'rgba(0,0,0,0.6)' },
+                  // Fixed dark pill in both themes — it sits over a photo of any
+                  // colour, so it must never follow the (light) surface colour.
+                  { backgroundColor: 'rgba(0,0,0,0.8)' },
                 ]}
               >
                 <Ionicons name="time-outline" size={10} color="white" />
@@ -679,6 +681,11 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: 'white',
     fontWeight: '500',
+    // A soft shadow keeps it legible even where the pill overlaps a bright
+    // part of the photo.
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   cardDetails: {
     padding: Spacing.sm,

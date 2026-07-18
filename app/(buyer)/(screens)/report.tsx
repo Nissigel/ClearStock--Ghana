@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { AxiosError } from 'axios';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { createReport } from '@/api/report.api';
@@ -65,7 +66,7 @@ export default function ReportScreen() {
         title={type === 'LISTING' ? 'Report Listing' : 'Report User'}
         onBackPress={() => router.back()}
       />
-      <View style={styles.content}>
+      <KeyboardAvoidingWrapper containerStyle={styles.content}>
         <Text style={[styles.intro, { color: colors.mutedForeground }]}>
           {type === 'LISTING'
             ? 'Tell us what’s wrong with this listing — misleading details, wrong price, or anything that shouldn’t be on ClearStock.'
@@ -91,7 +92,7 @@ export default function ReportScreen() {
           loading={loading}
           disabled={!reason.trim()}
         />
-      </View>
+      </KeyboardAvoidingWrapper>
     </SafeAreaView>
   );
 }

@@ -163,6 +163,33 @@ export default function BuyerTransactionDetailScreen() {
           />
         )}
 
+        {/* Paid, but the seller hasn't marked it ready yet. Confirms the
+            payment went through so the buyer isn't left wondering. */}
+        {transaction.paymentStatus === 'PAYMENT_SUCCESSFUL' &&
+          !isCompleted &&
+          !isCancelled &&
+          !showOtp && (
+            <View
+              style={[
+                styles.otpCard,
+                {
+                  backgroundColor: colors.secondary,
+                  borderColor: colors.primary,
+                  borderRadius: Radius.lg,
+                },
+              ]}
+            >
+              <Ionicons name="checkmark-circle" size={32} color={colors.primary} />
+              <Text style={[styles.otpTitle, { color: colors.foreground }]}>
+                Payment received
+              </Text>
+              <Text style={[styles.otpDesc, { color: colors.mutedForeground }]}>
+                Your payment is in. Waiting for the seller to prepare your order
+                for collection — you'll get a code to confirm handover.
+              </Text>
+            </View>
+          )}
+
         {/* Confirmed — replaces the OTP box once the order is finished. */}
         {isCompleted && (
           <View
