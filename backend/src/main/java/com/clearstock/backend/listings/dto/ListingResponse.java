@@ -16,6 +16,11 @@ public class ListingResponse {
 
     private Long id;
     private Long sellerId;
+    /**
+     * The seller's *user* id. Ratings and reviews are keyed by user, not by
+     * seller profile, so a screen showing both needs this to look them up.
+     */
+    private Long sellerUserId;
     private String sellerBusinessName;
     /** The seller's photo, so buyers see a face rather than just initials. */
     private String sellerProfileImageUrl;
@@ -45,6 +50,10 @@ public class ListingResponse {
         return ListingResponse.builder()
                 .id(listing.getId())
                 .sellerId(listing.getSeller().getId())
+                .sellerUserId(
+                        listing.getSeller().getUser() != null
+                                ? listing.getSeller().getUser().getId()
+                                : null)
                 .sellerBusinessName(listing.getSeller().getBusinessName())
                 .sellerProfileImageUrl(
                         listing.getSeller().getUser() != null
