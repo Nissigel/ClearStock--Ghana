@@ -39,22 +39,36 @@ git, or in a SQL script.
 
 The super admin then creates everyone else from the **Admins** screen.
 
-## Deploying to Vercel
+## Live deployment
 
-1. Push this repo to GitHub.
-2. In Vercel, import the repo and set the **root directory** to `admin`.
-3. Add an environment variable `VITE_API_BASE_URL` =
-   `https://clearstock-ghana.onrender.com`.
-4. Deploy. You get a URL like `clearstock-admin.vercel.app`.
-5. **Then add that URL to the backend**, or every request will be blocked by
-   the browser: set `ADMIN_CORS_ORIGINS` on the Render service to
-   `https://<your-app>.vercel.app` and restart.
+**https://clearstock-admin.vercel.app**
 
-Step 5 is easy to forget and the failure looks like a mysterious network error
-rather than a permissions problem.
+For the browser to be allowed to call the API, that origin must be listed on
+the Render service:
 
-`vercel.json` already routes every path back to `index.html`, which a
-single-page app needs — without it, refreshing on `/users` would 404.
+```
+ADMIN_CORS_ORIGINS = http://localhost:5173,https://clearstock-admin.vercel.app
+```
+
+Without it the page loads, sign-in does nothing, and the browser reports a
+network error rather than a permissions problem — the failure gives no hint at
+its cause, so check this first.
+
+### Redeploying
+
+The deployment is a snapshot, not wired to GitHub, so pushing code does not
+update it:
+
+```bash
+cd admin
+npx vercel deploy --prod --yes
+```
+
+To make it deploy on every push instead, import the repo in the Vercel
+dashboard with the root directory set to `admin`.
+
+`vercel.json` routes every path back to `index.html`, which a single-page app
+needs — without it, refreshing on `/users` would 404.
 
 ## Roles
 
