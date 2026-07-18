@@ -29,6 +29,7 @@ public class ReportService {
                 .reporter(reporter)
                 .reportType(request.getReportType())
                 .reason(request.getReason().strip())
+                .category(request.getCategory())
                 .status(ReportStatus.OPEN);
 
         if (request.getReportType() == ReportType.LISTING) {

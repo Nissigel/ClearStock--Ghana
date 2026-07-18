@@ -45,6 +45,13 @@ public class Report {
     @Column(nullable = false)
     private ReportType reportType;
 
+    /**
+     * A short label such as Fraud or No-show, chosen from a list in the app.
+     * Nullable: complaints filed before this existed carry only free text, and
+     * Postgres cannot add a NOT NULL column to a populated table.
+     */
+    private String category;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String reason;
 

@@ -322,7 +322,7 @@ public class AdminService {
         boolean isSeller = sellerRepository.findByUser(user).isPresent();
         return AdminUserResponse.builder()
                 .id(user.getId())
-                .name(user.getName())
+                .name(displayNameOf(user))
                 .phone(user.getPhone())
                 .email(user.getEmail())
                 .region(user.getRegion())
@@ -365,9 +365,25 @@ public class AdminService {
             return report.getListing().getProductName();
         }
         if (report.getReportedUser() != null) {
-            return report.getReportedUser().getName();
+            return displayNameOf(report.getReportedUser());
         }
         return "Unknown";
+    }
+
+    /**
+     * A person's shop name if they trade under one, otherwise their own name.
+     * Accounts created before profile setup have their phone number as their
+     * name, which is why the phone is the last resort rather than the first.
+     */
+    private String displayNameOf(User user) {
+        String shop = sellerRepository.findByUser(user)
+                .map(SellerProfile::getBusinessName)
+                .filter(businessName -> businessName != null && !businessName.isBlank())
+                .orElse(null);
+        if (shop != null) return shop;
+
+        String name = user.getName();
+        return name == null || name.isBlank() ? user.getPhone() : name;
     }
 
     private AdminReportResponse toReportResponse(Report report) {
@@ -393,8 +409,12 @@ public class AdminService {
                 .targetType(targetType)
                 .targetLabel(targetLabelOf(report))
                 .targetId(targetId)
-                .category(report.getReason())
-                .reporterName(report.getReporter().getName())
+                // Complaints filed before categories existed have only free
+                // text; showing the whole complaint in a Category column read
+                // as duplicated content, so they fall back to "Other".
+                .category(report.getCategory() == null || report.getCategory().isBlank()
+                        ? "Other" : report.getCategory())
+                .reporterName(displayNameOf(report.getReporter()))
                 .status(report.getStatus())
                 .createdAt(report.getCreatedAt())
                 .build();

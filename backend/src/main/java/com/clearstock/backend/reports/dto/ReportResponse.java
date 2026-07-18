@@ -18,6 +18,7 @@ public class ReportResponse {
     /** Human-readable label for what was reported (product or person). */
     private String targetLabel;
     private String reason;
+    private String category;
     private ReportStatus status;
     private LocalDateTime createdAt;
 
@@ -45,6 +46,7 @@ public class ReportResponse {
                 .targetId(targetId)
                 .targetLabel(targetLabel)
                 .reason(report.getReason())
+                .category(report.getCategory())
                 .status(report.getStatus())
                 .createdAt(report.getCreatedAt())
                 .build();

@@ -19,4 +19,7 @@ public class CreateReportRequest {
     @NotBlank(message = "Please describe the problem")
     @Size(max = 2000, message = "Reason is too long")
     private String reason;
+
+    /** Optional short label chosen from a list in the app. */
+    private String category;
 }
