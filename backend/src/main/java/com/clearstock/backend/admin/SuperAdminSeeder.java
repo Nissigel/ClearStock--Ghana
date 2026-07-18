@@ -8,6 +8,8 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.regex.Pattern;
+
 /**
  * Creates the first super admin on boot, from environment variables.
  *
@@ -24,6 +26,9 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class SuperAdminSeeder implements ApplicationRunner {
+
+    private static final Pattern LOOKS_LIKE_EMAIL =
+            Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final AdminRepository adminRepository;
     private final PasswordEncoder passwordEncoder;
@@ -54,6 +59,14 @@ public class SuperAdminSeeder implements ApplicationRunner {
         long admins = adminRepository.count();
         log.info("[super admin] admin accounts in database: {}. SUPER_ADMIN_EMAIL is {}.",
                 admins, (email == null || email.isBlank()) ? "NOT set" : "set");
+
+        // It is easy to paste the description of a variable instead of its
+        // value, which then seeds an account nobody can sign in to and looks
+        // exactly like a wrong password. Say so loudly rather than accept it.
+        if (email != null && !email.isBlank() && !LOOKS_LIKE_EMAIL.matcher(email.strip()).matches()) {
+            log.error("[super admin] SUPER_ADMIN_EMAIL is \"{}\", which is not an email "
+                    + "address. Set it to the actual address you will sign in with.", email);
+        }
 
         Admin existing = adminRepository.findAllByOrderByCreatedAtAsc().stream()
                 .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN)
