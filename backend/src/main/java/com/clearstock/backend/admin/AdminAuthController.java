@@ -3,6 +3,7 @@ package com.clearstock.backend.admin;
 import com.clearstock.backend.admin.dto.AdminLoginRequest;
 import com.clearstock.backend.admin.dto.AdminLoginResponse;
 import com.clearstock.backend.admin.dto.AdminResponse;
+import com.clearstock.backend.admin.dto.ChangePasswordRequest;
 import com.clearstock.backend.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,15 @@ public class AdminAuthController {
             @RequestBody @Valid AdminLoginRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
                 "Signed in", adminAuthService.login(request)));
+    }
+
+    /** Change your own password from the Settings screen. */
+    @PutMapping("/password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            Authentication authentication,
+            @RequestBody @Valid ChangePasswordRequest request) {
+        adminAuthService.changeOwnPassword((Admin) authentication.getPrincipal(), request);
+        return ResponseEntity.ok(ApiResponse.success("Password updated", null));
     }
 
     /**

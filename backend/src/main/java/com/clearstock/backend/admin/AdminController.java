@@ -130,6 +130,11 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(adminService.listReports()));
     }
 
+    @GetMapping("/reports/{id}")
+    public ResponseEntity<ApiResponse<AdminReportDetailResponse>> report(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(adminService.getReport(id)));
+    }
+
     @PutMapping("/reports/{id}/action")
     public ResponseEntity<ApiResponse<AdminReportResponse>> actionReport(
             Authentication authentication, @PathVariable Long id,

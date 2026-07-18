@@ -1,6 +1,7 @@
 package com.clearstock.backend.admin;
 
 import com.clearstock.backend.admin.dto.AdminLoginRequest;
+import com.clearstock.backend.admin.dto.ChangePasswordRequest;
 import com.clearstock.backend.admin.dto.AdminLoginResponse;
 import com.clearstock.backend.admin.dto.AdminResponse;
 import com.clearstock.backend.admin.dto.CreateAdminRequest;
@@ -48,6 +49,25 @@ public class AdminAuthService {
                         admin.getId(), admin.getEmail(), admin.getRole().name()))
                 .admin(toResponse(admin))
                 .build();
+    }
+
+    /**
+     * Changes the signed-in admin's own password. The current password is
+     * required, so a walk-up to an unlocked screen cannot lock the owner out
+     * of their own account.
+     */
+    public void changeOwnPassword(Admin actor, ChangePasswordRequest request) {
+        Admin admin = adminRepository.findById(actor.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Admin not found"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), admin.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Your current password is incorrect");
+        }
+
+        admin.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        adminRepository.save(admin);
     }
 
     public List<AdminResponse> listAdmins() {

@@ -24,6 +24,10 @@ public class AdminListingResponse {
     private String unit;
     private ListingStatus listingStatus;
     private LocalDate expiryDate;
+    private LocalDate clearanceEndDate;
+    /** The price the seller will not go below — the floor on the price bar. */
+    private BigDecimal minimumAcceptablePrice;
+    private Boolean expirySensitive;
     private List<String> imageUrls;
     private LocalDateTime createdAt;
 }

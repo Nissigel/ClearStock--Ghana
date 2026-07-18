@@ -197,6 +197,49 @@ public class AdminService {
                 .toList();
     }
 
+    /**
+     * One complaint plus its context. A moderator deciding whether to act
+     * needs to know if this is a first complaint or the fifth, so other
+     * reports about the same target come back with it.
+     */
+    public AdminReportDetailResponse getReport(Long reportId) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Report not found"));
+
+        AdminReportResponse mapped = toReportResponse(report);
+
+        List<AdminReportResponse> others = reportRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .filter(other -> !other.getId().equals(report.getId()))
+                .filter(other -> sameTarget(other, report))
+                .map(this::toReportResponse)
+                .toList();
+
+        long openCount = others.stream()
+                .filter(o -> o.getStatus() == ReportStatus.OPEN
+                        || o.getStatus() == ReportStatus.REVIEWING)
+                .count();
+
+        return AdminReportDetailResponse.builder()
+                .report(mapped)
+                .reason(report.getReason())
+                .otherReports(others)
+                .otherOpenCount(openCount)
+                .build();
+    }
+
+    /** Two reports share a target when they name the same listing or person. */
+    private boolean sameTarget(Report a, Report b) {
+        if (a.getReportType() != b.getReportType()) return false;
+        if (a.getReportType() == ReportType.LISTING) {
+            return a.getListing() != null && b.getListing() != null
+                    && a.getListing().getId().equals(b.getListing().getId());
+        }
+        return a.getReportedUser() != null && b.getReportedUser() != null
+                && a.getReportedUser().getId().equals(b.getReportedUser().getId());
+    }
+
     public AdminReportResponse setReportStatus(Admin actor, Long reportId,
                                                ReportStatus status, String note) {
         Report report = reportRepository.findById(reportId)
@@ -308,6 +351,9 @@ public class AdminService {
                 .unit(listing.getUnitOfMeasurement())
                 .listingStatus(listing.getListingStatus())
                 .expiryDate(listing.getExpiryDate())
+                .clearanceEndDate(listing.getClearanceEndDate())
+                .minimumAcceptablePrice(listing.getMinimumAcceptablePrice())
+                .expirySensitive(listing.isExpirySensitive())
                 .imageUrls(listing.getImages())
                 .createdAt(listing.getCreatedAt())
                 .build();
