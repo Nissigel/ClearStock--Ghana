@@ -18,8 +18,10 @@ import { Badge } from '@/components/ui/Badge';
 import { PriceDisplay } from '@/components/ui/PriceDisplay';
 import { Avatar } from '@/components/ui/Avatar';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import { StarRating } from '@/components/ui/StarRating';
 import { useQuery } from '@tanstack/react-query';
 import { getListingById } from '@/api/listing.api';
+import { getSellerRatingSummary } from '@/api/review.api';
 import {
   getConversationByListingId,
   createConversation,
@@ -46,6 +48,16 @@ export function ListingDetailScreen() {
   const { data: listing, isLoading, isError } = useQuery({
     queryKey: ['listing', id],
     queryFn: () => getListingById(id),
+  });
+
+  // Ratings key on the seller's *user* id, not their seller-profile id —
+  // confusing the two previously showed one seller's reviews on another's
+  // shop. Waits for the listing, since that is where the id comes from.
+  const sellerUserId = listing?.sellerUserId ?? null;
+  const { data: sellerRating } = useQuery({
+    queryKey: ['seller-rating', sellerUserId],
+    queryFn: () => getSellerRatingSummary(String(sellerUserId)),
+    enabled: sellerUserId != null,
   });
 
   const handleRestrictedAction = (action: () => void) => {
@@ -400,9 +412,35 @@ const handlePurchaseRequest = () => {
               >
                 {sellerName}
               </Text>
-              {/* The strongest trust signal a buyer has before paying, so it
-                  sits with the seller's name rather than further down. */}
-              <VerifiedBadge verified={listing.sellerVerified} />
+              {/* Rating and verification are the two things a buyer weighs
+                  before paying a stranger, so they sit together with the
+                  name rather than behind a tap through to the shop. */}
+              <View style={styles.sellerMeta}>
+                {sellerRating && sellerRating.totalReviews > 0 ? (
+                  <View style={styles.sellerRatingRow}>
+                    <StarRating rating={sellerRating.averageRating} size={13} />
+                    <Text
+                      style={[
+                        styles.sellerRatingText,
+                        { color: colors.mutedForeground },
+                      ]}
+                    >
+                      {sellerRating.averageRating.toFixed(1)} (
+                      {sellerRating.totalReviews})
+                    </Text>
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.sellerRatingText,
+                      { color: colors.mutedForeground },
+                    ]}
+                  >
+                    No reviews yet
+                  </Text>
+                )}
+                <VerifiedBadge verified={listing.sellerVerified} />
+              </View>
             </View>
             <Ionicons
               name="chevron-forward"
@@ -607,6 +645,20 @@ headerRight: {
   },
   sellerInfo: {
     flex: 1,
+  },
+  sellerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    flexWrap: 'wrap',
+  },
+  sellerRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  sellerRatingText: {
+    fontSize: FontSize.xs,
   },
   sellerName: {
     fontSize: FontSize.base,
