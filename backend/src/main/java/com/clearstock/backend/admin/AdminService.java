@@ -362,10 +362,15 @@ public class AdminService {
     }
 
     private AdminTransactionResponse toTransactionResponse(Transaction tx) {
+        // Quantity is non-null in the schema, but a row that predates that
+        // constraint would unbox to a NullPointerException and take the whole
+        // payments screen down rather than one row.
+        int quantity = tx.getQuantity() == null ? 0 : tx.getQuantity();
+
         BigDecimal amount = tx.getListing() == null || tx.getListing().getCurrentPrice() == null
-                ? BigDecimal.ZERO
+                ? BigDecimal.ZERO.setScale(2)
                 : tx.getListing().getCurrentPrice()
-                        .multiply(BigDecimal.valueOf(tx.getQuantity()))
+                        .multiply(BigDecimal.valueOf(quantity))
                         .setScale(2, RoundingMode.HALF_UP);
 
         String escrow;
@@ -411,7 +416,8 @@ public class AdminService {
                         .comment(review.getComment())
                         .reviewerName(displayNameOf(review.getReviewer()))
                         .revieweeName(displayNameOf(review.getReviewee()))
-                        .revieweeUserId(review.getReviewee().getId())
+                        .revieweeUserId(review.getReviewee() == null
+                                ? null : review.getReviewee().getId())
                         .listingTitle(review.getTransaction() == null
                                 || review.getTransaction().getListing() == null
                                 ? "—"
@@ -540,6 +546,8 @@ public class AdminService {
      * name, which is why the phone is the last resort rather than the first.
      */
     private String displayNameOf(User user) {
+        if (user == null) return "—";
+
         String shop = sellerRepository.findByUser(user)
                 .map(SellerProfile::getBusinessName)
                 .filter(businessName -> businessName != null && !businessName.isBlank())
