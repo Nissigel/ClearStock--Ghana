@@ -9,6 +9,8 @@ const PAGES = [
   { to: '/verifications', label: 'Verifications', title: 'Verifications', sub: 'Review and approve seller applications' },
   { to: '/users', label: 'Users', title: 'Users', sub: 'Manage buyer and seller accounts' },
   { to: '/listings', label: 'Listings', title: 'Listings', sub: 'Moderate products on the marketplace' },
+  { to: '/payments', label: 'Payments', title: 'Payments', sub: 'Escrow, commission and what sellers are owed' },
+  { to: '/reviews', label: 'Reviews', title: 'Reviews', sub: 'Ratings buyers and sellers left each other' },
   { to: '/reports', label: 'Reports', title: 'Reports', sub: 'Handle complaints about sellers, buyers, listings and reviews' },
   { to: '/admins', label: 'Admins', title: 'Admins', sub: 'Manage admin accounts' },
   { to: '/audit-logs', label: 'Audit logs', title: 'Audit logs', sub: 'A record of every admin action' },

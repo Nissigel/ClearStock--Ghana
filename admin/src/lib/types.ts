@@ -120,3 +120,45 @@ export interface AuditLog {
   note: string | null;
   createdAt: string;
 }
+
+export type EscrowState = 'HELD' | 'RELEASED' | 'UNPAID' | 'CANCELLED';
+
+export interface AdminTransaction {
+  id: number;
+  listingTitle: string;
+  buyerName: string;
+  sellerName: string;
+  quantity: number;
+  amount: number;
+  commission: number;
+  netToSeller: number;
+  paymentStatus: string;
+  transactionStatus: string;
+  escrowState: EscrowState;
+  paymentReference: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface AdminPayments {
+  commissionRate: number;
+  heldTotal: number;
+  heldCount: number;
+  releasedTotal: number;
+  releasedCount: number;
+  grossTotal: number;
+  commissionTotal: number;
+  netToSellersTotal: number;
+  transactions: AdminTransaction[];
+}
+
+export interface AdminReview {
+  id: number;
+  rating: number;
+  comment: string | null;
+  reviewerName: string;
+  revieweeName: string;
+  revieweeUserId: number;
+  listingTitle: string;
+  createdAt: string;
+}

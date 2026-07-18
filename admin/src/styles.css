@@ -1,8 +1,8 @@
 :root {
   --green-900: #04371f;
-  --green-800: #054527;
-  --green-700: #06542f;
-  --green-600: #0a6b3d;
+  --green-800: #005d33; /* sidebar */
+  --green-700: #005d33;
+  --green-600: #017040; /* selected nav item, primary buttons */
   --green-500: #0f8a4f;
   --green-50: #eaf4ee;
   --green-25: #f4faf6;

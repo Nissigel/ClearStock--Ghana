@@ -13,6 +13,8 @@ import ReportDetail from './pages/ReportDetail';
 import Admins from './pages/Admins';
 import AuditLogs from './pages/AuditLogs';
 import Settings from './pages/Settings';
+import Payments from './pages/Payments';
+import Reviews from './pages/Reviews';
 
 function Routed() {
   const { admin, loading } = useAuth();
@@ -33,6 +35,8 @@ function Routed() {
         <Route path="/users" element={<Users />} />
         <Route path="/listings" element={<Listings />} />
         <Route path="/listings/:id" element={<ListingDetail />} />
+        <Route path="/payments" element={<Payments />} />
+        <Route path="/reviews" element={<Reviews />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/reports/:id" element={<ReportDetail />} />
         <Route path="/settings" element={<Settings />} />
