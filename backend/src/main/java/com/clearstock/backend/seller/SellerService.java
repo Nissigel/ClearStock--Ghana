@@ -116,6 +116,9 @@ public class SellerService {
                 .businessCategory(profile.getBusinessCategory())
                 .marketHub(profile.getMarketHub())
                 .verificationStatus(profile.getVerificationStatus())
+                // The photo lives on the user account rather than the seller
+                // profile, so without this buyers only ever saw initials.
+                .profileImageUrl(profile.getUser().getProfileImageUrl())
                 .averageRating(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0)
                 .totalCompletedTransactions(completedTx)
                 .createdAt(profile.getCreatedAt())

@@ -17,6 +17,8 @@ public class ListingResponse {
     private Long id;
     private Long sellerId;
     private String sellerBusinessName;
+    /** The seller's photo, so buyers see a face rather than just initials. */
+    private String sellerProfileImageUrl;
     private String productName;
     private String category;
     private String description;
@@ -44,6 +46,10 @@ public class ListingResponse {
                 .id(listing.getId())
                 .sellerId(listing.getSeller().getId())
                 .sellerBusinessName(listing.getSeller().getBusinessName())
+                .sellerProfileImageUrl(
+                        listing.getSeller().getUser() != null
+                                ? listing.getSeller().getUser().getProfileImageUrl()
+                                : null)
                 .productName(listing.getProductName())
                 .category(listing.getCategory())
                 .description(listing.getDescription())

@@ -19,6 +19,8 @@ public class SellerProfileResponse {
     private String businessCategory;
     private String marketHub;
     private VerificationStatus verificationStatus;
+    /** The seller's photo, carried over from their user account. */
+    private String profileImageUrl;
     private Double averageRating;
     private Long totalCompletedTransactions;
     private LocalDateTime createdAt;
