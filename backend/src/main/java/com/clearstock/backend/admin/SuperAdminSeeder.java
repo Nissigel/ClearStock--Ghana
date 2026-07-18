@@ -37,6 +37,14 @@ public class SuperAdminSeeder implements ApplicationRunner {
     @Value("${admin.super.name:Super Admin}")
     private String name;
 
+    /**
+     * An escape hatch for a forgotten password. Off by default, because a
+     * seeder that silently rewrote credentials on every boot would mean an
+     * environment variable could take over a live account.
+     */
+    @Value("${admin.super.reset:false}")
+    private boolean reset;
+
     @Override
     public void run(ApplicationArguments args) {
         // Always report the state. Returning silently when an account already
@@ -47,9 +55,43 @@ public class SuperAdminSeeder implements ApplicationRunner {
         log.info("[super admin] admin accounts in database: {}. SUPER_ADMIN_EMAIL is {}.",
                 admins, (email == null || email.isBlank()) ? "NOT set" : "set");
 
-        if (adminRepository.existsByRole(AdminRole.SUPER_ADMIN)) {
-            log.info("[super admin] a super admin already exists — leaving it untouched. "
-                    + "If you cannot sign in, the password is wrong rather than missing.");
+        Admin existing = adminRepository.findAllByOrderByCreatedAtAsc().stream()
+                .filter(a -> a.getRole() == AdminRole.SUPER_ADMIN)
+                .findFirst()
+                .orElse(null);
+
+        if (existing != null) {
+            // The email is logged because signing in with the wrong one looks
+            // identical to a wrong password, and only the account owner can
+            // read these logs.
+            log.info("[super admin] one already exists: {}", existing.getEmail());
+
+            if (!reset) {
+                log.info("[super admin] leaving it untouched. If you cannot sign in, set "
+                        + "SUPER_ADMIN_RESET=true and redeploy to reset its password from "
+                        + "SUPER_ADMIN_PASSWORD.");
+                return;
+            }
+
+            if (password == null || password.isBlank()) {
+                log.warn("[super admin] SUPER_ADMIN_RESET is set but SUPER_ADMIN_PASSWORD "
+                        + "is empty — nothing to reset it to.");
+                return;
+            }
+
+            existing.setPasswordHash(passwordEncoder.encode(password));
+            if (email != null && !email.isBlank()) {
+                existing.setEmail(email.strip().toLowerCase());
+            }
+            if (name != null && !name.isBlank()) {
+                existing.setName(name);
+            }
+            existing.setActive(true);
+            adminRepository.save(existing);
+
+            log.warn("[super admin] password reset for {}. Remove SUPER_ADMIN_RESET from the "
+                    + "environment now — leaving it on resets the password on every restart.",
+                    existing.getEmail());
             return;
         }
 
