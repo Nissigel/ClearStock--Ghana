@@ -7,6 +7,7 @@ import type {
   UpdateSellerProfileRequest,
   RecoveryDashboard,
   SellerEarnings,
+  SubmitVerificationRequest,
 } from '@/types/user.types';
 
 // Returns null when the user has no seller profile (backend responds 404 —
@@ -68,6 +69,21 @@ export const updateSellerProfile = async (
     throw new Error('Not available in mock mode.');
   }
   const response = await apiClient.put('/seller/profile', data);
+  return response.data.data as SellerProfile;
+};
+
+/**
+ * Sends identity documents for review. Available any time after the shop
+ * exists, so a seller who skipped it at registration can still get verified.
+ */
+export const submitVerification = async (
+  data: SubmitVerificationRequest
+): Promise<SellerProfile> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    throw new Error('Not available in mock mode.');
+  }
+  const response = await apiClient.post('/seller/verification', data);
   return response.data.data as SellerProfile;
 };
 

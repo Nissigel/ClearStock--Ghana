@@ -5,6 +5,7 @@ export default function SellerScreensLayout() {
     <Stack screenOptions={{ headerShown: false, gestureEnabled: true }}>
       <Stack.Screen name="create-listing" />
       <Stack.Screen name="seller-profile" />
+      <Stack.Screen name="verification" />
       <Stack.Screen name="recovery-impact" />
       <Stack.Screen name="earnings" />
       <Stack.Screen name="transactions" />

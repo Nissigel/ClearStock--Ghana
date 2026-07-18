@@ -26,6 +26,7 @@ export interface SellerProfile {
   ghanaCardPhotoUrl: string | null;
   businessRegUrl: string | null;
   rejectionReason: string | null;
+  documentsSubmittedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +49,13 @@ export interface UpdateSellerProfileRequest {
   businessDescription?: string;
   ghanaCardNumber?: string | null;
   ghanaCardPhotoUrl?: string | null;
+  businessRegUrl?: string | null;
+}
+
+/** Documents a seller sends for review, separate from ordinary shop edits. */
+export interface SubmitVerificationRequest {
+  ghanaCardNumber: string;
+  ghanaCardPhotoUrl: string;
   businessRegUrl?: string | null;
 }
 

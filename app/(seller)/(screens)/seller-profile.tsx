@@ -5,10 +5,12 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Input } from '@/components/ui/Input';
@@ -97,15 +99,40 @@ export default function SellerProfileEditScreen() {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
+          {/* Verification lives on its own screen: it needs documents, and
+              submitting it sends the shop back for review, which shouldn't
+              happen just because someone edited their shop name here. */}
           {sellerProfile && (
-            <View style={styles.badgeRow}>
-              <Badge
-                variant={
-                  VERIFICATION_BADGE[sellerProfile.verificationStatus] ??
-                  'unverified'
-                }
+            <Pressable
+              onPress={() => router.push('/(seller)/(screens)/verification')}
+              style={[
+                styles.verificationRow,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <View style={styles.verificationText}>
+                <Badge
+                  variant={
+                    VERIFICATION_BADGE[sellerProfile.verificationStatus] ??
+                    'unverified'
+                  }
+                />
+                <Text
+                  style={[styles.verificationHint, { color: colors.mutedForeground }]}
+                >
+                  {sellerProfile.verificationStatus === 'VERIFIED'
+                    ? 'View your submitted documents'
+                    : sellerProfile.verificationStatus === 'PENDING'
+                      ? 'Documents are being reviewed'
+                      : 'Send your Ghana Card to get verified'}
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.mutedForeground}
               />
-            </View>
+            </Pressable>
           )}
 
           {sellerProfile?.rejectionReason && (
@@ -171,7 +198,16 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingBottom: Spacing['4xl'],
   },
-  badgeRow: { flexDirection: 'row' },
+  verificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    padding: Spacing.base,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+  },
+  verificationText: { flex: 1, alignItems: 'flex-start', gap: Spacing.xs },
+  verificationHint: { fontSize: FontSize.sm },
   rejectionReason: { fontSize: FontSize.sm },
   error: { fontSize: FontSize.sm },
   text: { fontSize: FontSize.base, textAlign: 'center' },
