@@ -39,13 +39,24 @@ public class SuperAdminSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        // Always report the state. Returning silently when an account already
+        // existed made "no super admin log line" ambiguous between "already
+        // set up" and "never ran", which is the one question this needs to
+        // answer when somebody cannot sign in.
+        long admins = adminRepository.count();
+        log.info("[super admin] admin accounts in database: {}. SUPER_ADMIN_EMAIL is {}.",
+                admins, (email == null || email.isBlank()) ? "NOT set" : "set");
+
         if (adminRepository.existsByRole(AdminRole.SUPER_ADMIN)) {
+            log.info("[super admin] a super admin already exists — leaving it untouched. "
+                    + "If you cannot sign in, the password is wrong rather than missing.");
             return;
         }
 
         if (email == null || email.isBlank() || password == null || password.isBlank()) {
-            log.warn("No super admin exists and SUPER_ADMIN_EMAIL/SUPER_ADMIN_PASSWORD are not set. "
-                    + "The admin dashboard cannot be signed into until they are.");
+            log.warn("[super admin] no super admin exists and SUPER_ADMIN_EMAIL/"
+                    + "SUPER_ADMIN_PASSWORD are not set. The admin dashboard cannot be "
+                    + "signed into until they are.");
             return;
         }
 
@@ -62,6 +73,7 @@ public class SuperAdminSeeder implements ApplicationRunner {
                 .active(true)
                 .build());
 
-        log.info("Seeded super admin {}", email);
+        log.info("[super admin] created {} — sign in with this email and the password "
+                + "you set in SUPER_ADMIN_PASSWORD.", email);
     }
 }
