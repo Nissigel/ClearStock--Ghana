@@ -39,6 +39,7 @@ public class TransactionService {
     private final ListingRepository listingRepository;
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
+    private final ReviewRepository reviewRepository;
     private final PaystackService paystackService;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
@@ -551,6 +552,9 @@ public class TransactionService {
                 .completedAt(t.getCompletedAt())
                 .createdAt(t.getCreatedAt())
                 .updatedAt(t.getUpdatedAt())
+                // Only the buyer reviews the seller, so that's whose review we
+                // look for.
+                .reviewed(reviewRepository.existsByTransactionAndReviewer(t, t.getBuyer()))
                 .evidence(evidence)
                 .build();
     }

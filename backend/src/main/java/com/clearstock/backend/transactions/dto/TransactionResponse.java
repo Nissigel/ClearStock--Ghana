@@ -28,5 +28,10 @@ public class TransactionResponse {
     private LocalDateTime completedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /**
+     * Whether the buyer has already reviewed this order, so the app stops
+     * offering to rate a seller they've already rated.
+     */
+    private boolean reviewed;
     private List<EvidenceResponse> evidence;
 }
