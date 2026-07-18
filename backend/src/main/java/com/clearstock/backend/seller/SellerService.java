@@ -29,7 +29,7 @@ import java.util.List;
 public class SellerService {
 
     /** ClearStock keeps 7% of each sale, deducted before the seller is paid. */
-    private static final BigDecimal COMMISSION_RATE_PERCENT = new BigDecimal("7.00");
+    public static final BigDecimal COMMISSION_RATE_PERCENT = new BigDecimal("7.00");
 
     private final SellerRepository sellerRepository;
     private final ReviewRepository reviewRepository;

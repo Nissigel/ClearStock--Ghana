@@ -12,8 +12,12 @@ import com.clearstock.backend.reports.ReportStatus;
 import com.clearstock.backend.reports.ReportType;
 import com.clearstock.backend.seller.SellerProfile;
 import com.clearstock.backend.seller.SellerRepository;
+import com.clearstock.backend.seller.SellerService;
 import com.clearstock.backend.seller.VerificationStatus;
+import com.clearstock.backend.transactions.PaymentStatus;
 import com.clearstock.backend.transactions.PurchaseRequestRepository;
+import com.clearstock.backend.transactions.ReviewRepository;
+import com.clearstock.backend.transactions.Transaction;
 import com.clearstock.backend.transactions.TransactionRepository;
 import com.clearstock.backend.transactions.TransactionStatus;
 import com.clearstock.backend.user.AccountStatus;
@@ -24,6 +28,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 /**
@@ -43,6 +49,7 @@ public class AdminService {
     private final TransactionRepository transactionRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final AuditLogRepository auditLogRepository;
+    private final ReviewRepository reviewRepository;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
 
@@ -304,6 +311,114 @@ public class AdminService {
                 "REPORT", report.getId(), targetLabelOf(report), note);
 
         return toReportResponse(report);
+    }
+
+    // ---------------------------------------------------------- payments
+
+    /**
+     * Every payment, plus the escrow totals.
+     *
+     * ClearStock holds a buyer's money until they confirm collection, so
+     * "paid" and "the seller has it" are different states — this is where an
+     * admin can see which is which, and answer a seller asking where their
+     * money is.
+     */
+    public AdminPaymentsResponse getPayments() {
+        List<Transaction> all = transactionRepository.findAllByOrderByCreatedAtDesc();
+
+        List<AdminTransactionResponse> mapped = all.stream()
+                .map(this::toTransactionResponse)
+                .toList();
+
+        BigDecimal held = sumWhere(mapped, "HELD");
+        BigDecimal released = sumWhere(mapped, "RELEASED");
+        BigDecimal gross = held.add(released).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal commission = commissionOn(gross);
+
+        return AdminPaymentsResponse.builder()
+                .commissionRate(SellerService.COMMISSION_RATE_PERCENT)
+                .heldTotal(held)
+                .heldCount((int) mapped.stream().filter(t -> "HELD".equals(t.getEscrowState())).count())
+                .releasedTotal(released)
+                .releasedCount((int) mapped.stream().filter(t -> "RELEASED".equals(t.getEscrowState())).count())
+                .grossTotal(gross)
+                .commissionTotal(commission)
+                .netToSellersTotal(gross.subtract(commission).setScale(2, RoundingMode.HALF_UP))
+                .transactions(mapped)
+                .build();
+    }
+
+    private BigDecimal sumWhere(List<AdminTransactionResponse> rows, String state) {
+        return rows.stream()
+                .filter(t -> state.equals(t.getEscrowState()))
+                .map(AdminTransactionResponse::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal commissionOn(BigDecimal gross) {
+        return gross.multiply(SellerService.COMMISSION_RATE_PERCENT)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+
+    private AdminTransactionResponse toTransactionResponse(Transaction tx) {
+        BigDecimal amount = tx.getListing() == null || tx.getListing().getCurrentPrice() == null
+                ? BigDecimal.ZERO
+                : tx.getListing().getCurrentPrice()
+                        .multiply(BigDecimal.valueOf(tx.getQuantity()))
+                        .setScale(2, RoundingMode.HALF_UP);
+
+        String escrow;
+        if (tx.getTransactionStatus() == TransactionStatus.CANCELLED) {
+            escrow = "CANCELLED";
+        } else if (tx.getPaymentStatus() != PaymentStatus.PAYMENT_SUCCESSFUL) {
+            escrow = "UNPAID";
+        } else if (tx.getTransactionStatus() == TransactionStatus.COMPLETED) {
+            escrow = "RELEASED";
+        } else {
+            escrow = "HELD";
+        }
+
+        BigDecimal commission = "CANCELLED".equals(escrow) || "UNPAID".equals(escrow)
+                ? BigDecimal.ZERO.setScale(2)
+                : commissionOn(amount);
+
+        return AdminTransactionResponse.builder()
+                .id(tx.getId())
+                .listingTitle(tx.getListing() == null ? "—" : tx.getListing().getProductName())
+                .buyerName(tx.getBuyer() == null ? "—" : displayNameOf(tx.getBuyer()))
+                .sellerName(tx.getSeller() == null ? "—" : displayNameOf(tx.getSeller()))
+                .quantity(tx.getQuantity())
+                .amount(amount)
+                .commission(commission)
+                .netToSeller(amount.subtract(commission).setScale(2, RoundingMode.HALF_UP))
+                .paymentStatus(tx.getPaymentStatus())
+                .transactionStatus(tx.getTransactionStatus())
+                .escrowState(escrow)
+                .paymentReference(tx.getPaymentReference())
+                .createdAt(tx.getCreatedAt())
+                .completedAt(tx.getCompletedAt())
+                .build();
+    }
+
+    // ----------------------------------------------------------- reviews
+
+    public List<AdminReviewResponse> listReviews() {
+        return reviewRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(review -> AdminReviewResponse.builder()
+                        .id(review.getId())
+                        .rating(review.getRating())
+                        .comment(review.getComment())
+                        .reviewerName(displayNameOf(review.getReviewer()))
+                        .revieweeName(displayNameOf(review.getReviewee()))
+                        .revieweeUserId(review.getReviewee().getId())
+                        .listingTitle(review.getTransaction() == null
+                                || review.getTransaction().getListing() == null
+                                ? "—"
+                                : review.getTransaction().getListing().getProductName())
+                        .createdAt(review.getCreatedAt())
+                        .build())
+                .toList();
     }
 
     // ------------------------------------------------------------ audit logs

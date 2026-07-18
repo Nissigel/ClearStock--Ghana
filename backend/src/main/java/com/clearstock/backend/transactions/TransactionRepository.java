@@ -14,6 +14,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByBuyerOrSellerOrderByCreatedAtDesc(User buyer, User seller);
 
+    List<Transaction> findAllByOrderByCreatedAtDesc();
+
     Optional<Transaction> findByPurchaseRequest(PurchaseRequest purchaseRequest);
 
     Optional<Transaction> findByPaymentReference(String paymentReference);

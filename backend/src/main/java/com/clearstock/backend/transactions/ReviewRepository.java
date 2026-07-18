@@ -19,4 +19,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Double findAverageRatingByRevieweeId(@Param("userId") Long userId);
 
     long countByRevieweeId(Long revieweeId);
+
+    List<Review> findAllByOrderByCreatedAtDesc();
 }

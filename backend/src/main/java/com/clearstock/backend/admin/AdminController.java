@@ -153,6 +153,19 @@ public class AdminController {
                         ReportStatus.DISMISSED, request.getNote())));
     }
 
+    // ------------------------------------------------------------- payments
+
+    /** Escrow position plus every payment. */
+    @GetMapping("/payments")
+    public ResponseEntity<ApiResponse<AdminPaymentsResponse>> payments() {
+        return ResponseEntity.ok(ApiResponse.success(adminService.getPayments()));
+    }
+
+    @GetMapping("/reviews")
+    public ResponseEntity<ApiResponse<List<AdminReviewResponse>>> reviews() {
+        return ResponseEntity.ok(ApiResponse.success(adminService.listReviews()));
+    }
+
     // ----------------------------------------------------------- audit logs
 
     @GetMapping("/audit-logs")
