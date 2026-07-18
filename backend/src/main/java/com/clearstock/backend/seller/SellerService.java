@@ -4,6 +4,7 @@ import com.clearstock.backend.seller.dto.BecomeSellerRequest;
 import com.clearstock.backend.seller.dto.RecoveryDashboardResponse;
 import com.clearstock.backend.seller.dto.SellerEarningsResponse;
 import com.clearstock.backend.seller.dto.SellerProfileResponse;
+import com.clearstock.backend.seller.dto.SubmitVerificationRequest;
 import com.clearstock.backend.seller.dto.UpdateSellerProfileRequest;
 import com.clearstock.backend.transactions.Transaction;
 import com.clearstock.backend.transactions.ReviewRepository;
@@ -19,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -74,6 +76,36 @@ public class SellerService {
         if (request.getBusinessPhone() != null) profile.setBusinessPhone(request.getBusinessPhone());
         if (request.getBusinessCategory() != null) profile.setBusinessCategory(request.getBusinessCategory());
         if (request.getMarketHub() != null) profile.setMarketHub(request.getMarketHub());
+
+        return mapToResponse(sellerRepository.save(profile));
+    }
+
+    /**
+     * Submit identity and business documents for review.
+     *
+     * Sellers can trade before verifying, so this is available at any point
+     * after the profile exists. Submitting moves them to PENDING and clears any
+     * previous rejection reason, so a resubmission starts clean.
+     */
+    public SellerProfileResponse submitVerification(
+            User user, SubmitVerificationRequest request) {
+        SellerProfile profile = sellerRepository.findByUser(user)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "No seller profile found"));
+
+        if (profile.getVerificationStatus() == VerificationStatus.VERIFIED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "This shop is already verified");
+        }
+
+        profile.setGhanaCardNumber(request.getGhanaCardNumber().strip());
+        profile.setGhanaCardPhotoUrl(request.getGhanaCardPhotoUrl());
+        if (request.getBusinessRegUrl() != null) {
+            profile.setBusinessRegUrl(request.getBusinessRegUrl());
+        }
+        profile.setVerificationStatus(VerificationStatus.PENDING);
+        profile.setRejectionReason(null);
+        profile.setDocumentsSubmittedAt(LocalDateTime.now());
 
         return mapToResponse(sellerRepository.save(profile));
     }
@@ -187,6 +219,11 @@ public class SellerService {
                 // The photo lives on the user account rather than the seller
                 // profile, so without this buyers only ever saw initials.
                 .profileImageUrl(profile.getUser().getProfileImageUrl())
+                .ghanaCardNumber(profile.getGhanaCardNumber())
+                .ghanaCardPhotoUrl(profile.getGhanaCardPhotoUrl())
+                .businessRegUrl(profile.getBusinessRegUrl())
+                .rejectionReason(profile.getRejectionReason())
+                .documentsSubmittedAt(profile.getDocumentsSubmittedAt())
                 .averageRating(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0)
                 .totalCompletedTransactions(completedTx)
                 .createdAt(profile.getCreatedAt())

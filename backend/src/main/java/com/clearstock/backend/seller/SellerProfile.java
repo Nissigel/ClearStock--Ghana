@@ -47,6 +47,25 @@ public class SellerProfile {
     @Builder.Default
     private VerificationStatus verificationStatus = VerificationStatus.UNVERIFIED;
 
+    // Identity and business documents, all optional at sign-up: a seller can
+    // start trading straight away and submit these later, which puts them into
+    // PENDING review rather than blocking them at registration.
+    @Column(name = "ghana_card_number")
+    private String ghanaCardNumber;
+
+    @Column(name = "ghana_card_photo_url")
+    private String ghanaCardPhotoUrl;
+
+    @Column(name = "business_reg_url")
+    private String businessRegUrl;
+
+    /** Why a review was turned down, so the seller knows what to correct. */
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
+    @Column(name = "documents_submitted_at")
+    private LocalDateTime documentsSubmittedAt;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

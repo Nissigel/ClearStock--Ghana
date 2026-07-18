@@ -21,6 +21,12 @@ public class SellerProfileResponse {
     private VerificationStatus verificationStatus;
     /** The seller's photo, carried over from their user account. */
     private String profileImageUrl;
+    // Verification documents and outcome, so the app can show progress.
+    private String ghanaCardNumber;
+    private String ghanaCardPhotoUrl;
+    private String businessRegUrl;
+    private String rejectionReason;
+    private LocalDateTime documentsSubmittedAt;
     private Double averageRating;
     private Long totalCompletedTransactions;
     private LocalDateTime createdAt;
