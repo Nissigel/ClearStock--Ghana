@@ -424,31 +424,30 @@ export default function GuestHomeScreen() {
             ]}
           >
             <Ionicons name="search-outline" size={18} color={colors.brandGreenMuted} />
-            {/* A guest browsing outside the tab navigator must not be pushed
-                into it — doing so left them stuck with a tab bar they have no
-                account for. They search in place instead. */}
-            {isInBuyerTabs ? (
-              <TouchableOpacity
-                style={styles.searchInput}
-                onPress={() => router.push('/(buyer)/(tabs)/search')}
-              >
-                <Text style={[styles.searchPlaceholder, { color: colors.brandGreenMuted }]}>
-                  Search goods, sellers...
-                </Text>
+            {/* Filters this feed in place. It deliberately does not jump to the
+                Search screen: the two are independent, and sending a guest into
+                the buyer tabs also left them with a tab bar they have no
+                account for. */}
+            <TextInput
+              value={filters.search ?? ''}
+              onChangeText={handleSearch}
+              placeholder="Search goods, sellers..."
+              placeholderTextColor={colors.brandGreenMuted}
+              returnKeyType="search"
+              style={[
+                styles.searchInput,
+                styles.searchField,
+                { color: colors.brandGreenForeground },
+              ]}
+            />
+            {!!filters.search && (
+              <TouchableOpacity onPress={() => handleSearch('')}>
+                <Ionicons
+                  name="close-circle"
+                  size={18}
+                  color={colors.brandGreenMuted}
+                />
               </TouchableOpacity>
-            ) : (
-              <TextInput
-                value={filters.search ?? ''}
-                onChangeText={handleSearch}
-                placeholder="Search goods, sellers..."
-                placeholderTextColor={colors.brandGreenMuted}
-                returnKeyType="search"
-                style={[
-                  styles.searchInput,
-                  styles.searchField,
-                  { color: colors.brandGreenForeground },
-                ]}
-              />
             )}
             <TouchableOpacity onPress={() => setShowFilter(true)}>
               <Ionicons name="options-outline" size={18} color={colors.brandGreenMuted} />
