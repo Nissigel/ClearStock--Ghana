@@ -17,6 +17,21 @@ public class ConversationResponse {
     private Long sellerUserId;
     private String buyerPhone;
     private String sellerPhone;
+
+    // Who the other person is, so the inbox can show a name and face instead of
+    // falling back to a raw phone number.
+    private String buyerName;
+    private String sellerName;
+    private String buyerProfileImageUrl;
+    private String sellerProfileImageUrl;
+
+    // Preview of the thread, so the inbox stops saying "No messages yet" when
+    // there are messages — including the ones the app itself posts.
+    private String lastMessageContent;
+    private LocalDateTime lastMessageAt;
+    private Long lastMessageSenderId;
+    private long unreadCount;
+
     private ConversationStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

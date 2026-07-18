@@ -42,7 +42,7 @@ public class MessagingService {
         }
 
         return conversationRepository.findByListingAndBuyer(listing, buyer)
-                .map(this::mapToConversationResponse)
+                .map(c -> mapToConversationResponse(c, buyer))
                 .orElseGet(() -> {
                     Conversation conversation = Conversation.builder()
                             .listing(listing)
@@ -50,7 +50,7 @@ public class MessagingService {
                             .seller(seller)
                             .status(ConversationStatus.ACTIVE)
                             .build();
-                    return mapToConversationResponse(conversationRepository.save(conversation));
+                    return mapToConversationResponse(conversationRepository.save(conversation), buyer);
                 });
     }
 
@@ -58,7 +58,7 @@ public class MessagingService {
         return conversationRepository.findByBuyerOrSellerOrderByUpdatedAtDesc(user, user)
                 .stream()
                 .filter(c -> !isHiddenFor(c, user))
-                .map(this::mapToConversationResponse)
+                .map(c -> mapToConversationResponse(c, user))
                 .collect(Collectors.toList());
     }
 
@@ -75,13 +75,13 @@ public class MessagingService {
         Listing listing = listingRepository.findById(listingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Listing not found"));
         return conversationRepository.findByListingAndBuyer(listing, buyer)
-                .map(this::mapToConversationResponse)
+                .map(c -> mapToConversationResponse(c, buyer))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No conversation found for this listing"));
     }
 
     public ConversationResponse getConversation(User user, Long conversationId) {
-        return mapToConversationResponse(findConversationForParticipant(user, conversationId));
+        return mapToConversationResponse(findConversationForParticipant(user, conversationId), user);
     }
 
     @Transactional
@@ -183,11 +183,15 @@ public class MessagingService {
         return conversation;
     }
 
-    private ConversationResponse mapToConversationResponse(Conversation conversation) {
+    private ConversationResponse mapToConversationResponse(Conversation conversation, User viewer) {
         boolean phonesVisible = purchaseRequestRepository.existsByListingAndBuyerAndStatusIn(
                 conversation.getListing(),
                 conversation.getBuyer(),
                 List.of(PurchaseRequestStatus.ACCEPTED, PurchaseRequestStatus.COMPLETED));
+
+        Message latest = messageRepository
+                .findFirstByConversationOrderByCreatedAtDesc(conversation)
+                .orElse(null);
 
         return ConversationResponse.builder()
                 .id(conversation.getId())
@@ -197,10 +201,44 @@ public class MessagingService {
                 .sellerUserId(conversation.getSeller().getId())
                 .buyerPhone(phonesVisible ? conversation.getBuyer().getPhone() : null)
                 .sellerPhone(phonesVisible ? conversation.getSeller().getPhone() : null)
+                .buyerName(displayNameOf(conversation.getBuyer()))
+                // Buyers know a seller by their shop, so prefer the business name.
+                .sellerName(shopNameOf(conversation.getListing(), conversation.getSeller()))
+                .buyerProfileImageUrl(conversation.getBuyer().getProfileImageUrl())
+                .sellerProfileImageUrl(conversation.getSeller().getProfileImageUrl())
+                .lastMessageContent(latest == null
+                        ? null
+                        : (latest.getDeletedAt() != null ? DELETED_PLACEHOLDER : latest.getMessageContent()))
+                .lastMessageAt(latest == null ? null : latest.getCreatedAt())
+                .lastMessageSenderId(latest == null ? null : latest.getSender().getId())
+                .unreadCount(messageRepository
+                        .countByConversationAndSenderNotAndSeenFalse(conversation, viewer))
                 .status(conversation.getStatus())
                 .createdAt(conversation.getCreatedAt())
                 .updatedAt(conversation.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * A human label for a user. Accounts created before the sign-up form saved a
+     * name still carry their phone number as their name, so fall back rather
+     * than showing a blank.
+     */
+    private String displayNameOf(User user) {
+        String name = user.getName();
+        if (name == null || name.isBlank() || name.equals(user.getPhone())) {
+            return null;
+        }
+        return name;
+    }
+
+    /** The shop's name for this listing, falling back to the seller's own name. */
+    private String shopNameOf(Listing listing, User seller) {
+        String business = listing.getSeller() != null ? listing.getSeller().getBusinessName() : null;
+        if (business != null && !business.isBlank()) {
+            return business;
+        }
+        return displayNameOf(seller);
     }
 
     private MessageResponse mapToMessageResponse(Message message) {
