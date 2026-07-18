@@ -50,6 +50,14 @@ public class SecurityConfig {
                         // a trader's token can never reach it.
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/listings/**", "/products/**").permitAll()
+                        // A seller's rating and reviews are public trust
+                        // signals. Requiring a token to read them meant a
+                        // guest browsing a listing was told the seller had no
+                        // reviews when they had plenty — the one moment the
+                        // rating matters most is before someone signs up.
+                        // Writing a review still needs an account.
+                        .requestMatchers(HttpMethod.GET, "/seller/*/rating").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/reviews/user/**").permitAll()
                         .requestMatchers("/reviews", "/reviews/**").authenticated()
                         .anyRequest().authenticated()
                 )
