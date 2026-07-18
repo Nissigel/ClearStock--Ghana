@@ -56,4 +56,30 @@ public class MailDiagnosticController {
 
         return ResponseEntity.ok(ApiResponse.success(report));
     }
+
+    /**
+     * Which mail relays this host can actually reach. SMTP blocks are applied
+     * per-port, so this shows whether any relay is usable at all before
+     * committing to a provider.
+     */
+    @GetMapping("/ports")
+    public ResponseEntity<ApiResponse<Map<String, String>>> checkPorts() {
+        Map<String, String> results = new LinkedHashMap<>();
+        String[][] targets = {
+                {"smtp.gmail.com", "587"},
+                {"smtp.gmail.com", "465"},
+                {"smtp-relay.brevo.com", "587"},
+                {"smtp-relay.brevo.com", "2525"},
+                {"smtp.sendgrid.net", "2525"},
+                // Plain HTTPS, to confirm outbound traffic works at all and
+                // that only mail ports are affected.
+                {"api.brevo.com", "443"},
+        };
+        for (String[] target : targets) {
+            results.put(
+                    target[0] + ":" + target[1],
+                    PortProbe.check(target[0], Integer.parseInt(target[1]), 6000));
+        }
+        return ResponseEntity.ok(ApiResponse.success(results));
+    }
 }
