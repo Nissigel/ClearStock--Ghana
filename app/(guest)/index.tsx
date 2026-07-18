@@ -4,6 +4,7 @@ import {
   TouchableOpacity,
   ScrollView,
   FlatList,
+  TextInput,
   Dimensions,
 } from 'react-native';
 import { useState, useMemo } from 'react';
@@ -56,8 +57,10 @@ export default function GuestHomeScreen() {
   // (inside the buyer tab navigator). Route to the matching group's
   // listing detail screen so buyers don't drop into the guest stack and
   // lose their tab bar.
-  const listingDetailRoute =
-    segments[0] === '(buyer)' ? '/(buyer)/(tabs)/listing/[id]' : '/(guest)/listing/[id]';
+  const isInBuyerTabs = segments[0] === '(buyer)';
+  const listingDetailRoute = isInBuyerTabs
+    ? '/(buyer)/(tabs)/listing/[id]'
+    : '/(guest)/listing/[id]';
 
   const filters = useListingFilterStore((state) => state.filters);
   const setFilter = useListingFilterStore((state) => state.setFilter);
@@ -421,14 +424,32 @@ export default function GuestHomeScreen() {
             ]}
           >
             <Ionicons name="search-outline" size={18} color={colors.brandGreenMuted} />
-            <TouchableOpacity
-              style={styles.searchInput}
-              onPress={() => router.push('/(buyer)/(tabs)/search')}
-            >
-              <Text style={[styles.searchPlaceholder, { color: colors.brandGreenMuted }]}>
-                Search goods, sellers...
-              </Text>
-            </TouchableOpacity>
+            {/* A guest browsing outside the tab navigator must not be pushed
+                into it — doing so left them stuck with a tab bar they have no
+                account for. They search in place instead. */}
+            {isInBuyerTabs ? (
+              <TouchableOpacity
+                style={styles.searchInput}
+                onPress={() => router.push('/(buyer)/(tabs)/search')}
+              >
+                <Text style={[styles.searchPlaceholder, { color: colors.brandGreenMuted }]}>
+                  Search goods, sellers...
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TextInput
+                value={filters.search ?? ''}
+                onChangeText={handleSearch}
+                placeholder="Search goods, sellers..."
+                placeholderTextColor={colors.brandGreenMuted}
+                returnKeyType="search"
+                style={[
+                  styles.searchInput,
+                  styles.searchField,
+                  { color: colors.brandGreenForeground },
+                ]}
+              />
+            )}
             <TouchableOpacity onPress={() => setShowFilter(true)}>
               <Ionicons name="options-outline" size={18} color={colors.brandGreenMuted} />
             </TouchableOpacity>
@@ -632,6 +653,10 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   searchInput: { flex: 1 },
+  searchField: {
+    paddingVertical: 0,
+    fontSize: FontSize.base,
+  },
   searchPlaceholder: { fontSize: FontSize.sm },
   categories: {
     paddingHorizontal: Spacing.base,
