@@ -22,6 +22,9 @@ public class ListingResponse {
      */
     private Long sellerUserId;
     private String sellerBusinessName;
+    /** Whether the shop has been verified, so buyers can see the badge
+     *  without opening the seller profile. */
+    private boolean sellerVerified;
     /** The seller's photo, so buyers see a face rather than just initials. */
     private String sellerProfileImageUrl;
     private String productName;
@@ -55,6 +58,8 @@ public class ListingResponse {
                                 ? listing.getSeller().getUser().getId()
                                 : null)
                 .sellerBusinessName(listing.getSeller().getBusinessName())
+                .sellerVerified(listing.getSeller().getVerificationStatus()
+                        == com.clearstock.backend.seller.VerificationStatus.VERIFIED)
                 .sellerProfileImageUrl(
                         listing.getSeller().getUser() != null
                                 ? listing.getSeller().getUser().getProfileImageUrl()

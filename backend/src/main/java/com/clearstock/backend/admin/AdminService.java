@@ -4,6 +4,8 @@ import com.clearstock.backend.admin.dto.*;
 import com.clearstock.backend.listings.Listing;
 import com.clearstock.backend.listings.ListingRepository;
 import com.clearstock.backend.listings.ListingStatus;
+import com.clearstock.backend.notifications.NotificationService;
+import com.clearstock.backend.notifications.NotificationType;
 import com.clearstock.backend.reports.Report;
 import com.clearstock.backend.reports.ReportRepository;
 import com.clearstock.backend.reports.ReportStatus;
@@ -42,6 +44,7 @@ public class AdminService {
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final AuditLogRepository auditLogRepository;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     // ---------------------------------------------------------------- stats
 
@@ -100,6 +103,13 @@ public class AdminService {
         auditLogService.record(actor, AuditAction.APPROVED_VERIFICATION, "VERIFICATION",
                 profile.getId(), sellerNameOf(profile), null);
 
+        // Nothing on the seller's screen changes until they open their
+        // profile, so tell them rather than making them go and look.
+        notificationService.send(profile.getUser(),
+                "Your shop is verified",
+                "Buyers will now see a verified badge on your shop and your listings.",
+                NotificationType.ACCOUNT, profile.getId());
+
         return toVerificationResponse(profile);
     }
 
@@ -125,6 +135,14 @@ public class AdminService {
         auditLogService.record(actor, AuditAction.REJECTED_VERIFICATION, "VERIFICATION",
                 profile.getId(), sellerNameOf(profile), reason.strip());
 
+        // The reason travels with the notification: a seller told only that
+        // they failed would resubmit exactly the same documents.
+        notificationService.send(profile.getUser(),
+                "Verification not approved",
+                reason.strip() + " You can fix this and submit again from your "
+                        + "seller profile.",
+                NotificationType.ACCOUNT, profile.getId());
+
         return toVerificationResponse(profile);
     }
 
@@ -149,7 +167,21 @@ public class AdminService {
         auditLogService.record(actor,
                 status == AccountStatus.SUSPENDED
                         ? AuditAction.SUSPENDED_USER : AuditAction.REACTIVATED_USER,
-                "USER", user.getId(), user.getName(), reason);
+                "USER", user.getId(), displayNameOf(user), reason);
+
+        if (status == AccountStatus.SUSPENDED) {
+            notificationService.send(user,
+                    "Your account has been suspended",
+                    (reason == null || reason.isBlank()
+                            ? "Please contact ClearStock support."
+                            : reason + " Please contact ClearStock support."),
+                    NotificationType.ACCOUNT, user.getId());
+        } else {
+            notificationService.send(user,
+                    "Your account is active again",
+                    "You can sign in and trade on ClearStock as normal.",
+                    NotificationType.ACCOUNT, user.getId());
+        }
 
         return toUserResponse(user);
     }
@@ -185,6 +217,23 @@ public class AdminService {
         };
         auditLogService.record(actor, action, "LISTING",
                 listing.getId(), listing.getProductName(), reason);
+
+        // A seller whose listing vanishes without explanation assumes the app
+        // is broken, so say what happened and why.
+        if (listing.getSeller() != null && listing.getSeller().getUser() != null) {
+            String title = switch (status) {
+                case SUSPENDED -> "A listing was suspended";
+                case ARCHIVED -> "A listing was archived";
+                default -> "A listing was restored";
+            };
+            String body = status == ListingStatus.ACTIVE
+                    ? "\"" + listing.getProductName() + "\" is visible to buyers again."
+                    : "\"" + listing.getProductName() + "\" is no longer visible to buyers."
+                            + (reason == null || reason.isBlank() ? "" : " Reason: " + reason);
+
+            notificationService.send(listing.getSeller().getUser(), title, body,
+                    NotificationType.ACCOUNT, listing.getId());
+        }
 
         return toListingResponse(listing);
     }
