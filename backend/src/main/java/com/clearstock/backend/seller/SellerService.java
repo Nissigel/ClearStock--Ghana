@@ -2,11 +2,13 @@ package com.clearstock.backend.seller;
 
 import com.clearstock.backend.seller.dto.BecomeSellerRequest;
 import com.clearstock.backend.seller.dto.RecoveryDashboardResponse;
+import com.clearstock.backend.seller.dto.SellerEarningsResponse;
 import com.clearstock.backend.seller.dto.SellerProfileResponse;
 import com.clearstock.backend.seller.dto.UpdateSellerProfileRequest;
 import com.clearstock.backend.transactions.Transaction;
 import com.clearstock.backend.transactions.ReviewRepository;
 import com.clearstock.backend.transactions.TransactionRepository;
+import com.clearstock.backend.transactions.PaymentStatus;
 import com.clearstock.backend.transactions.TransactionStatus;
 import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SellerService {
+
+    /** ClearStock keeps 7% of each sale, deducted before the seller is paid. */
+    private static final BigDecimal COMMISSION_RATE_PERCENT = new BigDecimal("7.00");
 
     private final SellerRepository sellerRepository;
     private final ReviewRepository reviewRepository;
@@ -71,6 +76,69 @@ public class SellerService {
         if (request.getMarketHub() != null) profile.setMarketHub(request.getMarketHub());
 
         return mapToResponse(sellerRepository.save(profile));
+    }
+
+    /**
+     * Where a seller's money currently sits. A buyer's payment is held until
+     * they confirm collection, so it clears in two stages.
+     */
+    public SellerEarningsResponse getEarnings(User user) {
+        List<Transaction> all = transactionRepository
+                .findByBuyerOrSellerOrderByCreatedAtDesc(user, user)
+                .stream()
+                .filter(t -> t.getSeller() != null && t.getSeller().getId().equals(user.getId()))
+                .toList();
+
+        // Only money the buyer has actually paid counts towards either bucket.
+        List<Transaction> paid = all.stream()
+                .filter(t -> t.getPaymentStatus() == PaymentStatus.PAYMENT_SUCCESSFUL)
+                .toList();
+
+        List<Transaction> cleared = paid.stream()
+                .filter(t -> t.getTransactionStatus() == TransactionStatus.COMPLETED)
+                .toList();
+
+        List<Transaction> held = paid.stream()
+                .filter(t -> t.getTransactionStatus() != TransactionStatus.COMPLETED
+                        && t.getTransactionStatus() != TransactionStatus.CANCELLED)
+                .toList();
+
+        BigDecimal heldGross = sumOf(held);
+        BigDecimal clearedGross = sumOf(cleared);
+        BigDecimal totalGross = heldGross.add(clearedGross).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal totalCommission = commissionOn(totalGross);
+
+        return SellerEarningsResponse.builder()
+                .commissionRate(COMMISSION_RATE_PERCENT)
+                .heldGross(heldGross)
+                .heldNet(heldGross.subtract(commissionOn(heldGross)).setScale(2, RoundingMode.HALF_UP))
+                .heldCount(held.size())
+                .clearedGross(clearedGross)
+                .clearedNet(clearedGross.subtract(commissionOn(clearedGross)).setScale(2, RoundingMode.HALF_UP))
+                .clearedCount(cleared.size())
+                .totalGross(totalGross)
+                .totalCommission(totalCommission)
+                .totalNet(totalGross.subtract(totalCommission).setScale(2, RoundingMode.HALF_UP))
+                // Payouts aren't automated yet — sellers are settled manually.
+                .paidOut(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP))
+                .build();
+    }
+
+    /** ClearStock's cut of a sale, deducted before the seller is paid. */
+    private BigDecimal commissionOn(BigDecimal gross) {
+        return gross.multiply(COMMISSION_RATE_PERCENT)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+
+    /** Transactions don't store an amount, so derive it the same way the
+     *  recovery dashboard does: unit price times quantity. */
+    private BigDecimal sumOf(List<Transaction> transactions) {
+        return transactions.stream()
+                .map(t -> t.getListing().getCurrentPrice()
+                        .multiply(BigDecimal.valueOf(t.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     public RecoveryDashboardResponse getRecoveryDashboard(User user) {
