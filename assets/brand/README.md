@@ -4,7 +4,9 @@ Generated from `assets/logo-source.png` by the commands recorded below.
 
 | File | Use it for |
 |---|---|
-| `clearstock-logo-1024.png` … `-64.png` | Transparent background — works on any colour |
+| `clearstock-lockup-dark-*.png` | **Logo with the name** — for white and light shirts |
+| `clearstock-lockup-light-*.png` | **Logo with the name** — for black and dark shirts |
+| `clearstock-logo-1024.png` … `-64.png` | Symbol only, transparent — where the name is already obvious |
 | `clearstock-logo-*-tile.png` | White rounded tile — for photos or busy backgrounds |
 | `clearstock-logo.svg` | Vector, transparent, for print or large sizes |
 
