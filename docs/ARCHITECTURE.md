@@ -4,10 +4,10 @@
 
 ```
 Expo / React Native app  ──HTTPS──>  Spring Boot API  ──JDBC──>  Postgres (Neon)
-                                            │
+   (buyers and sellers)                     │
                                             ├──>  Paystack   (payments)
-                                            ├──>  Arkesel    (SMS OTP)
-                                            └──>  Gmail SMTP (email OTP)
+Admin dashboard  ────────HTTPS──────>       ├──>  Arkesel    (SMS OTP)
+   (staff, React + Vite on Vercel)          └──>  Gmail SMTP (email OTP)
 
         └──────────────────────────>  Cloudinary  (image hosting, direct upload)
 ```
@@ -77,6 +77,34 @@ This has broken production three separate times. The rule that came out of it:
 
 `ListingSchemaFix` does exactly that for three legacy listing columns, which had
 been making every listing creation fail with a 500 when auto-discount was off.
+
+## Admin dashboard
+
+A separate React + Vite app in `admin/`, deployed to Vercel, talking to the
+same API. See [admin/README.md](../admin/README.md) for running and deploying it.
+
+**Staff are a different table from users.** `Admin` holds an email, a password
+hash and a role; `User` holds a phone, a PIN hash, a region and a city, all
+non-null. Folding staff into the users table would mean inventing phone numbers
+to satisfy those constraints, and would risk a member of staff being treated as
+a trader. Admin tokens carry a `purpose: ADMIN` claim so the auth filter can
+never confuse the two, and the role is read from the database on every request
+so disabling somebody takes effect immediately rather than when their token
+expires.
+
+**Two roles.** `ADMIN` covers verifications, users, listings, reports, payments
+and reviews. `SUPER_ADMIN` adds managing staff accounts. The first super admin
+is seeded on boot from environment variables, so no password is ever committed.
+
+**Every mutating action writes an audit entry** naming the admin, the target
+and the reason — a tool that can suspend somebody's livelihood has to be
+answerable. Actions also notify the person affected, because approving a shop
+otherwise changed a database column and nothing the seller could see.
+
+**CORS is configured, not wildcarded.** The mobile app is unaffected by CORS,
+but the dashboard is; the allowed origins come from `ADMIN_CORS_ORIGINS`. A
+tool that can approve sellers should not be callable from any page that happens
+to hold a staff token.
 
 ## Decisions worth explaining
 

@@ -1,22 +1,28 @@
 # Demo Script
 
-A walkthrough for presenting ClearStock Ghana. Roughly 8-10 minutes.
+A walkthrough for presenting ClearStock Ghana. Roughly 10-12 minutes.
+
+Two things to show: the **phone app** for buyers and sellers, and the **admin
+dashboard** at https://clearstock-admin.vercel.app for staff. Have both ready.
 
 ## Before you start
 
-**Wake the backend.** Open the app or hit the API 2-3 minutes before you
+**Wake the backend.** Open the app or the dashboard 2-3 minutes before you
 present. Render's free tier sleeps after 15 minutes idle and the first request
 takes 30-60 seconds. A cold start during a live demo looks like a broken app.
 
 Checklist:
 
-- [ ] Backend awake (open the app once and let a screen load)
+- [ ] Backend awake (open the dashboard and let the stats load)
 - [ ] Phone charged, screen timeout set long, notifications silenced
-- [ ] Signed out, so you can show the guest experience first
+- [ ] Signed out on the phone, so you can show the guest experience first
+- [ ] Dashboard already signed in on the laptop, on the Verifications tab
 - [ ] A second account ready if you want to show buyer and seller live
 - [ ] At least one active listing, one pending purchase request, one completed
       transaction — so no screen is empty
-- [ ] Screen mirroring tested
+- [ ] **One seller with verification pending**, so there is something real to
+      approve in front of the room
+- [ ] Screen mirroring tested for both the phone and the laptop
 
 **Have a fallback.** If the network fails, screenshots of each step below will
 save the presentation.
@@ -104,10 +110,35 @@ Open **Profile → Verification**.
 - Sellers can trade before verifying — you do not block someone from earning
   while paperwork is pending — but verification is always reachable afterwards.
 
-> **Be honest if asked:** there is no admin review screen yet. Documents reach
-> `PENDING` and stop there. This is the clearest next piece of work.
+## 8. The admin dashboard — the other half of trust
 
-## 8. Impact — close here
+Switch to the laptop: **https://clearstock-admin.vercel.app**
+
+This is a separate web app, not part of the phone app. Staff sign in with an
+email and a password; traders sign in with a phone number and a PIN. They are
+different tables in the database, so a trader can never reach it.
+
+Show these three, in this order:
+
+**Verifications** → open the application the seller just submitted. The Ghana
+Card photo and number are there. Approve it.
+
+**Then switch back to the phone.** The seller now has a notification saying
+their shop is verified, and a buyer opening one of their listings sees the
+verified badge next to the seller's name. That loop — submit, review, approve,
+notify — is the single strongest thing to demonstrate.
+
+**Payments** → the escrow position: money held, money released, ClearStock's
+7% commission, and what sellers are owed. This is where "how does the money
+work" gets a concrete answer rather than a diagram.
+
+**Audit logs** → every admin action, who did it and why. Say why this exists:
+a tool that can suspend somebody's livelihood needs to be answerable.
+
+> **Be honest if asked:** payouts are still settled manually. The dashboard
+> shows what is owed, not what has been sent.
+
+## 9. Impact — close here
 
 Open **Recovery Impact**. Cedis recovered, goods rescued, waste avoided.
 
@@ -122,9 +153,10 @@ a feature.
 **How do you make money?** 7% commission on each completed sale, deducted before
 the seller is paid. Visible in the earnings screen.
 
-**What stops fake sellers?** Ghana Card verification with a visible badge, plus
-ratings and reviews tied to completed transactions, plus reporting. The gap is
-that nobody reviews the submissions yet.
+**What stops fake sellers?** Ghana Card verification, reviewed by staff in the
+admin dashboard, with a visible badge on the seller's shop and every listing.
+Plus ratings and reviews tied to completed transactions, and reporting with a
+moderation queue behind it.
 
 **Why can't buyers see phone numbers immediately?** Privacy. Contact details are
 released only after the seller accepts a request, which also stops sellers being
@@ -139,8 +171,14 @@ so stock keeps moving without the seller monitoring it.
 
 **Does it work offline?** No. It needs a connection.
 
-**What would you build next?** In order: the admin review screen for
-verification, automated payouts, and push notifications.
+**Who reviews the verifications?** Staff, in the admin dashboard. There are two
+roles: an admin handles verifications, users, listings and reports; a super
+admin also creates and disables other admin accounts. Every action is recorded
+in the audit log.
+
+**What would you build next?** In order: automated seller payouts, push
+notifications on the phone, and email delivery (blocked today by the free
+hosting tier, which does not allow outbound mail).
 
 **What was the hardest part?** Worth answering concretely — the phone number
 format bug, or the database schema constraint that broke listing creation in

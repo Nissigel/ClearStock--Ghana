@@ -8,8 +8,18 @@ All responses are wrapped:
 { "success": true, "message": "…", "data": { } }
 ```
 
-Every endpoint except `/auth/*` requires `Authorization: Bearer <token>`.
-Tokens are JWTs valid for 24 hours.
+Most endpoints require `Authorization: Bearer <token>`. Tokens are JWTs valid
+for 24 hours.
+
+**Public, no token needed** — everything a guest sees while deciding whether to
+sign up:
+
+- `/auth/*`
+- `GET /listings/**`
+- `GET /seller/{id}/rating` and `GET /reviews/user/{id}` — a seller's rating is
+  the main trust signal, so it must be readable before sign-up. Writing a
+  review still needs an account.
+- `/payments/*` (Paystack callbacks)
 
 **Cold starts:** the first request after ~15 minutes of inactivity can take 30-60
 seconds while Render wakes the server. This is not an error.
@@ -180,3 +190,66 @@ Reviews key on **user id**, not seller-profile id.
 |---|---|---|
 | POST | `/` | Report a listing or user |
 | GET | `/` | List reports |
+
+---
+
+## Admin — `/admin`
+
+Used only by the [admin dashboard](../admin/README.md). Staff authenticate
+separately from traders: **email and password**, not phone and PIN, against the
+`admins` table. The token carries a `purpose: ADMIN` claim, so a trader's token
+can never reach these routes and vice versa.
+
+Everything under `/admin` requires the `ADMIN` role. Everything under
+`/admin/admins` additionally requires `SUPER_ADMIN`.
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/auth/login` | Email + password, returns an admin JWT |
+| GET | `/auth/me` | The signed-in admin (used to validate a stored token) |
+| PUT | `/auth/password` | Change your own password |
+| GET | `/stats` | Dashboard counters |
+| GET | `/verifications` | Applications, optionally `?status=PENDING` |
+| GET | `/verifications/{id}` | One application with its documents |
+| PUT | `/verifications/{id}/approve` | Verify the shop |
+| PUT | `/verifications/{id}/reject` | Reject — a reason is **required** |
+| GET | `/users` | All accounts |
+| PUT | `/users/{id}/suspend` | Suspend — blocks login |
+| PUT | `/users/{id}/reactivate` | Restore access |
+| GET | `/listings` | All listings |
+| GET | `/listings/{id}` | One listing |
+| PUT | `/listings/{id}/suspend` | Hide from the marketplace — reason required |
+| PUT | `/listings/{id}/archive` | Archive |
+| PUT | `/listings/{id}/restore` | Make active again |
+| GET | `/payments` | Escrow totals and every payment |
+| GET | `/reviews` | Every review left on the platform |
+| GET | `/reports` | Complaint queue |
+| GET | `/reports/{id}` | One complaint, with others about the same target |
+| PUT | `/reports/{id}/action` | Mark resolved |
+| PUT | `/reports/{id}/dismiss` | Close with no action |
+| GET | `/audit-logs` | Last 200 admin actions |
+| GET | `/admins` | Staff accounts *(super admin)* |
+| POST | `/admins` | Create a staff account *(super admin)* |
+| PUT | `/admins/{id}/disable` | Disable *(super admin)* |
+| PUT | `/admins/{id}/enable` | Enable *(super admin)* |
+| PUT | `/admins/{id}/role?role=` | Change role *(super admin)* |
+
+### Escrow
+
+`GET /admin/payments` returns each transaction with an `escrowState`:
+
+| State | Meaning |
+|---|---|
+| `UNPAID` | The buyer has not paid |
+| `HELD` | Paid, but the buyer has not confirmed collection — ClearStock holds it |
+| `RELEASED` | Collection confirmed, owed to the seller less commission |
+| `CANCELLED` | The transaction fell through |
+
+Commission is 7%, shared with the seller earnings code so the two cannot drift
+apart. Payouts are recorded, not sent — no money moves through this endpoint.
+
+### Every action is audited
+
+Approving, rejecting, suspending, archiving, dismissing and staff management all
+write an audit entry with the admin, the target and the reason, and notify the
+person affected.

@@ -13,7 +13,8 @@ buyer, then switch to seller mode to list their own stock.
 |---|---|
 | `app/` | Screens, routed by file path via expo-router |
 | `src/` | Components, API clients, stores, hooks, types, theme |
-| `assets/` | Icons, splash, onboarding images |
+| `assets/` | Icons, splash, onboarding images; `brand/` holds the shareable logo files |
+| `admin/` | Admin dashboard — React + Vite web app for staff |
 | `backend/` | Spring Boot API (lives on the `dev` branch) |
 | `docs/` | Architecture, API reference, demo script |
 
@@ -87,8 +88,8 @@ These are real and worth being honest about rather than discovering during a dem
 - **Seller payouts are not automated.** The earnings screen calculates what a
   seller is owed after ClearStock's 7% commission, but the actual transfer is
   manual. `paidOut` is always zero.
-- **Verification is not reviewed by anyone.** Sellers can submit documents and
-  reach `PENDING`, but there is no admin screen to approve or reject them.
+- **Admin payouts are recorded, not sent.** The Payments screen shows the escrow
+  position and what each seller is owed, but no money moves through it.
 - **Email OTP does not send from the deployed backend.** Render's free tier
   blocks outbound SMTP. The credentials are correct; the connection times out.
   SMS OTP via Arkesel works when `ARKESEL_API_KEY` is set.
@@ -103,3 +104,4 @@ These are real and worth being honest about rather than discovering during a dem
 - [Architecture](docs/ARCHITECTURE.md) — how the system fits together and why
 - [API reference](docs/API.md) — every endpoint
 - [Demo script](docs/DEMO-SCRIPT.md) — walkthrough for the presentation
+- [Admin dashboard](admin/README.md) — running it, and creating the first admin
