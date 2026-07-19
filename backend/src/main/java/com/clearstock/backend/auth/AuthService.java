@@ -46,11 +46,15 @@ public class AuthService {
                         .orElse(null);
         boolean emailed = StringUtils.hasText(targetEmail) && emailService.sendOtpEmail(targetEmail, otp);
 
-        // Only fall back to returning the code on-screen when neither channel
-        // actually delivered it.
-        boolean delivered = sms || emailed;
+        // The code stays on screen unless SMS was accepted.
+        //
+        // Email is deliberately not treated as delivery: the mail server only
+        // reports that it accepted the message, not that anyone received it,
+        // and a code sitting in a spam folder locks the person out of sign-up
+        // with no way forward. SMS is immediate and confirmable, so it is the
+        // only channel trusted to replace the on-screen fallback.
         return new SendOtpResponse(
-                delivered ? null : otp, LocalDateTime.now().plusMinutes(5), emailed);
+                sms ? null : otp, LocalDateTime.now().plusMinutes(5), emailed);
     }
 
     public VerifyOtpResponse verifyOtp(String rawPhone, String otp) {
@@ -146,9 +150,11 @@ public class AuthService {
                 && StringUtils.hasText(user.getEmail())
                 && emailService.sendOtpEmail(user.getEmail(), otp);
 
-        boolean delivered = sms || emailed;
+        // Same reasoning as sign-up: only SMS is treated as real delivery, so
+        // someone resetting their PIN is never left waiting on an email that
+        // may be sitting in spam.
         return new SendOtpResponse(
-                delivered ? null : otp, LocalDateTime.now().plusMinutes(5), emailed);
+                sms ? null : otp, LocalDateTime.now().plusMinutes(5), emailed);
     }
 
     public AuthResponse resetPin(String rawPhone, String otp, String newPin) {
