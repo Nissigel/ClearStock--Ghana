@@ -2,6 +2,7 @@ package com.clearstock.backend.common;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,17 @@ public class EmailService {
     private final BrevoMailClient brevo;
 
     /**
+     * Gmail only accepts a From address matching the account being
+     * authenticated with, so this defaults to the SMTP username rather than
+     * to anything configured separately.
+     */
+    @Value("${mail.from.address:${spring.mail.username:}}")
+    private String fromAddress;
+
+    @Value("${mail.from.name:ClearStock Ghana}")
+    private String fromName;
+
+    /**
      * Tries the HTTPS API first, then SMTP.
      *
      * The order matters: the deployment host blocks outbound SMTP, so on the
@@ -28,11 +40,18 @@ public class EmailService {
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            // Without an explicit From the message goes out with no sender
+            // header. Gmail accepts it, because the session is authenticated,
+            // and receiving servers then quietly discard it — which looks
+            // exactly like a successful send that never arrives.
+            if (fromAddress != null && !fromAddress.isBlank()) {
+                message.setFrom(fromName + " <" + fromAddress + ">");
+            }
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
             mailSender.send(message);
-            log.info("[mail] sent to {} via SMTP", to);
+            log.info("[mail] sent to {} via SMTP as {}", to, fromAddress);
             return true;
         } catch (Exception e) {
             log.warn("[mail] could not send '{}' to {}: {}", subject, to, e.getMessage());
