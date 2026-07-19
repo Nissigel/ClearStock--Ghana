@@ -4,9 +4,9 @@ Generated from `assets/logo-source.png` by the commands recorded below.
 
 | File | Use it for |
 |---|---|
-| `clearstock-logo-1024.png` … `-64.png` | Slides, documents, anywhere on a light background |
-| `clearstock-logo-*-tile.png` | Rounded tile with transparent corners — use on coloured or dark backgrounds |
-| `clearstock-logo.svg` | Vector, for print or when it must scale large |
+| `clearstock-logo-1024.png` … `-64.png` | Transparent background — works on any colour |
+| `clearstock-logo-*-tile.png` | White rounded tile — for photos or busy backgrounds |
+| `clearstock-logo.svg` | Vector, transparent, for print or large sizes |
 
 ## Two honest limitations
 
@@ -14,12 +14,12 @@ Generated from `assets/logo-source.png` by the commands recorded below.
 so `clearstock-logo-1024.png` has no more real detail than the 512 — it is
 smoother, not sharper. For anything printed large, use the SVG.
 
-**There is no flat-background transparent PNG, deliberately.** White is
-structural in this logo: the keyline around the price tag, the gap under the
-bag handle, and the punched hole are all white. Removing the white background
-also removes those, because they connect to it — the mark comes out with holes
-in it. The rounded `-tile` files solve the real need instead: transparent
-corners, white kept where the artwork needs it.
+**The white outline is part of the mark, not background.** The logo has a
+white keyline around it, a hole through the bag handle, and a punched hole in
+the tag. Cutting out every white pixel eats the keyline and leaves the mark
+full of gaps — so only background beyond the keyline is made transparent.
+The `-tile` files put it back on a white rounded tile, for photos or busy
+backgrounds where a transparent mark would get lost.
 
 ## About the SVG
 

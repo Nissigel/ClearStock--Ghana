@@ -68,6 +68,15 @@
         border-radius: 8px;
       }
       .item .swatch.dark { background: var(--green); }
+      .item .swatch.checks {
+        background-image:
+          linear-gradient(45deg, #e6ece8 25%, transparent 25%),
+          linear-gradient(-45deg, #e6ece8 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #e6ece8 75%),
+          linear-gradient(-45deg, transparent 75%, #e6ece8 75%);
+        background-size: 14px 14px;
+        background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+      }
       .item img { max-width: 74px; max-height: 74px; }
       .item .name { font-weight: 600; font-size: 13px; }
       .item .meta { color: var(--muted); font-size: 12px; }
@@ -97,65 +106,65 @@
         ⬇ Download everything (.zip)
       </a>
 
-      <h2>PNG — for slides, documents, light backgrounds</h2>
+      <h2>PNG — transparent background, works anywhere</h2>
       <div class="grid">
         <a class="item" href="/brand/clearstock-logo-1024.png" download>
-          <div class="swatch"><img src="/brand/clearstock-logo-256.png" alt="" /></div>
+          <div class="swatch checks"><img src="/brand/clearstock-logo-256.png" alt="" /></div>
           <div class="name">1024 px</div>
-          <div class="meta">PNG</div>
+          <div class="meta">PNG · transparent</div>
         </a>
         <a class="item" href="/brand/clearstock-logo-512.png" download>
-          <div class="swatch"><img src="/brand/clearstock-logo-256.png" alt="" /></div>
+          <div class="swatch checks"><img src="/brand/clearstock-logo-256.png" alt="" /></div>
           <div class="name">512 px</div>
-          <div class="meta">PNG</div>
+          <div class="meta">PNG · transparent</div>
         </a>
         <a class="item" href="/brand/clearstock-logo-256.png" download>
-          <div class="swatch"><img src="/brand/clearstock-logo-256.png" alt="" /></div>
+          <div class="swatch checks"><img src="/brand/clearstock-logo-256.png" alt="" /></div>
           <div class="name">256 px</div>
-          <div class="meta">PNG</div>
+          <div class="meta">PNG · transparent</div>
         </a>
         <a class="item" href="/brand/clearstock-logo-128.png" download>
-          <div class="swatch"><img src="/brand/clearstock-logo-128.png" alt="" /></div>
+          <div class="swatch checks"><img src="/brand/clearstock-logo-128.png" alt="" /></div>
           <div class="name">128 px</div>
-          <div class="meta">PNG</div>
+          <div class="meta">PNG · transparent</div>
         </a>
         <a class="item" href="/brand/clearstock-logo-64.png" download>
-          <div class="swatch"><img src="/brand/clearstock-logo-64.png" alt="" /></div>
+          <div class="swatch checks"><img src="/brand/clearstock-logo-64.png" alt="" /></div>
           <div class="name">64 px</div>
-          <div class="meta">PNG</div>
+          <div class="meta">PNG · transparent</div>
         </a>
       </div>
 
-      <h2>Rounded tile — for dark or coloured backgrounds</h2>
+      <h2>Rounded tile — for photos or busy backgrounds</h2>
       <div class="grid">
         <a class="item" href="/brand/clearstock-logo-1024-tile.png" download>
           <div class="swatch dark"><img src="/brand/clearstock-logo-256-tile.png" alt="" /></div>
           <div class="name">1024 px</div>
-          <div class="meta">PNG · transparent corners</div>
+          <div class="meta">PNG · white tile</div>
         </a>
         <a class="item" href="/brand/clearstock-logo-512-tile.png" download>
           <div class="swatch dark"><img src="/brand/clearstock-logo-256-tile.png" alt="" /></div>
           <div class="name">512 px</div>
-          <div class="meta">PNG · transparent corners</div>
+          <div class="meta">PNG · white tile</div>
         </a>
         <a class="item" href="/brand/clearstock-logo-256-tile.png" download>
           <div class="swatch dark"><img src="/brand/clearstock-logo-256-tile.png" alt="" /></div>
           <div class="name">256 px</div>
-          <div class="meta">PNG · transparent corners</div>
+          <div class="meta">PNG · white tile</div>
         </a>
         <a class="item" href="/brand/clearstock-logo-128-tile.png" download>
           <div class="swatch dark"><img src="/brand/clearstock-logo-128-tile.png" alt="" /></div>
           <div class="name">128 px</div>
-          <div class="meta">PNG · transparent corners</div>
+          <div class="meta">PNG · white tile</div>
         </a>
       </div>
 
       <h2>SVG — vector, for print or large sizes</h2>
       <div class="grid">
         <a class="item" href="/brand/clearstock-logo.svg" download>
-          <div class="swatch"><img src="/brand/clearstock-logo.svg" alt="" /></div>
+          <div class="swatch checks"><img src="/brand/clearstock-logo.svg" alt="" /></div>
           <div class="name">clearstock-logo.svg</div>
-          <div class="meta">Vector</div>
+          <div class="meta">Vector · transparent</div>
         </a>
       </div>
 
@@ -174,12 +183,10 @@
       </div>
 
       <div class="note">
-        <strong>There is no plain transparent-background PNG.</strong>
-        White is structural in this logo — the outline around the tag, the gap
-        under the handle, the punched hole. Cutting the white background out
-        removes those too and leaves holes in the mark. The rounded tile files
-        do the job instead: transparent corners, white kept where the artwork
-        needs it.
+        <strong>The white outline is part of the logo, not background.</strong>
+        The mark has a white keyline around it and a hole through the bag
+        handle. Cutting out every white pixel would have eaten the outline
+        too, so only the background beyond the keyline is transparent.
       </div>
 
       <footer>ClearStock Ghana</footer>
