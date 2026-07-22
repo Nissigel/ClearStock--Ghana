@@ -1,0 +1,969 @@
+:root {
+  --green-900: #04371f;
+  --green-800: #005d33; /* sidebar */
+  --green-700: #005d33;
+  --green-600: #017040; /* selected nav item, primary buttons */
+  --green-500: #0f8a4f;
+  --green-50: #eaf4ee;
+  --green-25: #f4faf6;
+  --gold: #d9a521;
+  --gold-soft: #fdf3d9;
+  --red: #c1362f;
+  --red-soft: #fdeceb;
+  --ink: #16211b;
+  --muted: #6b7a71;
+  --line: #e2e9e4;
+  --page: #f7faf8;
+  --card: #ffffff;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+}
+
+a {
+  color: var(--green-600);
+}
+
+/* ------------------------------------------------------------------ login */
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--green-700);
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 34px 32px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+}
+
+.login-logo {
+  display: block;
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+}
+
+.login-wordmark {
+  text-align: center;
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 2px;
+}
+
+.login-sub {
+  text-align: center;
+  letter-spacing: 4px;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 22px;
+}
+
+.login-hint {
+  text-align: center;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+/* ------------------------------------------------------------------ forms */
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+  background: #fff;
+  color: var(--ink);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--green-500);
+  outline-offset: -1px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  padding: 10px 16px;
+  font-weight: 600;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--green-600);
+  color: #fff;
+  width: 100%;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: var(--green-900);
+}
+
+.btn-danger {
+  background: var(--red);
+  color: #fff;
+}
+
+.btn-outline {
+  background: #fff;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.btn-outline-danger {
+  background: #fff;
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.error {
+  background: var(--red-soft);
+  color: var(--red);
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+}
+
+/* ----------------------------------------------------------------- layout */
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  background: var(--green-800);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px 18px;
+}
+
+.brand img {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+}
+
+.brand-name {
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.brand-sub {
+  font-size: 11px;
+  opacity: 0.72;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 10px;
+}
+
+.nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.nav a:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav a.active {
+  background: var(--green-600);
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-count {
+  background: var(--gold);
+  color: var(--green-900);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sidebar-foot {
+  margin-top: auto;
+  padding: 14px 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--green-900);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sidebar-foot small {
+  display: block;
+  opacity: 0.72;
+  font-size: 11px;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar {
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.topbar p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.role-pill {
+  background: var(--gold);
+  color: var(--green-900);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.content {
+  padding: 22px 26px 60px;
+}
+
+/* ------------------------------------------------------------------ cards */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green-500);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.stat.warn {
+  border-left-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.stat.bad {
+  border-left-color: var(--red);
+  background: var(--red-soft);
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stat.warn .stat-label {
+  color: #8a6a12;
+}
+
+.stat.bad .stat-label {
+  color: var(--red);
+}
+
+.stat-value {
+  font-size: 30px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.panel-head {
+  background: var(--green-50);
+  padding: 11px 16px;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.panel-row:first-of-type {
+  border-top: none;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.quick-actions {
+  background: var(--green-700);
+  border-radius: var(--radius);
+  padding: 16px;
+  color: #fff;
+}
+
+.quick-actions h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.quick-actions button {
+  width: 100%;
+  margin-bottom: 9px;
+  background: var(--green-600);
+  color: #fff;
+}
+
+.quick-actions button.gold {
+  background: var(--gold);
+  color: var(--green-900);
+}
+
+/* ----------------------------------------------------------------- tables */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+}
+
+thead th {
+  background: var(--green-50);
+  text-align: left;
+  padding: 11px 16px;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #3d5548;
+}
+
+tbody td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+
+tbody tr.clickable:hover {
+  background: var(--green-25);
+  cursor: pointer;
+}
+
+.table-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: auto;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.strong {
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ chips */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.chip {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 500;
+}
+
+.chip.on {
+  background: var(--green-700);
+  border-color: var(--green-700);
+  color: #fff;
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 3px 11px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge.green {
+  background: var(--green-50);
+  color: var(--green-600);
+}
+
+.badge.amber {
+  background: var(--gold-soft);
+  color: #8a6a12;
+}
+
+.badge.red {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.badge.grey {
+  background: #eef1ef;
+  color: var(--muted);
+}
+
+.badge.gold {
+  background: var(--gold);
+  color: var(--green-900);
+}
+
+/* ------------------------------------------------------------ detail view */
+
+.back-link {
+  background: none;
+  border: none;
+  color: var(--green-600);
+  padding: 0 0 14px;
+  font-weight: 600;
+}
+
+.detail-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  max-width: 780px;
+}
+
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.detail-head h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px 20px;
+}
+
+.detail-label {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.doc-image {
+  max-width: 280px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: block;
+}
+
+.doc-missing {
+  background: var(--green-25);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  color: var(--muted);
+  max-width: 280px;
+  text-align: center;
+}
+
+.action-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 780px;
+}
+
+/* ------------------------------------------------------------------ modal */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 20, 14, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 40;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.modal h3 {
+  margin: 0 0 6px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.reason-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+
+.state {
+  padding: 40px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------- dark theme */
+/* The sidebar is already dark green in both themes, so only the page,
+   surfaces, text and lines change. Set on <html> by the Settings toggle. */
+
+:root[data-theme='dark'] {
+  --ink: #e8efe9;
+  --muted: #9aa9a0;
+  --line: #23342a;
+  --page: #0d1712;
+  --card: #142019;
+  --green-50: #16291f;
+  --green-25: #16291f;
+  --gold-soft: #33280c;
+  --red-soft: #3a1a18;
+}
+
+:root[data-theme='dark'] input,
+:root[data-theme='dark'] select,
+:root[data-theme='dark'] textarea {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+:root[data-theme='dark'] .chip,
+:root[data-theme='dark'] .btn-outline {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+:root[data-theme='dark'] .topbar,
+:root[data-theme='dark'] table {
+  background: var(--card);
+}
+
+:root[data-theme='dark'] thead th {
+  color: #a9bdb1;
+}
+
+:root[data-theme='dark'] .modal {
+  background: var(--card);
+}
+
+:root[data-theme='dark'] .stat.warn .stat-label {
+  color: #e2b957;
+}
+
+/* --------------------------------------------------------------- settings */
+
+.settings-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  max-width: 620px;
+}
+
+.settings-card h3 {
+  margin: 0 0 14px;
+  font-size: 15px;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.switch {
+  width: 44px;
+  height: 25px;
+  border-radius: 999px;
+  border: none;
+  background: #cdd7d1;
+  position: relative;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+.switch.on {
+  background: var(--green-500);
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 0.15s;
+}
+
+.switch.on::after {
+  transform: translateX(19px);
+}
+
+.ok-note {
+  background: var(--green-50);
+  color: var(--green-600);
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+}
+
+/* -------------------------------------------------------- report + gallery */
+
+.alert-strip {
+  background: var(--red-soft);
+  color: var(--red);
+  border-radius: var(--radius);
+  padding: 10px 13px;
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+.quote-box {
+  background: var(--green-25);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px;
+  margin-top: 12px;
+}
+
+.gallery-main {
+  width: 100%;
+  max-width: 340px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: block;
+}
+
+.thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.thumb {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.thumb.on {
+  border-color: var(--green-500);
+}
+
+.thumb-count {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* Clearance price bar: original on the left, floor on the right, and how far
+   the current price has fallen between them. */
+.price-track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--line);
+  position: relative;
+  margin: 8px 0 6px;
+  overflow: hidden;
+}
+
+.price-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--green-500), var(--gold));
+}
+
+.price-ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.price-now {
+  font-size: 27px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* ------------------------------------------------------------- small screens */
+/* The sidebar is a fixed 210px column, which on a phone leaves the content
+   squeezed into a third of the screen. Below this width it becomes a top bar
+   with the nav scrolling sideways, and every multi-column grid collapses. */
+
+@media (max-width: 900px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 10px 0 0;
+  }
+
+  .brand {
+    padding: 0 14px 10px;
+  }
+
+  .brand img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .brand-name {
+    font-size: 14px;
+    /* Stacked "ClearStock / Ghana" wastes two lines in a top bar. */
+    line-height: 1.1;
+  }
+
+  .brand-name br {
+    display: none;
+  }
+
+  /* Horizontal, swipeable, and the active item stays reachable. */
+  .nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding: 0 10px 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav a {
+    white-space: nowrap;
+    padding: 7px 12px;
+    gap: 6px;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar-foot {
+    padding: 10px 14px;
+  }
+
+  .topbar {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .topbar h1 {
+    font-size: 18px;
+  }
+
+  .content {
+    padding: 14px 16px 48px;
+  }
+
+  /* Two stat cards per row rather than one giant card per screen. */
+  .stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
+  .detail-card,
+  .settings-card,
+  .action-bar {
+    max-width: none;
+  }
+
+  .action-bar {
+    flex-wrap: wrap;
+  }
+
+  .action-bar button {
+    flex: 1 1 auto;
+  }
+
+  .gallery-main {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filters {
+    gap: 6px;
+  }
+
+  .chip {
+    padding: 5px 11px;
+    font-size: 13px;
+  }
+
+  /* Tables stay wide and scroll inside their own box rather than forcing the
+     whole page to scroll sideways. */
+  .table-wrap {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  tbody td,
+  thead th {
+    padding: 10px 12px;
+    white-space: nowrap;
+  }
+
+  .login-card {
+    padding: 26px 20px;
+  }
+}
