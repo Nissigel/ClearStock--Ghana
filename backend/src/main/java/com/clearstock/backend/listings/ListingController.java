@@ -73,6 +73,24 @@ public class ListingController {
         return ResponseEntity.ok(ApiResponse.success("Listing archived", null));
     }
 
+    @PutMapping("/listings/{id}/repost")
+    public ResponseEntity<ApiResponse<ListingResponse>> repostListing(
+            Authentication authentication,
+            @PathVariable Long id) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success("Listing reposted",
+                listingService.repostListing(user, id)));
+    }
+
+    @DeleteMapping("/listings/{id}/permanent")
+    public ResponseEntity<ApiResponse<Void>> permanentlyDeleteListing(
+            Authentication authentication,
+            @PathVariable Long id) {
+        User user = (User) authentication.getPrincipal();
+        listingService.permanentlyDeleteListing(user, id);
+        return ResponseEntity.ok(ApiResponse.success("Listing deleted", null));
+    }
+
     @GetMapping("/seller/listings")
     public ResponseEntity<ApiResponse<List<ListingResponse>>> getSellerListings(Authentication authentication) {
         User user = (User) authentication.getPrincipal();

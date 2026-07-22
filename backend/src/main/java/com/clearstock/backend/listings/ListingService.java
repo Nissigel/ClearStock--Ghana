@@ -8,10 +8,12 @@ import com.clearstock.backend.seller.SellerRepository;
 import com.clearstock.backend.seller.VerificationStatus;
 import com.clearstock.backend.transactions.PurchaseRequestRepository;
 import com.clearstock.backend.transactions.PurchaseRequestStatus;
+import com.clearstock.backend.transactions.TransactionRepository;
 import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -26,6 +28,8 @@ public class ListingService {
     private final ListingRepository listingRepository;
     private final SellerRepository sellerRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
+    private final TransactionRepository transactionRepository;
+    private final SavedListingRepository savedListingRepository;
     private final DealAlertService dealAlertService;
 
     public ListingResponse createListing(User user, CreateListingRequest request) {
@@ -97,7 +101,7 @@ public class ListingService {
         if (request.getDescription() != null) listing.setDescription(request.getDescription());
         if (request.getQuantity() != null) listing.setQuantity(request.getQuantity());
         if (request.getUnitOfMeasurement() != null) listing.setUnitOfMeasurement(request.getUnitOfMeasurement());
-        if (request.getIsDiscountActive() != null) listing.setIsDiscountActive(request.getIsDiscountActive());
+        if (request.getIsDiscountActive() != null) listing.setDiscountActive(request.getIsDiscountActive());
         if (request.getExpirySensitive() != null) listing.setExpirySensitive(request.getExpirySensitive());
         if (request.getExpiryDate() != null) listing.setExpiryDate(request.getExpiryDate());
         if (request.getClearanceEndDate() != null) listing.setClearanceEndDate(request.getClearanceEndDate());
@@ -107,6 +111,16 @@ public class ListingService {
 
         if (request.getListingStatus() != null && request.getListingStatus() != ListingStatus.ARCHIVED) {
             listing.setListingStatus(request.getListingStatus());
+        } else if (request.getQuantity() != null) {
+            // Keep the status honest about the stock, the way accepting an order
+            // already does. Editing the count down to zero should read as sold
+            // out, and restocking a sold-out listing should put it back on the
+            // market — otherwise a listing sits at "0 available" while ACTIVE.
+            if (listing.getQuantity() == 0) {
+                listing.setListingStatus(ListingStatus.OUT_OF_STOCK);
+            } else if (listing.getListingStatus() == ListingStatus.OUT_OF_STOCK) {
+                listing.setListingStatus(ListingStatus.ACTIVE);
+            }
         }
 
         if (request.getMinimumAcceptablePrice() != null) {
@@ -116,9 +130,9 @@ public class ListingService {
             listing.setManualDiscountPercent(request.getManualDiscountPercent());
         }
 
-        if (!Boolean.TRUE.equals(listing.getIsDiscountActive()) && listing.getManualDiscountPercent() != null) {
+        if (!listing.isDiscountActive() && listing.getManualDiscountPercent() != null) {
             listing.setCurrentPrice(applyPercent(listing.getOriginalPrice(), listing.getManualDiscountPercent()));
-        } else if (Boolean.TRUE.equals(listing.getIsDiscountActive())) {
+        } else if (listing.isDiscountActive()) {
             listing.setCurrentPrice(listing.getOriginalPrice());
         } else if (request.getCurrentPrice() != null) {
             if (listing.getMinimumAcceptablePrice() != null &&
@@ -152,6 +166,48 @@ public class ListingService {
         listingRepository.save(listing);
     }
 
+    // Un-archive: put an archived listing back on the marketplace.
+    public ListingResponse repostListing(User user, Long id) {
+        SellerProfile seller = requireSellerProfile(user);
+        Listing listing = findListingOrThrow(id);
+
+        if (!listing.getSeller().getId().equals(seller.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only repost your own listings");
+        }
+        if (listing.getListingStatus() != ListingStatus.ARCHIVED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only archived listings can be reposted");
+        }
+
+        listing.setListingStatus(ListingStatus.ACTIVE);
+        return ListingResponse.from(listingRepository.save(listing));
+    }
+
+    // Hard delete an archived listing. Blocked only when a real transaction
+    // exists (a completed/in-progress order carries evidence and reviews that
+    // shouldn't be discarded). Otherwise its purchase requests and saved
+    // entries are removed first so the row's foreign keys don't block deletion.
+    @Transactional
+    public void permanentlyDeleteListing(User user, Long id) {
+        SellerProfile seller = requireSellerProfile(user);
+        Listing listing = findListingOrThrow(id);
+
+        if (!listing.getSeller().getId().equals(seller.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own listings");
+        }
+        if (listing.getListingStatus() != ListingStatus.ARCHIVED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Archive the listing before deleting it permanently");
+        }
+        if (transactionRepository.existsByListing(listing)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This listing has a completed order and can't be permanently deleted; it stays archived");
+        }
+
+        purchaseRequestRepository.deleteByListing(listing);
+        savedListingRepository.deleteByListing(listing);
+        listingRepository.delete(listing);
+    }
+
     public List<ListingResponse> getHighUrgencyListings() {
         return listingRepository.findHighUrgencyListings()
                 .stream().map(ListingResponse::from).collect(Collectors.toList());
@@ -159,7 +215,7 @@ public class ListingService {
 
     public List<ListingResponse> getSellerListings(User user) {
         SellerProfile seller = requireSellerProfile(user);
-        return listingRepository.findBySeller(seller)
+        return listingRepository.findBySellerOrderByCreatedAtDesc(seller)
                 .stream().map(ListingResponse::from).collect(Collectors.toList());
     }
 

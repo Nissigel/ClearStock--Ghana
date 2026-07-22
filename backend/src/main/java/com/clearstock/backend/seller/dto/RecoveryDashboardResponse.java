@@ -12,6 +12,4 @@ public class RecoveryDashboardResponse {
     private long totalTransactionsCompleted;
     private long goodsRescued;
     private BigDecimal estimatedGhsSavedFromWaste;
-    private long buyersReached;
-    private BigDecimal co2AvoidedKg;
 }

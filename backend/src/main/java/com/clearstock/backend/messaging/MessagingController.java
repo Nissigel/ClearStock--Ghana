@@ -2,6 +2,7 @@ package com.clearstock.backend.messaging;
 
 import com.clearstock.backend.common.ApiResponse;
 import com.clearstock.backend.messaging.dto.ConversationResponse;
+import com.clearstock.backend.messaging.dto.EditMessageRequest;
 import com.clearstock.backend.messaging.dto.MessageResponse;
 import com.clearstock.backend.messaging.dto.SendMessageRequest;
 import com.clearstock.backend.messaging.dto.StartConversationRequest;
@@ -71,6 +72,16 @@ public class MessagingController {
         return ResponseEntity.ok(ApiResponse.success(messagingService.getMessages(user, id)));
     }
 
+    @PutMapping("/messages/{id}")
+    public ResponseEntity<ApiResponse<MessageResponse>> editMessage(
+            Authentication authentication,
+            @PathVariable Long id,
+            @RequestBody @Valid EditMessageRequest request) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success("Message updated",
+                messagingService.editMessage(user, id, request.getMessageContent())));
+    }
+
     @DeleteMapping("/messages/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMessage(
             Authentication authentication,
@@ -78,5 +89,14 @@ public class MessagingController {
         User user = (User) authentication.getPrincipal();
         messagingService.deleteMessage(user, id);
         return ResponseEntity.ok(ApiResponse.success("Message deleted", null));
+    }
+
+    @DeleteMapping("/conversations/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteConversation(
+            Authentication authentication,
+            @PathVariable Long id) {
+        User user = (User) authentication.getPrincipal();
+        messagingService.deleteConversation(user, id);
+        return ResponseEntity.ok(ApiResponse.success("Conversation deleted", null));
     }
 }

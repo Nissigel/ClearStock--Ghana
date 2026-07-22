@@ -3,7 +3,9 @@ package com.clearstock.backend.seller;
 import com.clearstock.backend.common.ApiResponse;
 import com.clearstock.backend.seller.dto.BecomeSellerRequest;
 import com.clearstock.backend.seller.dto.RecoveryDashboardResponse;
+import com.clearstock.backend.seller.dto.SellerEarningsResponse;
 import com.clearstock.backend.seller.dto.SellerProfileResponse;
+import com.clearstock.backend.seller.dto.SubmitVerificationRequest;
 import com.clearstock.backend.seller.dto.UpdateSellerProfileRequest;
 import com.clearstock.backend.transactions.ReviewService;
 import com.clearstock.backend.transactions.dto.SellerRatingResponse;
@@ -44,6 +46,24 @@ public class SellerController {
             @RequestBody @Valid UpdateSellerProfileRequest request) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(ApiResponse.success("Seller profile updated", sellerService.updateSellerProfile(user, request)));
+    }
+
+    /** Send identity documents for review, at any point after the shop exists. */
+    @PostMapping("/verification")
+    public ResponseEntity<ApiResponse<SellerProfileResponse>> submitVerification(
+            Authentication authentication,
+            @RequestBody @Valid SubmitVerificationRequest request) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success(
+                "Documents submitted for review",
+                sellerService.submitVerification(user, request)));
+    }
+
+    @GetMapping("/earnings")
+    public ResponseEntity<ApiResponse<SellerEarningsResponse>> getEarnings(
+            Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(ApiResponse.success(sellerService.getEarnings(user)));
     }
 
     @GetMapping("/recovery-dashboard")

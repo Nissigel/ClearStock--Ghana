@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "cd backend && ./mvnw clean package -DskipTests",
+    "watchPatterns": ["backend/**", "railway.json"]
+  },
+  "deploy": {
+    "startCommand": "java -jar backend/target/*.jar",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}

@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class MessagingService {
 
     private static final String DELETED_PLACEHOLDER = "This message was deleted";
+    private static final int EDIT_WINDOW_MINUTES = 3;
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
@@ -41,7 +42,7 @@ public class MessagingService {
         }
 
         return conversationRepository.findByListingAndBuyer(listing, buyer)
-                .map(this::mapToConversationResponse)
+                .map(c -> mapToConversationResponse(c, buyer))
                 .orElseGet(() -> {
                     Conversation conversation = Conversation.builder()
                             .listing(listing)
@@ -49,26 +50,38 @@ public class MessagingService {
                             .seller(seller)
                             .status(ConversationStatus.ACTIVE)
                             .build();
-                    return mapToConversationResponse(conversationRepository.save(conversation));
+                    return mapToConversationResponse(conversationRepository.save(conversation), buyer);
                 });
     }
 
     public List<ConversationResponse> getInbox(User user) {
         return conversationRepository.findByBuyerOrSellerOrderByUpdatedAtDesc(user, user)
-                .stream().map(this::mapToConversationResponse).collect(Collectors.toList());
+                .stream()
+                .filter(c -> !isHiddenFor(c, user))
+                .map(c -> mapToConversationResponse(c, user))
+                .collect(Collectors.toList());
+    }
+
+    /** True when the user has "deleted for me" this conversation. */
+    private boolean isHiddenFor(Conversation conversation, User user) {
+        boolean isBuyer = conversation.getBuyer().getId().equals(user.getId());
+        // Null (rows that predate these columns) means "not hidden".
+        return isBuyer
+                ? Boolean.TRUE.equals(conversation.getDeletedForBuyer())
+                : Boolean.TRUE.equals(conversation.getDeletedForSeller());
     }
 
     public ConversationResponse getConversationByListing(User buyer, Long listingId) {
         Listing listing = listingRepository.findById(listingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Listing not found"));
         return conversationRepository.findByListingAndBuyer(listing, buyer)
-                .map(this::mapToConversationResponse)
+                .map(c -> mapToConversationResponse(c, buyer))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No conversation found for this listing"));
     }
 
     public ConversationResponse getConversation(User user, Long conversationId) {
-        return mapToConversationResponse(findConversationForParticipant(user, conversationId));
+        return mapToConversationResponse(findConversationForParticipant(user, conversationId), user);
     }
 
     @Transactional
@@ -78,6 +91,14 @@ public class MessagingService {
         if (conversation.getStatus() == ConversationStatus.CLOSED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Cannot send messages in a closed conversation");
+        }
+
+        // A new message revives the conversation for anyone who had hidden it.
+        if (Boolean.TRUE.equals(conversation.getDeletedForBuyer())
+                || Boolean.TRUE.equals(conversation.getDeletedForSeller())) {
+            conversation.setDeletedForBuyer(false);
+            conversation.setDeletedForSeller(false);
+            conversationRepository.save(conversation);
         }
 
         Message message = Message.builder()
@@ -113,13 +134,41 @@ public class MessagingService {
         if (message.getDeletedAt() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message already deleted");
         }
-        if (message.isSeen()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Cannot delete a message that has already been seen by the recipient");
-        }
 
+        // Soft delete — the bubble shows "This message was deleted" to both sides,
+        // so a sender can retract a mistake even after it has been seen.
         message.setDeletedAt(LocalDateTime.now());
         messageRepository.save(message);
+    }
+
+    @Transactional
+    public MessageResponse editMessage(User sender, Long messageId, String newContent) {
+        Message message = messageRepository.findByIdAndSender(messageId, sender)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found"));
+
+        if (message.getDeletedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot edit a deleted message");
+        }
+        if (message.getCreatedAt().isBefore(LocalDateTime.now().minusMinutes(EDIT_WINDOW_MINUTES))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Messages can only be edited within " + EDIT_WINDOW_MINUTES + " minutes of sending");
+        }
+
+        message.setMessageContent(newContent);
+        message.setEditedAt(LocalDateTime.now());
+        return mapToMessageResponse(messageRepository.save(message));
+    }
+
+    @Transactional
+    public void deleteConversation(User user, Long conversationId) {
+        Conversation conversation = findConversationForParticipant(user, conversationId);
+        // "Delete for me" — hide it from this user's inbox only.
+        if (conversation.getBuyer().getId().equals(user.getId())) {
+            conversation.setDeletedForBuyer(true);
+        } else {
+            conversation.setDeletedForSeller(true);
+        }
+        conversationRepository.save(conversation);
     }
 
     private Conversation findConversationForParticipant(User user, Long conversationId) {
@@ -134,11 +183,15 @@ public class MessagingService {
         return conversation;
     }
 
-    private ConversationResponse mapToConversationResponse(Conversation conversation) {
+    private ConversationResponse mapToConversationResponse(Conversation conversation, User viewer) {
         boolean phonesVisible = purchaseRequestRepository.existsByListingAndBuyerAndStatusIn(
                 conversation.getListing(),
                 conversation.getBuyer(),
                 List.of(PurchaseRequestStatus.ACCEPTED, PurchaseRequestStatus.COMPLETED));
+
+        Message latest = messageRepository
+                .findFirstByConversationOrderByCreatedAtDesc(conversation)
+                .orElse(null);
 
         return ConversationResponse.builder()
                 .id(conversation.getId())
@@ -148,10 +201,44 @@ public class MessagingService {
                 .sellerUserId(conversation.getSeller().getId())
                 .buyerPhone(phonesVisible ? conversation.getBuyer().getPhone() : null)
                 .sellerPhone(phonesVisible ? conversation.getSeller().getPhone() : null)
+                .buyerName(displayNameOf(conversation.getBuyer()))
+                // Buyers know a seller by their shop, so prefer the business name.
+                .sellerName(shopNameOf(conversation.getListing(), conversation.getSeller()))
+                .buyerProfileImageUrl(conversation.getBuyer().getProfileImageUrl())
+                .sellerProfileImageUrl(conversation.getSeller().getProfileImageUrl())
+                .lastMessageContent(latest == null
+                        ? null
+                        : (latest.getDeletedAt() != null ? DELETED_PLACEHOLDER : latest.getMessageContent()))
+                .lastMessageAt(latest == null ? null : latest.getCreatedAt())
+                .lastMessageSenderId(latest == null ? null : latest.getSender().getId())
+                .unreadCount(messageRepository
+                        .countByConversationAndSenderNotAndSeenFalse(conversation, viewer))
                 .status(conversation.getStatus())
                 .createdAt(conversation.getCreatedAt())
                 .updatedAt(conversation.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * A human label for a user. Accounts created before the sign-up form saved a
+     * name still carry their phone number as their name, so fall back rather
+     * than showing a blank.
+     */
+    private String displayNameOf(User user) {
+        String name = user.getName();
+        if (name == null || name.isBlank() || name.equals(user.getPhone())) {
+            return null;
+        }
+        return name;
+    }
+
+    /** The shop's name for this listing, falling back to the seller's own name. */
+    private String shopNameOf(Listing listing, User seller) {
+        String business = listing.getSeller() != null ? listing.getSeller().getBusinessName() : null;
+        if (business != null && !business.isBlank()) {
+            return business;
+        }
+        return displayNameOf(seller);
     }
 
     private MessageResponse mapToMessageResponse(Message message) {
@@ -165,6 +252,7 @@ public class MessagingService {
                 .seen(message.isSeen())
                 .seenAt(message.getSeenAt())
                 .createdAt(message.getCreatedAt())
+                .editedAt(isDeleted ? null : message.getEditedAt())
                 .build();
     }
 }

@@ -51,13 +51,9 @@ public class Listing {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal currentPrice;
 
-    // Boxed (not primitive) so existing rows with a NULL value in this
-    // column don't crash Hibernate on load — primitive boolean can't bind
-    // to a null column value. Defaulted to false and kept non-null for new
-    // rows via the field initializer + @PrePersist/@PreUpdate below.
     @Column(nullable = false)
     @Builder.Default
-    private Boolean expirySensitive = false;
+    private boolean expirySensitive = false;
 
     private LocalDate expiryDate;
 
@@ -93,13 +89,9 @@ public class Listing {
     @Builder.Default
     private Integer viewsCount = 0;
 
-    // Same reasoning as expirySensitive above — this is exactly the field
-    // that was crashing GET /listings: existing rows have NULL here (the
-    // column predates this constraint), and a primitive boolean can't
-    // absorb that on read.
-    @Column(name = "is_discount_active", nullable = false)
+    @Column(name = "is_discount_active")
     @Builder.Default
-    private Boolean isDiscountActive = false;
+    private boolean isDiscountActive = false;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Fetch(FetchMode.SUBSELECT)
@@ -115,17 +107,4 @@ public class Listing {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    // Belt-and-braces: guarantee these are never persisted as null, even if
-    // some future code path sets them explicitly via the boxed setters.
-    @PrePersist
-    @PreUpdate
-    private void normalizeBooleanDefaults() {
-        if (expirySensitive == null) {
-            expirySensitive = false;
-        }
-        if (isDiscountActive == null) {
-            isDiscountActive = false;
-        }
-    }
 }

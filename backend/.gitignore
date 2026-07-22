@@ -31,4 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
-src/main/resources/application.properties
+
+### Local secret overrides (never commit real secrets) ###
+# application.properties is tracked but holds only non-secret config plus
+# ${ENV_VAR} references. Put real secrets in env vars, or a local override file:
+src/main/resources/application-local.properties
+.env
+.env.local

@@ -45,6 +45,14 @@ public class User {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
+    /**
+     * Null means active. Deliberately nullable: the users table already holds
+     * rows, and Postgres cannot add a NOT NULL column to a populated table.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status")
+    private AccountStatus accountStatus;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

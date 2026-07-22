@@ -3,8 +3,11 @@ package com.clearstock.backend.transactions;
 import com.clearstock.backend.listings.Listing;
 import com.clearstock.backend.listings.ListingRepository;
 import com.clearstock.backend.listings.ListingStatus;
+import com.clearstock.backend.messaging.Conversation;
 import com.clearstock.backend.messaging.ConversationRepository;
 import com.clearstock.backend.messaging.ConversationStatus;
+import com.clearstock.backend.messaging.Message;
+import com.clearstock.backend.messaging.MessageRepository;
 import com.clearstock.backend.notifications.NotificationService;
 import com.clearstock.backend.notifications.NotificationType;
 import com.clearstock.backend.transactions.dto.*;
@@ -28,7 +31,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TransactionService {
 
-    private static final int AUTO_COMPLETE_DAYS = 3;
     private final Random random = new Random();
 
     private final TransactionRepository transactionRepository;
@@ -36,6 +38,8 @@ public class TransactionService {
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final ListingRepository listingRepository;
     private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
+    private final ReviewRepository reviewRepository;
     private final PaystackService paystackService;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
@@ -58,6 +62,11 @@ public class TransactionService {
                     "A transaction already exists for this purchase request");
         }
 
+        // Reserve the stock the moment the seller accepts, so the listing count
+        // drops immediately. It's restored if the order is later cancelled or
+        // released, and consumed for good on completion.
+        reserveStock(pr.getListing(), pr.getRequestedQuantity());
+
         pr.setStatus(PurchaseRequestStatus.ACCEPTED);
         purchaseRequestRepository.save(pr);
 
@@ -72,6 +81,13 @@ public class TransactionService {
 
         Transaction saved = transactionRepository.save(transaction);
 
+        // Open the buyer/seller thread on acceptance so the two can arrange
+        // payment and handover without hunting for a way to make contact.
+        openThreadWithSellerNote(pr,
+                "I've accepted your request for " + pr.getRequestedQuantity() + "x "
+                        + pr.getListing().getProductName()
+                        + ". Once payment goes through we'll arrange collection.");
+
         notificationService.send(
                 pr.getBuyer(),
                 "Purchase Request Accepted",
@@ -82,6 +98,29 @@ public class TransactionService {
         );
 
         return mapToResponse(saved);
+    }
+
+    /** Find or create the buyer/seller thread and post a note from the seller. */
+    private void openThreadWithSellerNote(PurchaseRequest pr, String text) {
+        Conversation conversation = conversationRepository
+                .findByListingAndBuyer(pr.getListing(), pr.getBuyer())
+                .orElseGet(() -> conversationRepository.save(Conversation.builder()
+                        .listing(pr.getListing())
+                        .buyer(pr.getBuyer())
+                        .seller(pr.getSeller())
+                        .status(ConversationStatus.ACTIVE)
+                        .build()));
+
+        conversation.setStatus(ConversationStatus.ACTIVE);
+        conversation.setDeletedForBuyer(false);
+        conversation.setDeletedForSeller(false);
+        conversationRepository.save(conversation);
+
+        messageRepository.save(Message.builder()
+                .conversation(conversation)
+                .sender(pr.getSeller())
+                .messageContent(text)
+                .build());
     }
 
     public List<TransactionResponse> getTransactions(User user) {
@@ -246,6 +285,7 @@ public class TransactionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Completed transactions cannot be modified");
         }
 
+        TransactionStatus previousStatus = transaction.getTransactionStatus();
         TransactionStatus newStatus = request.getTransactionStatus();
 
         if (newStatus == TransactionStatus.READY_FOR_COLLECTION || newStatus == TransactionStatus.DELIVERED) {
@@ -258,9 +298,17 @@ public class TransactionService {
             transaction.setOtpGeneratedAt(LocalDateTime.now());
         }
 
-        if (newStatus == TransactionStatus.CANCELLED) {
-            if (transaction.getTransactionStatus() == TransactionStatus.COMPLETED) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot cancel a completed transaction");
+        // Cancelling frees the reserved stock back onto the listing (once only)
+        // and closes the request behind it. Left ACCEPTED, a dead request keeps
+        // the listing from ever being archived.
+        if (newStatus == TransactionStatus.CANCELLED
+                && previousStatus != TransactionStatus.CANCELLED) {
+            restoreReservedStock(transaction);
+
+            PurchaseRequest pr = transaction.getPurchaseRequest();
+            if (pr != null && pr.getStatus() == PurchaseRequestStatus.ACCEPTED) {
+                pr.setStatus(PurchaseRequestStatus.CANCELLED);
+                purchaseRequestRepository.save(pr);
             }
         }
 
@@ -355,13 +403,9 @@ public class TransactionService {
                 transaction.getId()
         );
 
+        // Stock was already reserved (decremented) when the seller accepted the
+        // request, so completion just finalises the sale — no further decrement.
         Listing listing = transaction.getListing();
-        int remaining = listing.getQuantity() - transaction.getQuantity();
-        listing.setQuantity(Math.max(remaining, 0));
-        if (listing.getQuantity() == 0) {
-            listing.setListingStatus(ListingStatus.OUT_OF_STOCK);
-        }
-        listingRepository.save(listing);
 
         conversationRepository.findByListingAndBuyerAndSeller(
                 listing, transaction.getBuyer(), transaction.getSeller())
@@ -373,6 +417,107 @@ public class TransactionService {
         PurchaseRequest pr = transaction.getPurchaseRequest();
         pr.setStatus(PurchaseRequestStatus.COMPLETED);
         purchaseRequestRepository.save(pr);
+    }
+
+    /**
+     * Called when a buyer never confirms collection with the OTP in time. Rather
+     * than completing the sale, cancel it and put the item back on the market —
+     * the stock reserved at acceptance is restored so the listing is available
+     * again.
+     */
+    @Transactional
+    public void releaseUnconfirmedTransaction(Transaction transaction) {
+        transaction.setOtpCode(null);
+        transaction.setTransactionStatus(TransactionStatus.CANCELLED);
+        // The buyer paid but never confirmed receipt; flag the payment so it can
+        // be reversed. (Actual refund is handled outside this flow.)
+        if (transaction.getPaymentStatus() == PaymentStatus.PAYMENT_SUCCESSFUL) {
+            transaction.setPaymentStatus(PaymentStatus.PAYMENT_CANCELLED);
+        }
+        transactionRepository.save(transaction);
+
+        Listing listing = transaction.getListing();
+        restoreReservedStock(transaction);
+
+        PurchaseRequest pr = transaction.getPurchaseRequest();
+        pr.setStatus(PurchaseRequestStatus.EXPIRED);
+        purchaseRequestRepository.save(pr);
+
+        notificationService.send(
+                transaction.getSeller(),
+                "Order Released",
+                "The buyer didn't confirm collection of " + listing.getProductName()
+                        + " in time, so the order was cancelled and the item is back on sale.",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
+        notificationService.send(
+                transaction.getBuyer(),
+                "Order Cancelled",
+                "You didn't confirm collection of " + listing.getProductName()
+                        + " in time, so the order was cancelled. Any payment will be reversed.",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
+    }
+
+    /**
+     * Called when an accepted order is never paid for within the allowed window.
+     * Cancel it and return the reserved stock to the listing so the item doesn't
+     * stay locked behind a buyer who walked away.
+     */
+    @Transactional
+    public void cancelUnpaidOrder(Transaction transaction) {
+        transaction.setTransactionStatus(TransactionStatus.CANCELLED);
+        transactionRepository.save(transaction);
+
+        Listing listing = transaction.getListing();
+        restoreReservedStock(transaction);
+
+        PurchaseRequest pr = transaction.getPurchaseRequest();
+        pr.setStatus(PurchaseRequestStatus.EXPIRED);
+        purchaseRequestRepository.save(pr);
+
+        notificationService.send(
+                transaction.getSeller(),
+                "Order Cancelled",
+                "An order for " + listing.getProductName()
+                        + " was cancelled because the buyer didn't pay in time. "
+                        + "The item is back on sale.",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
+        notificationService.send(
+                transaction.getBuyer(),
+                "Order Cancelled",
+                "Your order for " + listing.getProductName()
+                        + " was cancelled because payment wasn't completed in time.",
+                NotificationType.TRANSACTION,
+                transaction.getId()
+        );
+    }
+
+    /** Decrement listing stock when an order is accepted; block if short. */
+    private void reserveStock(Listing listing, int quantity) {
+        if (listing.getQuantity() < quantity) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only " + listing.getQuantity() + " unit(s) left in stock");
+        }
+        listing.setQuantity(listing.getQuantity() - quantity);
+        if (listing.getQuantity() == 0) {
+            listing.setListingStatus(ListingStatus.OUT_OF_STOCK);
+        }
+        listingRepository.save(listing);
+    }
+
+    /** Return an order's reserved stock to the listing when it's cancelled. */
+    private void restoreReservedStock(Transaction transaction) {
+        Listing listing = transaction.getListing();
+        listing.setQuantity(listing.getQuantity() + transaction.getQuantity());
+        if (listing.getListingStatus() == ListingStatus.OUT_OF_STOCK && listing.getQuantity() > 0) {
+            listing.setListingStatus(ListingStatus.ACTIVE);
+        }
+        listingRepository.save(listing);
     }
 
     private Transaction findTransactionForParticipant(User user, Long transactionId) {
@@ -407,6 +552,9 @@ public class TransactionService {
                 .completedAt(t.getCompletedAt())
                 .createdAt(t.getCreatedAt())
                 .updatedAt(t.getUpdatedAt())
+                // Only the buyer reviews the seller, so that's whose review we
+                // look for.
+                .reviewed(reviewRepository.existsByTransactionAndReviewer(t, t.getBuyer()))
                 .evidence(evidence)
                 .build();
     }

@@ -16,7 +16,17 @@ public class ListingResponse {
 
     private Long id;
     private Long sellerId;
+    /**
+     * The seller's *user* id. Ratings and reviews are keyed by user, not by
+     * seller profile, so a screen showing both needs this to look them up.
+     */
+    private Long sellerUserId;
     private String sellerBusinessName;
+    /** Whether the shop has been verified, so buyers can see the badge
+     *  without opening the seller profile. */
+    private boolean sellerVerified;
+    /** The seller's photo, so buyers see a face rather than just initials. */
+    private String sellerProfileImageUrl;
     private String productName;
     private String category;
     private String description;
@@ -43,7 +53,17 @@ public class ListingResponse {
         return ListingResponse.builder()
                 .id(listing.getId())
                 .sellerId(listing.getSeller().getId())
+                .sellerUserId(
+                        listing.getSeller().getUser() != null
+                                ? listing.getSeller().getUser().getId()
+                                : null)
                 .sellerBusinessName(listing.getSeller().getBusinessName())
+                .sellerVerified(listing.getSeller().getVerificationStatus()
+                        == com.clearstock.backend.seller.VerificationStatus.VERIFIED)
+                .sellerProfileImageUrl(
+                        listing.getSeller().getUser() != null
+                                ? listing.getSeller().getUser().getProfileImageUrl()
+                                : null)
                 .productName(listing.getProductName())
                 .category(listing.getCategory())
                 .description(listing.getDescription())
@@ -51,7 +71,7 @@ public class ListingResponse {
                 .unitOfMeasurement(listing.getUnitOfMeasurement())
                 .originalPrice(listing.getOriginalPrice())
                 .currentPrice(listing.getCurrentPrice())
-                .expirySensitive(Boolean.TRUE.equals(listing.getExpirySensitive()))
+                .expirySensitive(listing.isExpirySensitive())
                 .expiryDate(listing.getExpiryDate())
                 .clearanceEndDate(listing.getClearanceEndDate())
                 .discountStepPercent(listing.getDiscountStepPercent())
@@ -61,7 +81,7 @@ public class ListingResponse {
                 .listingStatus(listing.getListingStatus())
                 .urgencyScore(listing.getUrgencyScore())
                 .isHighUrgency(listing.getIsHighUrgency())
-                .isDiscountActive(Boolean.TRUE.equals(listing.getIsDiscountActive()))
+                .isDiscountActive(listing.isDiscountActive())
                 .images(listing.getImages())
                 .createdAt(listing.getCreatedAt())
                 .updatedAt(listing.getUpdatedAt())

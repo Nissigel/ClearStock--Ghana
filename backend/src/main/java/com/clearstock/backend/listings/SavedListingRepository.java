@@ -15,4 +15,6 @@ public interface SavedListingRepository extends JpaRepository<SavedListing, Long
     Optional<SavedListing> findByUserAndListing(User user, Listing listing);
 
     boolean existsByUserAndListing(User user, Listing listing);
+
+    void deleteByListing(Listing listing);
 }

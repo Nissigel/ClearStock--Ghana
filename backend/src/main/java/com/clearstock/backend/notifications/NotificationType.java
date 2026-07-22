@@ -5,5 +5,7 @@ public enum NotificationType {
     PURCHASE_REQUEST,
     TRANSACTION,
     REVIEW,
-    PAYMENT
+    PAYMENT,
+    /** Verification outcomes and moderation decisions made by an admin. */
+    ACCOUNT
 }

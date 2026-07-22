@@ -12,4 +12,8 @@ public class UpdateProfileRequest {
     private String email;
 
     private String profileImageUrl;
+
+    private String region;
+
+    private String cityTown;
 }
