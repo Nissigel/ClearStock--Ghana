@@ -16,8 +16,14 @@ import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { becomeSeller } from '@/api/seller.api';
+import { SellerTermsModal } from '@/components/ui/SellerTermsModal';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
 import { SELLER_TYPES, SELLER_TYPE_DESCRIPTIONS, type SellerType } from '@/constants/sellerTypes';
+
+// Remembered for the session so the seller terms are shown only the first time
+// a buyer opens this screen — this screen is only ever reached when a buyer
+// chooses to become a seller, so acknowledging it once is enough.
+let sellerTermsAcknowledged = false;
 
 export default function BecomeSellerScreen() {
   const { colors } = useTheme();
@@ -31,6 +37,19 @@ export default function BecomeSellerScreen() {
   const [businessDescription, setBusinessDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showTerms, setShowTerms] = useState(!sellerTermsAcknowledged);
+
+  const handleAgreeTerms = () => {
+    sellerTermsAcknowledged = true;
+    setShowTerms(false);
+  };
+
+  const handleDeclineTerms = () => {
+    setShowTerms(false);
+    // Becoming a seller means accepting the terms, so backing out returns them
+    // to where they came from rather than into the form.
+    router.back();
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -204,6 +223,12 @@ export default function BecomeSellerScreen() {
           />
         </View>
       </KeyboardAvoidingWrapper>
+
+      <SellerTermsModal
+        visible={showTerms}
+        onAgree={handleAgreeTerms}
+        onCancel={handleDeclineTerms}
+      />
     </SafeAreaView>
   );
 }
