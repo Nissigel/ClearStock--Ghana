@@ -39,10 +39,21 @@ public interface ListingRepository extends JpaRepository<Listing, Long>, JpaSpec
     List<Listing> findByListingStatusAndExpiryDateIsNotNullAndExpiryDateBefore(
             ListingStatus status, LocalDate date);
 
+    /**
+     * Listings whose clearance sale has closed. A dead-stock or surplus listing
+     * carries a clearance end date rather than an expiry date, so this is what
+     * "the sale is over" means for anything that isn't perishable.
+     */
+    List<Listing> findByListingStatusAndClearanceEndDateIsNotNullAndClearanceEndDateBefore(
+            ListingStatus status, LocalDate date);
+
     /** Listings sitting in a status untouched since the cutoff (updatedAt). */
     List<Listing> findByListingStatusAndUpdatedAtBefore(
             ListingStatus status, LocalDateTime cutoff);
 
-    @Query("SELECT l FROM Listing l WHERE l.listingStatus = 'ACTIVE' AND l.isHighUrgency = true ORDER BY l.urgencyScore DESC")
+    @Query("SELECT l FROM Listing l WHERE l.listingStatus = 'ACTIVE' AND l.isHighUrgency = true "
+            + "AND (l.expiryDate IS NULL OR l.expiryDate >= CURRENT_DATE) "
+            + "AND (l.clearanceEndDate IS NULL OR l.clearanceEndDate >= CURRENT_DATE) "
+            + "ORDER BY l.urgencyScore DESC")
     List<Listing> findHighUrgencyListings();
 }

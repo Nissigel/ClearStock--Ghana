@@ -8,6 +8,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,20 @@ public class ListingSpecification {
             query.orderBy(cb.desc(root.get("urgencyScore")));
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("listingStatus"), ListingStatus.ACTIVE));
+
+            // Hide anything past its due date straight away, without waiting for
+            // the sweep that flips it to EXPIRED — the free-tier server sleeps
+            // and can miss that sweep, and buyers should never see a sale that
+            // has already ended. "Due" means the expiry date has passed
+            // (perishable stock) or the clearance sale has ended (everything
+            // else); a listing with neither date set never expires this way.
+            LocalDate today = LocalDate.now();
+            predicates.add(cb.or(
+                    cb.isNull(root.get("expiryDate")),
+                    cb.greaterThanOrEqualTo(root.<LocalDate>get("expiryDate"), today)));
+            predicates.add(cb.or(
+                    cb.isNull(root.get("clearanceEndDate")),
+                    cb.greaterThanOrEqualTo(root.<LocalDate>get("clearanceEndDate"), today)));
 
             Join<Listing, SellerProfile> seller = root.join("seller", JoinType.INNER);
 
