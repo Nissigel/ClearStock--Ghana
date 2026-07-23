@@ -63,10 +63,17 @@ export default function ConversationScreen() {
     ? conversation?.sellerPhoneVisible
     : conversation?.buyerPhoneVisible;
 
+  // Once the deal has been rated the backend closes the chat. Lock the input
+  // and show why, rather than letting a message be typed only to be rejected.
+  const locked = conversation?.canSendMessages === false;
+  const lockedReason =
+    conversation?.messagingLockedReason ??
+    'This conversation is closed — no new messages can be sent.';
+
   // Sends straight away rather than filling the box: the point is to skip
   // typing entirely.
   const handleQuickReply = (text: string) => {
-    if (busy) return;
+    if (busy || locked) return;
     send(
       { conversationId: id, content: text },
       {
@@ -78,7 +85,7 @@ export default function ConversationScreen() {
 
   const handleSend = () => {
     const text = messageText.trim();
-    if (!text || busy) return;
+    if (!text || busy || locked) return;
 
     if (editingId) {
       editMessage(
@@ -116,7 +123,7 @@ export default function ConversationScreen() {
   };
 
   const handleLongPress = (message: Message) => {
-    if (message.senderUserId !== currentUserId || message.deletedAt) return;
+    if (message.senderUserId !== currentUserId || message.deletedAt || locked) return;
 
     const options: Parameters<typeof Alert.alert>[2] = [];
     if (canEdit(message)) {
@@ -331,6 +338,24 @@ export default function ConversationScreen() {
           </View>
         )}
 
+        {locked ? (
+          <View
+            style={[
+              styles.lockedNotice,
+              { backgroundColor: colors.secondary, borderTopColor: colors.border },
+            ]}
+          >
+            <Ionicons
+              name="lock-closed-outline"
+              size={16}
+              color={colors.mutedForeground}
+            />
+            <Text style={[styles.lockedText, { color: colors.mutedForeground }]}>
+              {lockedReason}
+            </Text>
+          </View>
+        ) : (
+          <>
         {/* Editing banner */}
         {editingId && (
           <View
@@ -407,6 +432,8 @@ export default function ConversationScreen() {
             />
           </TouchableOpacity>
         </View>
+          </>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -555,5 +582,18 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.sm,
+  },
+  lockedNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+    borderTopWidth: 0.5,
+  },
+  lockedText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    lineHeight: 20,
   },
 });

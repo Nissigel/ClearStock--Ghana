@@ -9,6 +9,10 @@ export interface Conversation {
   status: ConversationStatus;
   buyerPhoneVisible: boolean;
   sellerPhoneVisible: boolean;
+  /** False once the deal is rated/closed — the chat should stop accepting messages. */
+  canSendMessages: boolean;
+  /** Why the chat is closed, shown in the conversation when messaging is locked. */
+  messagingLockedReason: string | null;
   lastMessage: LastMessage | null;
   unreadCount: number;
   createdAt: string;
