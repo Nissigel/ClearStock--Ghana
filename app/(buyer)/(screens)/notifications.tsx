@@ -4,6 +4,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { useRef } from 'react';
 import { useRouter, type Href } from 'expo-router';
@@ -168,6 +169,8 @@ export default function NotificationsScreen() {
   const queryClient = useQueryClient();
   const currentMode = useModeStore((state) => state.currentMode);
   const isSeller = currentMode === USER_MODE.SELLER;
+  const switchToBuyer = useModeStore((state) => state.switchToBuyer);
+  const switchToSeller = useModeStore((state) => state.switchToSeller);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: [NOTIFICATIONS_KEY],
@@ -238,13 +241,46 @@ export default function NotificationsScreen() {
     else markUnread(item.id);
   };
 
+  // Marks a notification read and, where it points at something, opens it. The
+  // buyer and seller screens live in separate stacks, so `asSeller` picks which
+  // one to land on.
+  const openInMode = (item: Notification, asSeller: boolean) => {
+    if (item.status === 'UNREAD') markRead(item.id);
+    const target = targetFor(item, asSeller);
+    if (target) router.push(target);
+  };
+
   // Tapping the body of a notification marks it read and, where it points at
   // something, takes the user there — e.g. an accepted request to the order so
   // they can pay, a message notice to the conversation.
+  //
+  // One account is both buyer and seller sharing a single inbox, so a
+  // notification meant for the other mode can't be opened from here: its
+  // screen lives in the other tab navigator, and opening it in the current
+  // mode would show "request not found". Instead we offer to switch modes.
   const open = (item: Notification) => {
-    if (item.status === 'UNREAD') markRead(item.id);
-    const target = targetFor(item, isSeller);
-    if (target) router.push(target);
+    const currentRole = isSeller ? 'SELLER' : 'BUYER';
+    const requiredRole = item.role;
+    if (requiredRole && requiredRole !== currentRole) {
+      const targetMode = requiredRole === 'SELLER' ? 'seller' : 'buyer';
+      Alert.alert(
+        `Switch to ${targetMode} mode`,
+        `This notification is for your ${targetMode} account. Switch to ${targetMode} mode to view it.`,
+        [
+          { text: 'Not now', style: 'cancel' },
+          {
+            text: `Switch to ${targetMode} mode`,
+            onPress: () => {
+              if (requiredRole === 'SELLER') switchToSeller();
+              else switchToBuyer();
+              openInMode(item, requiredRole === 'SELLER');
+            },
+          },
+        ]
+      );
+      return;
+    }
+    openInMode(item, isSeller);
   };
 
   const notifications: Notification[] = data?.content ?? [];

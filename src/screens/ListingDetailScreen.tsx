@@ -20,7 +20,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { StarRating } from '@/components/ui/StarRating';
 import { useQuery } from '@tanstack/react-query';
-import { getListingById } from '@/api/listing.api';
+import { getListingById, getSavedListings } from '@/api/listing.api';
+import { useSaveListing, SAVED_LISTINGS_KEY } from '@/hooks/useListings';
 import { getSellerRatingSummary } from '@/api/review.api';
 import {
   getConversationByListingId,
@@ -29,7 +30,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 import { CURRENCY_SYMBOL } from '@/constants/app';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PurchaseRequestSheet } from '@/components/ui/PurchaseRequestSheet';
 import { SaleEndsCountdown } from '@/components/ui/SaleEndsCountdown';
 
@@ -59,6 +60,20 @@ export function ListingDetailScreen() {
     queryFn: () => getSellerRatingSummary(String(sellerUserId)),
     enabled: sellerUserId != null,
   });
+
+  // Which listings this user has saved — powers the filled heart. Only fetched
+  // when logged in (the endpoint requires auth).
+  const { data: savedList = [] } = useQuery({
+    queryKey: [SAVED_LISTINGS_KEY],
+    queryFn: getSavedListings,
+    enabled: isAuthenticated,
+  });
+  const savedIds = useMemo(
+    () => new Set(savedList.map((l) => String(l.id))),
+    [savedList]
+  );
+  const isSaved = id ? savedIds.has(String(id)) : false;
+  const { mutate: toggleSave } = useSaveListing();
 
   const handleRestrictedAction = (action: () => void) => {
     if (!isAuthenticated) {
@@ -98,7 +113,8 @@ const handlePurchaseRequest = () => {
 
   const handleSave = () => {
     handleRestrictedAction(() => {
-      // Save listing — built in Milestone 3
+      if (!listing) return;
+      toggleSave({ listingId: String(listing.id), isSaved });
     });
   };
 
@@ -190,9 +206,9 @@ const handlePurchaseRequest = () => {
             </TouchableOpacity>
             <TouchableOpacity onPress={handleSave}>
               <Ionicons
-                name="heart-outline"
+                name={isSaved ? 'heart' : 'heart-outline'}
                 size={24}
-                color={colors.foreground}
+                color={isSaved ? colors.destructive : colors.foreground}
               />
             </TouchableOpacity>
           </View>

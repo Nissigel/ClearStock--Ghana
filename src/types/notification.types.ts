@@ -9,8 +9,16 @@ export interface Notification {
   status: NotificationStatus;
   referenceType: ReferenceType | null;
   referenceId: string | null;
+  /**
+   * Which mode you must be in to act on this notification, or null when either
+   * mode can open it. A single account is both buyer and seller with one shared
+   * inbox, so this drives the "switch mode to view" prompt.
+   */
+  role: NotificationRole | null;
   createdAt: string;
 }
+
+export type NotificationRole = 'BUYER' | 'SELLER';
 
 export interface NotificationListResponse {
   content: Notification[];

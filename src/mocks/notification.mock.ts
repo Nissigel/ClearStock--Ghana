@@ -10,6 +10,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     status: 'UNREAD',
     referenceType: 'purchase_request',
     referenceId: 'request-002',
+    role: 'BUYER',
     createdAt: '2026-06-23T14:00:00Z',
   },
   {
@@ -21,6 +22,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     status: 'UNREAD',
     referenceType: 'transaction',
     referenceId: 'txn-001',
+    role: 'BUYER',
     createdAt: '2026-06-24T08:00:00Z',
   },
   {
@@ -32,6 +34,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     status: 'UNREAD',
     referenceType: 'conversation',
     referenceId: 'conv-001',
+    role: null,
     createdAt: '2026-06-24T10:30:00Z',
   },
   {
@@ -43,6 +46,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     status: 'READ',
     referenceType: 'purchase_request',
     referenceId: 'request-004',
+    role: 'BUYER',
     createdAt: '2026-06-21T12:00:00Z',
   },
   {
@@ -54,6 +58,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     status: 'READ',
     referenceType: 'transaction',
     referenceId: 'txn-002',
+    role: 'BUYER',
     createdAt: '2026-06-22T11:00:00Z',
   },
   {
@@ -65,6 +70,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     status: 'READ',
     referenceType: 'listing',
     referenceId: 'listing-001',
+    role: null,
     createdAt: '2026-06-18T00:00:00Z',
   },
 ];
