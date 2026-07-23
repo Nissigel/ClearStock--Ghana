@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
 import { useQuery } from '@tanstack/react-query';
 import { getMyListings } from '@/api/listing.api';
+import { getSellerTransactions } from '@/api/transaction.api';
 import { getRecoveryDashboard, getSellerEarnings } from '@/api/seller.api';
 import { getSellerRatingSummary } from '@/api/review.api';
 import {
@@ -32,6 +33,25 @@ import type { ListingSummary } from '@/types/listing.types';
 
 const formatGhs = (n: number) =>
   `${CURRENCY_SYMBOL} ${Math.round(n).toLocaleString('en-GH')}`;
+
+// A transaction is "ongoing" while it is neither finished nor cancelled.
+const ONGOING_TX_STATUSES = [
+  'PENDING_FULFILLMENT',
+  'READY_FOR_COLLECTION',
+  'DELIVERED',
+];
+
+const txStatusVariant = (status: string) => {
+  switch (status) {
+    case 'PENDING_FULFILLMENT':
+      return 'pending';
+    case 'READY_FOR_COLLECTION':
+    case 'DELIVERED':
+      return 'active';
+    default:
+      return 'unverified';
+  }
+};
 
 interface StatCardProps {
   label: string;
@@ -112,6 +132,11 @@ export default function SellerDashboardScreen() {
     enabled: !!user?.id,
   });
 
+  const { data: sellerTransactions, refetch: refetchTransactions } = useQuery({
+    queryKey: ['seller-transactions'],
+    queryFn: getSellerTransactions,
+  });
+
   // Tab screens stay mounted and React Query doesn't refetch on focus in React
   // Native, so without this a request a buyer submits after the dashboard first
   // loaded would never appear until the app restarts. Refresh on every focus.
@@ -122,12 +147,14 @@ export default function SellerDashboardScreen() {
       refetchRecovery();
       refetchEarnings();
       refetchRating();
+      refetchTransactions();
     }, [
       refetchRequests,
       refetchListings,
       refetchRecovery,
       refetchEarnings,
       refetchRating,
+      refetchTransactions,
     ])
   );
 
@@ -135,6 +162,10 @@ export default function SellerDashboardScreen() {
 
   const incomingOrders = (requests ?? [])
     .filter((r) => r.status === 'PENDING')
+    .slice(0, 3);
+
+  const ongoingOrders = (sellerTransactions ?? [])
+    .filter((t) => ONGOING_TX_STATUSES.includes(t.transactionStatus))
     .slice(0, 3);
 
   const handleAccept = (request: PurchaseRequest) => {
@@ -272,6 +303,7 @@ export default function SellerDashboardScreen() {
               refetchListings();
               refetchRecovery();
               refetchRating();
+              refetchTransactions();
             }}
             tintColor={colors.primary}
           />
@@ -370,6 +402,66 @@ export default function SellerDashboardScreen() {
                     />
                   </View>
                 </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {/* Ongoing Orders — live transactions, so the seller sees them here
+            without opening the transactions screen first. */}
+        {ongoingOrders.length > 0 && (
+          <>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Ongoing Orders
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(seller)/(screens)/transactions')}
+              >
+                <Text style={[styles.seeAll, { color: colors.primary }]}>
+                  See all
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.incomingList}>
+              {ongoingOrders.map((tx) => (
+                <TouchableOpacity
+                  key={tx.id}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(seller)/(screens)/transaction-detail/[id]',
+                      params: { id: String(tx.id) },
+                    })
+                  }
+                  style={[
+                    styles.orderCard,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      borderRadius: Radius.lg,
+                      ...Shadow.sm,
+                    },
+                  ]}
+                >
+                  <View style={styles.orderHeader}>
+                    <Text
+                      style={[styles.orderProduct, { color: colors.foreground }]}
+                      numberOfLines={1}
+                    >
+                      {tx.listingProductName}
+                    </Text>
+                    <Badge
+                      variant={txStatusVariant(tx.transactionStatus) as any}
+                      label={tx.transactionStatus.replace(/_/g, ' ')}
+                    />
+                  </View>
+                  <Text
+                    style={[styles.orderMeta, { color: colors.mutedForeground }]}
+                  >
+                    {tx.buyerPhone} · Qty {tx.quantity}
+                  </Text>
+                </TouchableOpacity>
               ))}
             </View>
           </>
