@@ -46,6 +46,8 @@ interface RawConversation {
   lastMessageSenderId: number | null;
   unreadCount: number | null;
   status: string;
+  canSendMessages?: boolean;
+  messagingLockedReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -98,6 +100,10 @@ const mapConversation = (raw: RawConversation): Conversation => {
         }
       : null,
     unreadCount: raw.unreadCount ?? 0,
+    // Default to allowed when an older backend omits the field, so existing
+    // chats aren't locked out by a deploy-order mismatch.
+    canSendMessages: raw.canSendMessages !== false,
+    messagingLockedReason: raw.messagingLockedReason ?? null,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };
