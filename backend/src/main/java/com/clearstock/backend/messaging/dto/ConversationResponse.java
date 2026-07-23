@@ -33,6 +33,13 @@ public class ConversationResponse {
     private long unreadCount;
 
     private ConversationStatus status;
+
+    // Whether new messages are still allowed. Turns false once the deal is done
+    // (the buyer and seller have rated) or the conversation is closed, so the
+    // app can lock the chat and explain why with the reason below.
+    private boolean canSendMessages;
+    private String messagingLockedReason;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

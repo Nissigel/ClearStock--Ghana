@@ -8,6 +8,7 @@ import com.clearstock.backend.messaging.dto.SendMessageRequest;
 import com.clearstock.backend.messaging.dto.StartConversationRequest;
 import com.clearstock.backend.transactions.PurchaseRequestRepository;
 import com.clearstock.backend.transactions.PurchaseRequestStatus;
+import com.clearstock.backend.transactions.ReviewRepository;
 import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,10 +27,15 @@ public class MessagingService {
     private static final String DELETED_PLACEHOLDER = "This message was deleted";
     private static final int EDIT_WINDOW_MINUTES = 3;
 
+    private static final String CLOSED_REASON = "This conversation is closed.";
+    private static final String COMPLETED_REASON =
+            "This deal is complete, so the chat is now closed.";
+
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final ListingRepository listingRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
+    private final ReviewRepository reviewRepository;
 
     public ConversationResponse startConversation(User buyer, StartConversationRequest request) {
         Listing listing = listingRepository.findById(request.getListingId())
@@ -88,9 +94,9 @@ public class MessagingService {
     public MessageResponse sendMessage(User sender, SendMessageRequest request) {
         Conversation conversation = findConversationForParticipant(sender, request.getConversationId());
 
-        if (conversation.getStatus() == ConversationStatus.CLOSED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Cannot send messages in a closed conversation");
+        String lockedReason = messagingLockedReason(conversation);
+        if (lockedReason != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, lockedReason);
         }
 
         // A new message revives the conversation for anyone who had hidden it.
@@ -193,6 +199,8 @@ public class MessagingService {
                 .findFirstByConversationOrderByCreatedAtDesc(conversation)
                 .orElse(null);
 
+        String lockedReason = messagingLockedReason(conversation);
+
         return ConversationResponse.builder()
                 .id(conversation.getId())
                 .listingId(conversation.getListing().getId())
@@ -214,9 +222,28 @@ public class MessagingService {
                 .unreadCount(messageRepository
                         .countByConversationAndSenderNotAndSeenFalse(conversation, viewer))
                 .status(conversation.getStatus())
+                .canSendMessages(lockedReason == null)
+                .messagingLockedReason(lockedReason)
                 .createdAt(conversation.getCreatedAt())
                 .updatedAt(conversation.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Why messaging is closed for this conversation, or null while it is still
+     * open. A conversation closes when it is marked CLOSED, or once the buyer
+     * and seller have rated their deal — at that point the transaction is over
+     * and there is nothing left for them to arrange.
+     */
+    private String messagingLockedReason(Conversation conversation) {
+        if (conversation.getStatus() == ConversationStatus.CLOSED) {
+            return CLOSED_REASON;
+        }
+        boolean rated = reviewRepository.existsForListingAndBuyerAndSeller(
+                conversation.getListing().getId(),
+                conversation.getBuyer().getId(),
+                conversation.getSeller().getId());
+        return rated ? COMPLETED_REASON : null;
     }
 
     /**
