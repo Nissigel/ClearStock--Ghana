@@ -4,7 +4,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,9 +43,17 @@ export default function BuyerTransactionDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['transaction', id] });
       queryClient.invalidateQueries({ queryKey: ['buyer-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['seller-transactions'] });
-      Alert.alert('Success', 'Transaction completed successfully!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      // Collection confirmed, so the order is complete. Take the buyer straight
+      // to rating rather than dropping them back on the list to reopen the
+      // order and hunt for the button.
+      router.replace({
+        pathname: '/(buyer)/(screens)/rate-transaction',
+        params: {
+          transactionId: id,
+          sellerId: String(transaction?.sellerUserId ?? ''),
+          sellerName: transaction?.sellerPhone ?? '',
+        },
+      });
     },
     onError: () => {
       setOtpError('Invalid OTP. Please try again.');
