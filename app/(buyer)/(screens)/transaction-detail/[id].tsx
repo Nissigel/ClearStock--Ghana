@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -25,6 +25,14 @@ export default function BuyerTransactionDetailScreen() {
   const queryClient = useQueryClient();
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
+  // Once the OTP is confirmed we show a brief "order complete" screen and then
+  // move the buyer on to rating. Holding the rate details here lets the timer
+  // fire even as the transaction query refetches underneath.
+  const [pendingRate, setPendingRate] = useState<{
+    transactionId: string;
+    sellerId: string;
+    sellerName: string;
+  } | null>(null);
 
   const { data: transaction, isLoading } = useQuery({
     queryKey: ['transaction', id],
@@ -43,16 +51,14 @@ export default function BuyerTransactionDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['transaction', id] });
       queryClient.invalidateQueries({ queryKey: ['buyer-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['seller-transactions'] });
-      // Collection confirmed, so the order is complete. Take the buyer straight
-      // to rating rather than dropping them back on the list to reopen the
-      // order and hunt for the button.
-      router.replace({
-        pathname: '/(buyer)/(screens)/rate-transaction',
-        params: {
-          transactionId: id,
-          sellerId: String(transaction?.sellerUserId ?? ''),
-          sellerName: transaction?.sellerPhone ?? '',
-        },
+      // Collection confirmed, so the order is complete. Show a short success
+      // screen (the effect below moves on to rating a couple of seconds later)
+      // rather than dropping the buyer back to reopen the order and hunt for
+      // the rate button.
+      setPendingRate({
+        transactionId: id,
+        sellerId: String(transaction?.sellerUserId ?? ''),
+        sellerName: transaction?.sellerPhone ?? '',
       });
     },
     onError: () => {
@@ -60,6 +66,19 @@ export default function BuyerTransactionDetailScreen() {
       setOtp('');
     },
   });
+
+  // Hold "Order complete" for a beat, then open rating. Using replace means
+  // backing out of the rating screen lands on the orders list, not back here.
+  useEffect(() => {
+    if (!pendingRate) return;
+    const timer = setTimeout(() => {
+      router.replace({
+        pathname: '/(buyer)/(screens)/rate-transaction',
+        params: pendingRate,
+      });
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [pendingRate, router]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -71,6 +90,24 @@ export default function BuyerTransactionDetailScreen() {
       default: return 'unverified';
     }
   };
+
+  if (pendingRate) {
+    return (
+      <SafeAreaView
+        style={[styles.safeArea, styles.successScreen, { backgroundColor: colors.background }]}
+      >
+        <View style={[styles.successCircle, { backgroundColor: colors.primary }]}>
+          <Ionicons name="checkmark" size={44} color={colors.primaryForeground} />
+        </View>
+        <Text style={[styles.successTitle, { color: colors.foreground }]}>
+          Order complete
+        </Text>
+        <Text style={[styles.successSub, { color: colors.mutedForeground }]}>
+          Taking you to rate the seller…
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading || !transaction) {
     return (
@@ -298,6 +335,27 @@ export default function BuyerTransactionDetailScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  successScreen: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    padding: Spacing.xl,
+  },
+  successCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successTitle: {
+    fontSize: FontSize['2xl'],
+    fontWeight: 'bold',
+  },
+  successSub: {
+    fontSize: FontSize.sm,
+    textAlign: 'center',
+  },
   content: { padding: Spacing.base, gap: Spacing.md, paddingBottom: Spacing['4xl'] },
   card: { padding: Spacing.base, borderWidth: 0.5 },
   listingName: { fontSize: FontSize.lg, fontWeight: 'bold', marginBottom: Spacing.sm },

@@ -6,7 +6,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRef } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,8 +26,41 @@ import type {
   Notification,
   NotificationListResponse,
 } from '@/types/notification.types';
+import { useModeStore } from '@/store/modeStore';
+import { USER_MODE } from '@/constants/app';
 
 const NOTIFICATIONS_KEY = 'notifications';
+
+// Where a notification should take you when tapped, from the reference the
+// backend attaches to it. Returns null when there is nothing specific to open
+// (for example account notices), in which case tapping only marks it read.
+function targetFor(item: Notification, isSeller: boolean): Href | null {
+  const id = item.referenceId ?? undefined;
+  switch (item.referenceType) {
+    case 'transaction':
+      if (!id) return null;
+      // Buyer and seller each have their own order screen; the buyer's is where
+      // "Pay now" lives, which is exactly where an "accepted — please pay"
+      // notification should land.
+      return isSeller
+        ? { pathname: '/(seller)/(screens)/transaction-detail/[id]', params: { id } }
+        : { pathname: '/(buyer)/(screens)/transaction-detail/[id]', params: { id } };
+    case 'listing':
+      return id ? { pathname: '/(buyer)/(tabs)/listing/[id]', params: { id } } : null;
+    case 'conversation':
+      return id ? { pathname: '/(buyer)/(screens)/conversation/[id]', params: { id } } : null;
+    case 'purchase_request':
+      // Sellers act on incoming requests from their Requests tab; a buyer's
+      // request notification points at the request itself.
+      return isSeller
+        ? '/(seller)/(tabs)/requests'
+        : id
+          ? { pathname: '/(buyer)/(screens)/purchase-requests/[id]', params: { id } }
+          : null;
+    default:
+      return null;
+  }
+}
 
 const CATEGORY_ICONS: Record<string, string> = {
   MESSAGING: 'chatbubble-outline',
@@ -41,10 +74,11 @@ interface NotificationRowProps {
   item: Notification;
   colors: ReturnType<typeof useTheme>['colors'];
   onToggle: (item: Notification) => void;
+  onOpen: (item: Notification) => void;
 }
 
 // One notification row with a left-swipe action that toggles read/unread.
-function NotificationRow({ item, colors, onToggle }: NotificationRowProps) {
+function NotificationRow({ item, colors, onToggle, onOpen }: NotificationRowProps) {
   const swipeRef = useRef<Swipeable>(null);
   const isUnread = item.status === 'UNREAD';
 
@@ -85,9 +119,7 @@ function NotificationRow({ item, colors, onToggle }: NotificationRowProps) {
     >
       <TouchableOpacity
         activeOpacity={0.7}
-        onPress={() => {
-          if (isUnread) onToggle(item);
-        }}
+        onPress={() => onOpen(item)}
         style={[
           styles.notifItem,
           {
@@ -134,6 +166,8 @@ export default function NotificationsScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const currentMode = useModeStore((state) => state.currentMode);
+  const isSeller = currentMode === USER_MODE.SELLER;
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: [NOTIFICATIONS_KEY],
@@ -204,6 +238,15 @@ export default function NotificationsScreen() {
     else markUnread(item.id);
   };
 
+  // Tapping the body of a notification marks it read and, where it points at
+  // something, takes the user there — e.g. an accepted request to the order so
+  // they can pay, a message notice to the conversation.
+  const open = (item: Notification) => {
+    if (item.status === 'UNREAD') markRead(item.id);
+    const target = targetFor(item, isSeller);
+    if (target) router.push(target);
+  };
+
   const notifications: Notification[] = data?.content ?? [];
   const unreadCount = notifications.filter((n) => n.status === 'UNREAD').length;
 
@@ -220,7 +263,7 @@ export default function NotificationsScreen() {
         data={notifications}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <NotificationRow item={item} colors={colors} onToggle={toggle} />
+          <NotificationRow item={item} colors={colors} onToggle={toggle} onOpen={open} />
         )}
         onRefresh={refetch}
         refreshing={isRefetching}
