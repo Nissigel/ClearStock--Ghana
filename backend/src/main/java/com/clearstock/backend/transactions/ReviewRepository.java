@@ -15,6 +15,19 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     boolean existsByTransactionAndReviewer(Transaction transaction, User reviewer);
 
+    /**
+     * Has this buyer/seller pair already rated their deal on this listing? Once
+     * a review exists the transaction is finished, which is the signal we use to
+     * close the conversation — there is nothing left to arrange.
+     */
+    @Query("SELECT COUNT(r) > 0 FROM Review r "
+            + "WHERE r.transaction.listing.id = :listingId "
+            + "AND r.transaction.buyer.id = :buyerId "
+            + "AND r.transaction.seller.id = :sellerId")
+    boolean existsForListingAndBuyerAndSeller(@Param("listingId") Long listingId,
+                                              @Param("buyerId") Long buyerId,
+                                              @Param("sellerId") Long sellerId);
+
     @Query("SELECT COALESCE(AVG(r.rating), 0.0) FROM Review r WHERE r.reviewee.id = :userId")
     Double findAverageRatingByRevieweeId(@Param("userId") Long userId);
 
