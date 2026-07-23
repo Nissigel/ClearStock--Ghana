@@ -8,7 +8,8 @@ import com.clearstock.backend.messaging.dto.SendMessageRequest;
 import com.clearstock.backend.messaging.dto.StartConversationRequest;
 import com.clearstock.backend.transactions.PurchaseRequestRepository;
 import com.clearstock.backend.transactions.PurchaseRequestStatus;
-import com.clearstock.backend.transactions.ReviewRepository;
+import com.clearstock.backend.transactions.TransactionRepository;
+import com.clearstock.backend.transactions.TransactionStatus;
 import com.clearstock.backend.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,13 +30,13 @@ public class MessagingService {
 
     private static final String CLOSED_REASON = "This conversation is closed.";
     private static final String COMPLETED_REASON =
-            "This deal is complete, so the chat is now closed.";
+            "This transaction is over — you can no longer message each other here.";
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final ListingRepository listingRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
-    private final ReviewRepository reviewRepository;
+    private final TransactionRepository transactionRepository;
 
     public ConversationResponse startConversation(User buyer, StartConversationRequest request) {
         Listing listing = listingRepository.findById(request.getListingId())
@@ -190,10 +191,14 @@ public class MessagingService {
     }
 
     private ConversationResponse mapToConversationResponse(Conversation conversation, User viewer) {
+        // Contact numbers appear once the seller accepts the request, and are
+        // hidden again once the deal is done, so a number is only shared for as
+        // long as the two actually need to reach each other.
         boolean phonesVisible = purchaseRequestRepository.existsByListingAndBuyerAndStatusIn(
                 conversation.getListing(),
                 conversation.getBuyer(),
-                List.of(PurchaseRequestStatus.ACCEPTED, PurchaseRequestStatus.COMPLETED));
+                List.of(PurchaseRequestStatus.ACCEPTED, PurchaseRequestStatus.COMPLETED))
+                && !transactionOver(conversation);
 
         Message latest = messageRepository
                 .findFirstByConversationOrderByCreatedAtDesc(conversation)
@@ -239,11 +244,22 @@ public class MessagingService {
         if (conversation.getStatus() == ConversationStatus.CLOSED) {
             return CLOSED_REASON;
         }
-        boolean rated = reviewRepository.existsForListingAndBuyerAndSeller(
-                conversation.getListing().getId(),
-                conversation.getBuyer().getId(),
-                conversation.getSeller().getId());
-        return rated ? COMPLETED_REASON : null;
+        return transactionOver(conversation) ? COMPLETED_REASON : null;
+    }
+
+    /**
+     * True once this buyer and seller have a completed transaction on this
+     * listing. The deal is finished at that point, so the conversation closes
+     * and the contact numbers are hidden again — there is nothing left to
+     * arrange, and neither side needs the other's number any more.
+     */
+    private boolean transactionOver(Conversation conversation) {
+        return transactionRepository
+                .existsByListingAndBuyerAndSellerAndTransactionStatus(
+                        conversation.getListing(),
+                        conversation.getBuyer(),
+                        conversation.getSeller(),
+                        TransactionStatus.COMPLETED);
     }
 
     /**
