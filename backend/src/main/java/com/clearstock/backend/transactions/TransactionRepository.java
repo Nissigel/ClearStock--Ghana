@@ -32,4 +32,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findBySellerIdAndTransactionStatus(Long sellerId, TransactionStatus transactionStatus);
 
     boolean existsByListing(Listing listing);
+
+    /**
+     * Whether this buyer/seller pair have a transaction in the given state on a
+     * listing. Used to tell when a deal is finished, so the conversation can be
+     * closed and the contact numbers hidden again.
+     */
+    boolean existsByListingAndBuyerAndSellerAndTransactionStatus(
+            Listing listing, User buyer, User seller, TransactionStatus transactionStatus);
 }
