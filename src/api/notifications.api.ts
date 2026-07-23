@@ -13,7 +13,7 @@ import type {
 import type { NotificationCategory } from '@/constants/app';
 
 // The backend returns a flat list of { id, title, message, type, isRead,
-// relatedId, createdAt } — map it to the app's Notification shape.
+// relatedId, role, createdAt } — map it to the app's Notification shape.
 interface RawNotification {
   id: number;
   title: string;
@@ -24,6 +24,9 @@ interface RawNotification {
   read?: boolean;
   isRead?: boolean;
   relatedId: number | null;
+  // Which mode the recipient must be in to act on it — "BUYER", "SELLER" or
+  // null (either mode). Older backends omit it, so treat missing as null.
+  role?: string | null;
   createdAt: string;
 }
 
@@ -52,6 +55,7 @@ const mapNotification = (raw: RawNotification): Notification => ({
   status: (raw.read ?? raw.isRead) ? 'READ' : 'UNREAD',
   referenceType: REFERENCE_BY_TYPE[raw.type] ?? null,
   referenceId: raw.relatedId != null ? String(raw.relatedId) : null,
+  role: raw.role === 'BUYER' || raw.role === 'SELLER' ? raw.role : null,
   createdAt: raw.createdAt,
 });
 
