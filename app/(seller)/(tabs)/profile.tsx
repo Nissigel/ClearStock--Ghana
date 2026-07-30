@@ -121,7 +121,24 @@ export default function SellerProfileScreen() {
             },
           ]}
         >
-          <Avatar uri={user?.profilePhotoUrl} name={user?.fullName} size="xl" />
+          <View style={styles.avatarWrap}>
+            <Avatar
+              uri={user?.profilePhotoUrl}
+              name={user?.fullName}
+              size="xl"
+              enlargeable
+            />
+            <TouchableOpacity
+              onPress={() => router.push('/(buyer)/(screens)/edit-profile')}
+              style={[
+                styles.editBadge,
+                { backgroundColor: colors.primary, borderColor: colors.card },
+              ]}
+              accessibilityLabel="Edit profile"
+            >
+              <Ionicons name="pencil" size={13} color={colors.primaryForeground} />
+            </TouchableOpacity>
+          </View>
           <Text style={[styles.userName, { color: colors.foreground }]}>
             {user?.fullName}
           </Text>
@@ -185,7 +202,6 @@ export default function SellerProfileScreen() {
               },
               { icon: 'leaf-outline', label: 'Recovery Impact', route: '/(seller)/(screens)/recovery-impact' },
               { icon: 'swap-horizontal-outline', label: 'Transaction History', route: '/(seller)/(screens)/transactions' },
-              { icon: 'person-outline', label: 'Edit Profile', route: '/(buyer)/(screens)/edit-profile' },
               { icon: 'settings-outline', label: 'Settings', route: '/(buyer)/(screens)/settings' },
             ].map((item, index) => (
               <TouchableOpacity
@@ -213,18 +229,31 @@ export default function SellerProfileScreen() {
               </TouchableOpacity>
             ))}
 
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={styles.settingsRow}
-            >
-              <View style={[styles.settingsIcon, { backgroundColor: colors.muted }]}>
-                <Ionicons name="log-out-outline" size={18} color={colors.destructive} />
-              </View>
-              <Text style={[styles.settingsLabel, { color: colors.destructive }]}>
-                Logout
-              </Text>
-            </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Logout — a bold red bar so this risky, deliberate action stands
+            out from the neutral rows above. */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            onPress={handleLogout}
+            activeOpacity={0.85}
+            style={[
+              styles.logoutBar,
+              { backgroundColor: colors.destructive, borderRadius: Radius.lg },
+            ]}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={20}
+              color={colors.destructiveForeground}
+            />
+            <Text
+              style={[styles.logoutLabel, { color: colors.destructiveForeground }]}
+            >
+              Logout
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -233,6 +262,32 @@ export default function SellerProfileScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  avatarWrap: {
+    position: 'relative',
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 26,
+    height: 26,
+    borderRadius: Radius.full,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.base,
+    ...Shadow.sm,
+  },
+  logoutLabel: {
+    fontSize: FontSize.base,
+    fontWeight: '700',
+  },
   profileHeader: {
     alignItems: 'center',
     padding: Spacing.xl,
