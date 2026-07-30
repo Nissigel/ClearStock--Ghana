@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Dimensions,
   FlatList,
+  Alert,
 } from 'react-native';
 import { Text } from '@/components/ui/Typography';
 import { Image } from 'react-native';
@@ -30,7 +31,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { FontSize, Spacing, Radius, Shadow } from '@/constants/theme';
 import { CURRENCY_SYMBOL } from '@/constants/app';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PurchaseRequestSheet } from '@/components/ui/PurchaseRequestSheet';
 import { SaleEndsCountdown } from '@/components/ui/SaleEndsCountdown';
 
@@ -72,8 +73,19 @@ export function ListingDetailScreen() {
     () => new Set(savedList.map((l) => String(l.id))),
     [savedList]
   );
-  const isSaved = id ? savedIds.has(String(id)) : false;
+  const serverSaved = id ? savedIds.has(String(id)) : false;
   const { mutate: toggleSave } = useSaveListing();
+
+  // Local optimistic flag so the heart fills/empties the instant it's tapped,
+  // rather than waiting for the save request and the saved-list refetch (which
+  // made the button feel dead). Cleared once the server state catches up.
+  const [pendingSave, setPendingSave] = useState<boolean | null>(null);
+  const isSaved = pendingSave ?? serverSaved;
+  useEffect(() => {
+    if (pendingSave !== null && pendingSave === serverSaved) {
+      setPendingSave(null);
+    }
+  }, [pendingSave, serverSaved]);
 
   const handleRestrictedAction = (action: () => void) => {
     if (!isAuthenticated) {
@@ -114,7 +126,20 @@ const handlePurchaseRequest = () => {
   const handleSave = () => {
     handleRestrictedAction(() => {
       if (!listing) return;
-      toggleSave({ listingId: String(listing.id), isSaved });
+      const currentlySaved = isSaved;
+      setPendingSave(!currentlySaved); // flip the heart immediately
+      toggleSave(
+        { listingId: String(listing.id), isSaved: currentlySaved },
+        {
+          onError: () => {
+            setPendingSave(null); // revert on failure
+            Alert.alert(
+              'Could not save',
+              'Please check your connection and try again.'
+            );
+          },
+        }
+      );
     });
   };
 

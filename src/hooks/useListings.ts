@@ -35,7 +35,10 @@ export const useSaveListing = () => {
   return useMutation({
     mutationFn: ({ listingId, isSaved }: { listingId: string; isSaved: boolean }) =>
       isSaved ? unsaveListing(listingId) : saveListing(listingId),
-    onSuccess: () => {
+    // Re-sync both lists with the server whether the toggle succeeded or failed.
+    // The listing screen shows instant feedback locally in the meantime, so the
+    // heart never has to wait on this round-trip.
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [LISTINGS_KEY] });
       queryClient.invalidateQueries({ queryKey: [SAVED_LISTINGS_KEY] });
     },
