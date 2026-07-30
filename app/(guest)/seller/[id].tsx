@@ -72,7 +72,7 @@ const { data: reviews } = useQuery({
           },
         ]}
       >
-        <Avatar uri={sellerPhoto} name={sellerName} size="xl" />
+        <Avatar uri={sellerPhoto} name={sellerName} size="xl" enlargeable />
         <Text style={[styles.sellerName, { color: colors.foreground }]}>
           {sellerName}
         </Text>
