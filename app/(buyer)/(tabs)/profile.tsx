@@ -211,11 +211,24 @@ export default function ProfileScreen() {
             },
           ]}
         >
-          <Avatar
-            uri={user?.profilePhotoUrl}
-            name={user?.fullName}
-            size="xl"
-          />
+          <View style={styles.avatarWrap}>
+            <Avatar
+              uri={user?.profilePhotoUrl}
+              name={user?.fullName}
+              size="xl"
+              enlargeable
+            />
+            <TouchableOpacity
+              onPress={() => handleNavigate('/(buyer)/(screens)/edit-profile')}
+              style={[
+                styles.editBadge,
+                { backgroundColor: colors.primary, borderColor: colors.card },
+              ]}
+              accessibilityLabel="Edit profile"
+            >
+              <Ionicons name="pencil" size={13} color={colors.primaryForeground} />
+            </TouchableOpacity>
+          </View>
           <Text style={[styles.userName, { color: colors.foreground }]}>
             {user?.fullName ?? 'User'}
           </Text>
@@ -331,12 +344,6 @@ export default function ProfileScreen() {
             ]}
           >
             <SettingsRow
-              icon="person-outline"
-              label="Edit Profile"
-              onPress={() => handleNavigate('/(buyer)/(screens)/edit-profile')}
-              colors={colors}
-            />
-            <SettingsRow
               icon="call-outline"
               label="Change Phone Number"
               onPress={() => handleNavigate('/(buyer)/(screens)/change-phone')}
@@ -395,27 +402,31 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Logout */}
+        {/* Logout — deliberately a bold red bar: logging out is a risky,
+            deliberate action and should stand out from the neutral rows. */}
         <View style={styles.section}>
-          <View
+          <TouchableOpacity
+            onPress={handleLogout}
+            activeOpacity={0.85}
             style={[
-              styles.sectionCard,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                borderRadius: Radius.lg,
-              },
+              styles.logoutBar,
+              { backgroundColor: colors.destructive, borderRadius: Radius.lg },
             ]}
           >
-            <SettingsRow
-              icon="log-out-outline"
-              label="Logout"
-              onPress={handleLogout}
-              destructive
-              showArrow={false}
-              colors={colors}
+            <Ionicons
+              name="log-out-outline"
+              size={20}
+              color={colors.destructiveForeground}
             />
-          </View>
+            <Text
+              style={[
+                styles.logoutLabel,
+                { color: colors.destructiveForeground },
+              ]}
+            >
+              Logout
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.bottomPadding} />
@@ -426,6 +437,32 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  avatarWrap: {
+    position: 'relative',
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 26,
+    height: 26,
+    borderRadius: Radius.full,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.base,
+    ...Shadow.sm,
+  },
+  logoutLabel: {
+    fontSize: FontSize.base,
+    fontWeight: '700',
+  },
   profileHeader: {
     alignItems: 'center',
     padding: Spacing.xl,
