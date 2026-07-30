@@ -1,13 +1,19 @@
 import {
   View,
   Text,
+  Image,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@/hooks/useTheme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Input } from '@/components/ui/Input';
@@ -15,10 +21,13 @@ import { Button } from '@/components/ui/Button';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { useAuthStore } from '@/store/authStore';
 import { useModeStore } from '@/store/modeStore';
-import { becomeSeller } from '@/api/seller.api';
+import { becomeSeller, submitVerification } from '@/api/seller.api';
+import { uploadImages } from '@/api/upload.api';
 import { SellerTermsModal } from '@/components/ui/SellerTermsModal';
 import { FontSize, Spacing, Radius } from '@/constants/theme';
 import { SELLER_TYPES, SELLER_TYPE_DESCRIPTIONS, type SellerType } from '@/constants/sellerTypes';
+
+type DocumentSlot = 'card' | 'businessReg';
 
 // Remembered for the session so the seller terms are shown only the first time
 // a buyer opens this screen — this screen is only ever reached when a buyer
@@ -35,9 +44,43 @@ export default function BecomeSellerScreen() {
   const [businessName, setBusinessName] = useState('');
   const [marketHub, setMarketHub] = useState('');
   const [businessDescription, setBusinessDescription] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardPhotoUrl, setCardPhotoUrl] = useState<string | null>(null);
+  const [businessRegUrl, setBusinessRegUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<DocumentSlot | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showTerms, setShowTerms] = useState(!sellerTermsAcknowledged);
+
+  // Lets the seller pick a photo from their library and uploads it to the
+  // image host, so the "Upload" controls actually attach a document instead of
+  // doing nothing.
+  const pickDocument = async (slot: DocumentSlot) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets[0]) return;
+
+    setUploading(slot);
+    try {
+      const [hosted] = await uploadImages([result.assets[0].uri]);
+      if (!hosted) {
+        Alert.alert(
+          'Upload failed',
+          'Could not upload that photo. Please check your connection and try again.'
+        );
+        return;
+      }
+      if (slot === 'card') setCardPhotoUrl(hosted);
+      else setBusinessRegUrl(hosted);
+    } catch {
+      Alert.alert('Upload failed', 'Could not upload that photo. Please try again.');
+    } finally {
+      setUploading(null);
+    }
+  };
 
   const handleAgreeTerms = () => {
     sellerTermsAcknowledged = true;
@@ -65,12 +108,28 @@ export default function BecomeSellerScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
-      const profile = await becomeSeller({
+      let profile = await becomeSeller({
         sellerType: sellerType!,
         businessName: businessName.trim() || null,
         marketHub: marketHub.trim(),
         businessDescription: businessDescription.trim(),
       });
+      // If they attached their Ghana Card here, send it straight for review so
+      // the optional documents they added actually get submitted. Needs a card
+      // number to submit; without one they can finish later on the verification
+      // screen.
+      if (cardPhotoUrl && cardNumber.trim()) {
+        try {
+          profile = await submitVerification({
+            ghanaCardNumber: cardNumber.trim(),
+            ghanaCardPhotoUrl: cardPhotoUrl,
+            businessRegUrl: businessRegUrl ?? null,
+          });
+        } catch {
+          // Becoming a seller still succeeded — don't block that on the
+          // optional verification step failing.
+        }
+      }
       setSellerProfile(profile);
       switchToSeller();
       router.replace('/(seller)/(tabs)/dashboard');
@@ -199,21 +258,103 @@ export default function BecomeSellerScreen() {
             Verification Documents (Optional)
           </Text>
           <Text style={[styles.verifyHint, { color: colors.mutedForeground }]}>
-            Upload your Ghana Card and business registration to get verified.
-            Verified sellers get more trust from buyers.
+            Add your Ghana Card and business registration to get verified.
+            Verified sellers earn more trust from buyers. You can also do this
+            later from your seller profile.
           </Text>
-          <Button
-            label="Upload Ghana Card"
-            onPress={() => {}}
-            variant="outline"
-            style={styles.uploadButton}
+
+          <Input
+            label="Ghana Card Number"
+            placeholder="GHA-000000000-0"
+            value={cardNumber}
+            onChangeText={setCardNumber}
+            autoCapitalize="characters"
+            leftIcon="card-outline"
           />
-          <Button
-            label="Upload Business Registration"
-            onPress={() => {}}
-            variant="outline"
-            style={styles.uploadButton}
-          />
+
+          <View style={styles.slot}>
+            <Text style={[styles.slotLabel, { color: colors.foreground }]}>
+              Ghana Card Photo
+            </Text>
+            <Pressable
+              onPress={() => pickDocument('card')}
+              disabled={uploading !== null}
+              style={[
+                styles.dropZone,
+                { borderColor: colors.border, backgroundColor: colors.muted },
+              ]}
+            >
+              {uploading === 'card' ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : cardPhotoUrl ? (
+                <Image
+                  source={{ uri: cardPhotoUrl }}
+                  style={styles.preview}
+                  resizeMode="cover"
+                />
+              ) : (
+                <>
+                  <Ionicons
+                    name="camera-outline"
+                    size={26}
+                    color={colors.mutedForeground}
+                  />
+                  <Text style={[styles.dropHint, { color: colors.mutedForeground }]}>
+                    Tap to add a clear photo of the front
+                  </Text>
+                </>
+              )}
+            </Pressable>
+            {cardPhotoUrl && (
+              <Pressable onPress={() => pickDocument('card')}>
+                <Text style={[styles.replace, { color: colors.primary }]}>
+                  Change photo
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
+          <View style={styles.slot}>
+            <Text style={[styles.slotLabel, { color: colors.foreground }]}>
+              Business Registration
+            </Text>
+            <Pressable
+              onPress={() => pickDocument('businessReg')}
+              disabled={uploading !== null}
+              style={[
+                styles.dropZone,
+                { borderColor: colors.border, backgroundColor: colors.muted },
+              ]}
+            >
+              {uploading === 'businessReg' ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : businessRegUrl ? (
+                <Image
+                  source={{ uri: businessRegUrl }}
+                  style={styles.preview}
+                  resizeMode="cover"
+                />
+              ) : (
+                <>
+                  <Ionicons
+                    name="camera-outline"
+                    size={26}
+                    color={colors.mutedForeground}
+                  />
+                  <Text style={[styles.dropHint, { color: colors.mutedForeground }]}>
+                    Only if your shop is registered
+                  </Text>
+                </>
+              )}
+            </Pressable>
+            {businessRegUrl && (
+              <Pressable onPress={() => pickDocument('businessReg')}>
+                <Text style={[styles.replace, { color: colors.primary }]}>
+                  Change photo
+                </Text>
+              </Pressable>
+            )}
+          </View>
 
           <Button
             label="Become a Seller"
@@ -277,9 +418,31 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: Spacing.md,
   },
-  uploadButton: {
-    marginBottom: Spacing.sm,
+  slot: {
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
   },
+  slotLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+  },
+  dropZone: {
+    height: 150,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    overflow: 'hidden',
+  },
+  preview: { width: '100%', height: '100%' },
+  dropHint: {
+    fontSize: FontSize.sm,
+    textAlign: 'center',
+    paddingHorizontal: Spacing.base,
+  },
+  replace: { fontSize: FontSize.sm, fontWeight: '600' },
   sellerTypeTitle: {
     fontSize: FontSize.base,
     fontWeight: '600',
