@@ -94,7 +94,7 @@ export default function Layout() {
             <div>{admin?.name}</div>
             <small>{isSuper ? 'Super admin' : 'Admin'}</small>
           </div>
-          <button className="btn-sm btn-outline" onClick={signOut}>
+          <button className="btn-sm btn-danger" onClick={signOut}>
             Log out
           </button>
         </div>
