@@ -63,12 +63,19 @@ export default function ConversationScreen() {
     ? conversation?.sellerPhoneVisible
     : conversation?.buyerPhoneVisible;
 
-  // Once the deal has been rated the backend closes the chat. Lock the input
-  // and show why, rather than letting a message be typed only to be rejected.
-  const locked = conversation?.canSendMessages === false;
-  const lockedReason =
+  // A chat closes when the deal is completed/rated or the purchase request
+  // expires. Lock the input and explain why — with a next step for each role —
+  // rather than letting a message be typed only to be rejected. Also key off
+  // status so the notice still shows if the backend omits the flag.
+  const locked =
+    conversation?.canSendMessages === false ||
+    conversation?.status === 'CLOSED';
+  const closedReason =
     conversation?.messagingLockedReason ??
-    'This conversation is closed — no new messages can be sent.';
+    'Chats close once the deal is completed or a purchase request expires.';
+  const closedNextStep = isBuyer
+    ? 'To buy from this seller again, open the listing and start a new chat.'
+    : 'If the buyer wants to order again, they can start a new chat.';
 
   // Sends straight away rather than filling the box: the point is to skip
   // typing entirely.
@@ -349,10 +356,19 @@ export default function ConversationScreen() {
               name="lock-closed-outline"
               size={16}
               color={colors.mutedForeground}
+              style={styles.lockedIcon}
             />
-            <Text style={[styles.lockedText, { color: colors.mutedForeground }]}>
-              {lockedReason}
-            </Text>
+            <View style={styles.lockedTextWrap}>
+              <Text style={[styles.lockedTitle, { color: colors.foreground }]}>
+                This chat is closed
+              </Text>
+              <Text style={[styles.lockedText, { color: colors.mutedForeground }]}>
+                {closedReason}
+              </Text>
+              <Text style={[styles.lockedText, { color: colors.mutedForeground }]}>
+                {closedNextStep}
+              </Text>
+            </View>
           </View>
         ) : (
           <>
@@ -585,14 +601,24 @@ const styles = StyleSheet.create({
   },
   lockedNotice: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: Spacing.sm,
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
     borderTopWidth: 0.5,
   },
-  lockedText: {
+  lockedIcon: {
+    marginTop: 2,
+  },
+  lockedTextWrap: {
     flex: 1,
+    gap: 3,
+  },
+  lockedTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+  },
+  lockedText: {
     fontSize: FontSize.sm,
     lineHeight: 20,
   },
