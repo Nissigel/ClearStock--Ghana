@@ -7,6 +7,7 @@ import {
   Empty,
   ErrorNote,
   Loading,
+  formatDate,
   useLoad,
 } from '../components/common';
 
@@ -93,6 +94,7 @@ export default function Users() {
                 <th>Location</th>
                 <th>Role</th>
                 <th>Account</th>
+                <th>Joined</th>
                 <th />
               </tr>
             </thead>
@@ -112,6 +114,7 @@ export default function Users() {
                       <Badge tone="green">Active</Badge>
                     )}
                   </td>
+                  <td className="muted">{formatDate(user.createdAt)}</td>
                   <td>
                     {user.accountStatus === 'SUSPENDED' ? (
                       <button

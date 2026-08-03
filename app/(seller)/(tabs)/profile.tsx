@@ -201,6 +201,7 @@ export default function SellerProfileScreen() {
                 ],
               },
               { icon: 'leaf-outline', label: 'Recovery Impact', route: '/(seller)/(screens)/recovery-impact' },
+              { icon: 'star-outline', label: 'My Reviews', route: '/(seller)/(screens)/my-reviews' },
               { icon: 'swap-horizontal-outline', label: 'Transaction History', route: '/(seller)/(screens)/transactions' },
               { icon: 'settings-outline', label: 'Settings', route: '/(buyer)/(screens)/settings' },
             ].map((item, index) => (

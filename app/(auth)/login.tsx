@@ -3,6 +3,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Keyboard,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -167,6 +168,11 @@ export default function LoginPinScreen() {
             onChange={(value) => {
               setPin(value);
               if (pinError) setPinError('');
+              // Drop the keyboard once the full PIN is in, so the Login button
+              // isn't left hidden behind it.
+              if (value.length >= PIN_LENGTH) {
+                Keyboard.dismiss();
+              }
             }}
             error={pinError}
             containerStyle={styles.pinInput}
