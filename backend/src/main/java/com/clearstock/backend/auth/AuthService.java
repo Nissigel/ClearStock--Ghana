@@ -33,6 +33,15 @@ public class AuthService {
 
     public SendOtpResponse sendOtp(String rawPhone, String email) {
         String phone = PhoneUtil.normalize(rawPhone);
+
+        // One number, one account. Reject a sign-up code for a number that is
+        // already registered before generating or texting anything, so no SMS
+        // credit is spent and the app can send them straight to login.
+        if (userRepository.existsByPhone(phone)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This number is already registered. Please log in with your PIN.");
+        }
+
         String otp = otpService.generateAndSaveOtp(phone, OtpPurpose.SIGNUP);
 
         // Try real delivery: SMS to the phone, plus email if one is known.

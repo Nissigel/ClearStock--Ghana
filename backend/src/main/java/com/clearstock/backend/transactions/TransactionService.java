@@ -43,6 +43,7 @@ public class TransactionService {
     private final PaystackService paystackService;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
+    private final com.clearstock.backend.common.EmailService emailService;
 
     @Transactional
     public TransactionResponse createTransaction(User seller, CreateTransactionRequest request) {
@@ -390,10 +391,19 @@ public class TransactionService {
                 transaction.getSeller(),
                 "Transaction Completed",
                 "Your transaction for " + transaction.getListing().getProductName()
-                        + " has been completed successfully.",
+                        + " has been completed and your payment has been released.",
                 NotificationType.TRANSACTION,
                 transaction.getId()
         );
+        // Also email the seller their payout confirmation when they've given us
+        // an address — the user asked for this regardless of their OTP-channel
+        // preference, so it isn't gated on preferEmail.
+        User seller = transaction.getSeller();
+        if (seller.getEmail() != null && !seller.getEmail().isBlank()) {
+            emailService.sendTransactionCompletedEmail(
+                    seller.getEmail(), seller.getName(),
+                    transaction.getListing().getProductName());
+        }
         notificationService.send(
                 transaction.getBuyer(),
                 "Transaction Completed",
