@@ -9,11 +9,13 @@ import {
   formatDate,
   useLoad,
 } from '../components/common';
+import { ContactModal, type ContactTarget } from '../components/ContactModal';
 
 type Filter = 'ALL' | 'LOW' | 'HIGH' | 'WITH_COMMENT';
 
 export default function Reviews() {
   const [filter, setFilter] = useState<Filter>('ALL');
+  const [contact, setContact] = useState<ContactTarget | null>(null);
 
   const { data, error, loading } = useLoad(() =>
     api.get<AdminReview[]>('/admin/reviews')
@@ -85,6 +87,7 @@ export default function Reviews() {
                 <th>Listing</th>
                 <th>Comment</th>
                 <th>Date</th>
+                <th>Contact</th>
               </tr>
             </thead>
             <tbody>
@@ -100,12 +103,46 @@ export default function Reviews() {
                     {review.comment?.trim() ? review.comment : <span className="muted">—</span>}
                   </td>
                   <td className="muted">{formatDate(review.createdAt)}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <button
+                        className="btn-sm btn-outline"
+                        onClick={() =>
+                          setContact({
+                            userId: review.revieweeUserId,
+                            name: review.revieweeName,
+                            phone: review.revieweePhone,
+                            email: review.revieweeEmail,
+                          })
+                        }
+                      >
+                        Seller
+                      </button>
+                      {review.reviewerUserId != null && (
+                        <button
+                          className="btn-sm btn-outline"
+                          onClick={() =>
+                            setContact({
+                              userId: review.reviewerUserId!,
+                              name: review.reviewerName,
+                              phone: review.reviewerPhone,
+                              email: review.reviewerEmail,
+                            })
+                          }
+                        >
+                          Buyer
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      <ContactModal target={contact} onClose={() => setContact(null)} />
     </>
   );
 }

@@ -70,6 +70,8 @@ export interface AdminListing {
   category: string;
   sellerName: string | null;
   sellerUserId: number | null;
+  sellerPhone: string | null;
+  sellerEmail: string | null;
   originalPrice: number;
   currentPrice: number;
   quantity: number;
@@ -159,6 +161,11 @@ export interface AdminReview {
   reviewerName: string;
   revieweeName: string;
   revieweeUserId: number;
+  reviewerUserId: number | null;
+  reviewerPhone: string | null;
+  reviewerEmail: string | null;
+  revieweePhone: string | null;
+  revieweeEmail: string | null;
   listingTitle: string;
   createdAt: string;
 }

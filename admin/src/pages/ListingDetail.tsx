@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import type { AdminListing } from '../lib/types';
 import { ErrorNote, Loading, formatDate, useLoad } from '../components/common';
+import { ContactModal, type ContactTarget } from '../components/ContactModal';
 import { ListingBadge } from './Listings';
 
 /** The mockup's preset reasons, so moderation stays consistent between admins. */
@@ -20,6 +21,7 @@ export default function ListingDetail() {
   const [reloadKey, setReloadKey] = useState(0);
   const [shown, setShown] = useState(0);
   const [mode, setMode] = useState<'suspend' | 'archive' | null>(null);
+  const [contact, setContact] = useState<ContactTarget | null>(null);
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -191,6 +193,21 @@ export default function ListingDetail() {
             Restore listing
           </button>
         )}
+        {data.sellerUserId != null && (
+          <button
+            className="btn-outline"
+            onClick={() =>
+              setContact({
+                userId: data.sellerUserId!,
+                name: data.sellerName ?? 'Seller',
+                phone: data.sellerPhone,
+                email: data.sellerEmail,
+              })
+            }
+          >
+            Contact seller
+          </button>
+        )}
       </div>
 
       {mode && (
@@ -234,6 +251,8 @@ export default function ListingDetail() {
           </div>
         </div>
       )}
+
+      <ContactModal target={contact} onClose={() => setContact(null)} />
     </>
   );
 }

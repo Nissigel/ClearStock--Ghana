@@ -10,6 +10,7 @@ import {
   formatDate,
   useLoad,
 } from '../components/common';
+import { ContactModal, type ContactTarget } from '../components/ContactModal';
 
 type Filter = 'ALL' | 'ACTIVE' | 'SUSPENDED' | 'SELLERS' | 'BUYERS';
 
@@ -17,6 +18,7 @@ export default function Users() {
   const [filter, setFilter] = useState<Filter>('ALL');
   const [reloadKey, setReloadKey] = useState(0);
   const [target, setTarget] = useState<AdminUser | null>(null);
+  const [contact, setContact] = useState<ContactTarget | null>(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<unknown>(null);
@@ -116,21 +118,36 @@ export default function Users() {
                   </td>
                   <td className="muted">{formatDate(user.createdAt)}</td>
                   <td>
-                    {user.accountStatus === 'SUSPENDED' ? (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       <button
                         className="btn-sm btn-outline"
-                        onClick={() => reactivate(user)}
+                        onClick={() =>
+                          setContact({
+                            userId: user.id,
+                            name: user.name,
+                            phone: user.phone,
+                            email: user.email,
+                          })
+                        }
                       >
-                        Reactivate
+                        Contact
                       </button>
-                    ) : (
-                      <button
-                        className="btn-sm btn-outline-danger"
-                        onClick={() => setTarget(user)}
-                      >
-                        Suspend
-                      </button>
-                    )}
+                      {user.accountStatus === 'SUSPENDED' ? (
+                        <button
+                          className="btn-sm btn-outline"
+                          onClick={() => reactivate(user)}
+                        >
+                          Reactivate
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-sm btn-outline-danger"
+                          onClick={() => setTarget(user)}
+                        >
+                          Suspend
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -169,6 +186,8 @@ export default function Users() {
           </div>
         </div>
       )}
+
+      <ContactModal target={contact} onClose={() => setContact(null)} />
     </>
   );
 }
