@@ -81,6 +81,15 @@ public class EmailService {
                         + "— The ClearStock Ghana Team");
     }
 
+    public boolean sendTransactionCompletedEmail(String to, String sellerName, String productName) {
+        return send(to, "Your ClearStock sale is complete",
+                "Hi " + sellerName + ",\n\n"
+                        + "Your sale of " + productName + " is complete and your "
+                        + "payment has been released to you.\n\n"
+                        + "Thank you for selling on ClearStock Ghana.\n\n"
+                        + "— The ClearStock Ghana Team");
+    }
+
     public void sendWelcomeEmail(String to, String name) {
         send(to, "Welcome to ClearStock Ghana",
                 "Hi " + name + ",\n\n"
