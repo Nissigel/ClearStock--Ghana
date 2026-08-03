@@ -183,7 +183,7 @@ export default function OtpVerifyScreen() {
           <Text
             style={[styles.subheading, { color: colors.mutedForeground }]}
           >
-            The code expires in 2 minutes
+            The code expires in 5 minutes
           </Text>
 
           {!!shownCode && (

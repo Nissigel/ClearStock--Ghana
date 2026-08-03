@@ -58,6 +58,9 @@ function targetFor(item: Notification, isSeller: boolean): Href | null {
         : id
           ? { pathname: '/(buyer)/(screens)/purchase-requests/[id]', params: { id } }
           : null;
+    case 'review':
+      // Reviews are always about the seller — take them to their own reviews.
+      return '/(seller)/(screens)/my-reviews';
     default:
       return null;
   }

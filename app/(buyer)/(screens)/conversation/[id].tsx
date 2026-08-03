@@ -11,8 +11,9 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { AxiosError } from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/useTheme';
 import { Avatar } from '@/components/ui/Avatar';
 import { QuickReplies } from '@/components/ui/QuickReplies';
@@ -22,6 +23,7 @@ import {
   useConversation,
   useEditMessage,
   useDeleteMessage,
+  CONVERSATIONS_KEY,
 } from '@/hooks/useConversations';
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,9 +41,22 @@ export default function ConversationScreen() {
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
 
+  const queryClient = useQueryClient();
   const { data: conversation } = useConversation(id);
   const { data: messages, isLoading } = useMessages(id);
   const { mutate: send, isPending } = useSendMessage();
+
+  // Opening the chat marks its messages read on the server (getMessages does),
+  // so refresh the inbox list once they've loaded and again on the way out —
+  // otherwise the conversation keeps showing as unread in the messages list.
+  const messagesLoaded = !!messages;
+  useEffect(() => {
+    if (!messagesLoaded) return;
+    queryClient.invalidateQueries({ queryKey: [CONVERSATIONS_KEY] });
+    return () => {
+      queryClient.invalidateQueries({ queryKey: [CONVERSATIONS_KEY] });
+    };
+  }, [messagesLoaded, queryClient]);
   const { mutate: editMessage, isPending: isEditing } = useEditMessage();
   const { mutate: deleteMessage } = useDeleteMessage();
 

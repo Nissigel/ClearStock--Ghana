@@ -42,7 +42,9 @@ const REFERENCE_BY_TYPE: Record<string, ReferenceType> = {
   DEAL_ALERT: 'listing',
   PURCHASE_REQUEST: 'purchase_request',
   TRANSACTION: 'transaction',
-  REVIEW: 'transaction',
+  // A review notification is about the seller's own reviews, not the underlying
+  // transaction — it opens the seller's My Reviews screen.
+  REVIEW: 'review',
   PAYMENT: 'transaction',
 };
 

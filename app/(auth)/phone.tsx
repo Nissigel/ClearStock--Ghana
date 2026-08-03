@@ -3,6 +3,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
@@ -76,6 +77,28 @@ export default function PhoneEntryScreen() {
         },
       });
     } catch (err) {
+      // The backend rejects a sign-up for a number that already has an account
+      // (one number, one account). Send them to log in instead of registering.
+      const status = (err as { response?: { status?: number; data?: { message?: string } } })
+        ?.response;
+      if (status?.status === 409) {
+        Alert.alert(
+          'Number already registered',
+          status.data?.message ??
+            'This number already has an account. Please log in with your PIN.',
+          [
+            {
+              text: 'Log in',
+              onPress: () =>
+                router.replace({
+                  pathname: '/(auth)/login',
+                  params: { phoneNumber },
+                }),
+            },
+          ]
+        );
+        return;
+      }
       setError('Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
@@ -175,7 +198,15 @@ export default function PhoneEntryScreen() {
               <Input
                 value={phoneNumber}
                 onChangeText={(text) => {
-                  setPhoneNumber(text);
+                  // The +233 prefix is shown separately, so a leading zero is
+                  // dropped automatically as they type (0244… becomes 244…),
+                  // the way the network apps do it. Keep digits only and cap at
+                  // the nine digits a Ghana number has after the prefix.
+                  const digits = text
+                    .replace(/\D/g, '')
+                    .replace(/^0+/, '')
+                    .slice(0, 9);
+                  setPhoneNumber(digits);
                   if (error) setError('');
                 }}
                 placeholder="XX XXX XXXX"

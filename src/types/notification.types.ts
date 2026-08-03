@@ -39,4 +39,5 @@ export type ReferenceType =
   | 'listing'
   | 'conversation'
   | 'purchase_request'
-  | 'transaction';
+  | 'transaction'
+  | 'review';

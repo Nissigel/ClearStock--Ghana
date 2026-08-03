@@ -7,6 +7,7 @@ export default function SellerScreensLayout() {
       <Stack.Screen name="seller-profile" />
       <Stack.Screen name="verification" />
       <Stack.Screen name="recovery-impact" />
+      <Stack.Screen name="my-reviews" />
       <Stack.Screen name="earnings" />
       <Stack.Screen name="transactions" />
       <Stack.Screen name="transaction-detail/[id]" />

@@ -8,6 +8,7 @@ import {
   Empty,
   ErrorNote,
   Loading,
+  formatDate,
   useLoad,
 } from '../components/common';
 
@@ -57,6 +58,7 @@ export default function Listings() {
                 <th>Price</th>
                 <th>Stock</th>
                 <th>Status</th>
+                <th>Added</th>
               </tr>
             </thead>
             <tbody>
@@ -76,6 +78,7 @@ export default function Listings() {
                   <td>
                     <ListingBadge status={listing.listingStatus} />
                   </td>
+                  <td className="muted">{formatDate(listing.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
