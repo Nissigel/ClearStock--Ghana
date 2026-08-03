@@ -90,6 +90,14 @@ public class EmailService {
                         + "— The ClearStock Ghana Team");
     }
 
+    /** A free-text message an admin sends to a user from the dashboard. */
+    public boolean sendAdminMessageEmail(String to, String name, String message) {
+        return send(to, "A message from ClearStock",
+                "Hi " + name + ",\n\n"
+                        + message + "\n\n"
+                        + "— The ClearStock Ghana Team");
+    }
+
     public void sendWelcomeEmail(String to, String name) {
         send(to, "Welcome to ClearStock Ghana",
                 "Hi " + name + ",\n\n"
