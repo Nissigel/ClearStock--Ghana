@@ -18,6 +18,9 @@ public class AdminListingResponse {
     private String category;
     private String sellerName;
     private Long sellerUserId;
+    // Seller contact, so an admin can reach them about a suspended/archived listing.
+    private String sellerPhone;
+    private String sellerEmail;
     private BigDecimal originalPrice;
     private BigDecimal currentPrice;
     private Integer quantity;

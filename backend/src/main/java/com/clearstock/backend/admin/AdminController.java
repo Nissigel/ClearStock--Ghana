@@ -85,6 +85,14 @@ public class AdminController {
                         AccountStatus.ACTIVE, null)));
     }
 
+    @PostMapping("/users/{id}/contact")
+    public ResponseEntity<ApiResponse<Void>> contactUser(
+            Authentication authentication, @PathVariable Long id,
+            @RequestBody ContactUserRequest request) {
+        adminService.contactUser(actor(authentication), id, request.getMessage());
+        return ResponseEntity.ok(ApiResponse.<Void>success("Message sent", null));
+    }
+
     // ------------------------------------------------------------- listings
 
     @GetMapping("/listings")

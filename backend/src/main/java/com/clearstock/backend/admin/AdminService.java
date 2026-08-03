@@ -52,6 +52,7 @@ public class AdminService {
     private final ReviewRepository reviewRepository;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
+    private final com.clearstock.backend.common.EmailService emailService;
 
     // ---------------------------------------------------------------- stats
 
@@ -191,6 +192,27 @@ public class AdminService {
         }
 
         return toUserResponse(user);
+    }
+
+    /**
+     * Sends a free-text message from an admin to a user (seller or buyer). It
+     * lands in their in-app notifications and, when they have an address on
+     * file, their email — so an admin can reach anyone without leaving the
+     * dashboard.
+     */
+    public void contactUser(Admin actor, Long userId, String message) {
+        if (message == null || message.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Write a message to send.");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        String body = message.strip();
+        notificationService.send(user, "Message from ClearStock", body,
+                NotificationType.ACCOUNT, user.getId());
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            emailService.sendAdminMessageEmail(user.getEmail(), user.getName(), body);
+        }
     }
 
     // -------------------------------------------------------------- listings
@@ -418,6 +440,16 @@ public class AdminService {
                         .revieweeName(displayNameOf(review.getReviewee()))
                         .revieweeUserId(review.getReviewee() == null
                                 ? null : review.getReviewee().getId())
+                        .reviewerUserId(review.getReviewer() == null
+                                ? null : review.getReviewer().getId())
+                        .reviewerPhone(review.getReviewer() == null
+                                ? null : review.getReviewer().getPhone())
+                        .reviewerEmail(review.getReviewer() == null
+                                ? null : review.getReviewer().getEmail())
+                        .revieweePhone(review.getReviewee() == null
+                                ? null : review.getReviewee().getPhone())
+                        .revieweeEmail(review.getReviewee() == null
+                                ? null : review.getReviewee().getEmail())
                         .listingTitle(review.getTransaction() == null
                                 || review.getTransaction().getListing() == null
                                 ? "—"
@@ -515,6 +547,8 @@ public class AdminService {
                 .category(listing.getCategory())
                 .sellerName(seller == null ? null : sellerNameOf(seller))
                 .sellerUserId(seller == null ? null : seller.getUser().getId())
+                .sellerPhone(seller == null ? null : seller.getUser().getPhone())
+                .sellerEmail(seller == null ? null : seller.getUser().getEmail())
                 .originalPrice(listing.getOriginalPrice())
                 .currentPrice(listing.getCurrentPrice())
                 .quantity(listing.getQuantity())
