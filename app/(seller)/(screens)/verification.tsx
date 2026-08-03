@@ -66,7 +66,11 @@ export default function SellerVerificationScreen() {
 
   useEffect(() => {
     (async () => {
-      const profile = sellerProfile ?? (await getSellerProfile());
+      // Always fetch the live profile rather than trusting the store, which is
+      // set at login and goes stale once an admin approves the shop — that's
+      // what made this screen still say "not verified" while the profile page
+      // (which fetches fresh) correctly showed "Verified".
+      const profile = (await getSellerProfile()) ?? sellerProfile;
       if (profile) {
         setSellerProfile(profile);
         setCardNumber(profile.ghanaCardNumber ?? '');
