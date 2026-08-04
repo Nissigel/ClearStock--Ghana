@@ -83,7 +83,15 @@ export default function ResetPinNewScreen() {
         router.replace('/(buyer)/(tabs)/home');
       }
     } catch (err) {
-      setConfirmError('Something went wrong. Please try again.');
+      // Surface the backend reason (e.g. an expired code) rather than a blanket
+      // "something went wrong", so the user knows to request a fresh code.
+      const res = (err as { response?: { status?: number; data?: { message?: string } } })
+        ?.response;
+      setConfirmError(
+        res?.data?.message
+          ? `${res.data.message} You may need to go back and request a new code.`
+          : 'Something went wrong. Please try again.'
+      );
     } finally {
       setLoading(false);
     }

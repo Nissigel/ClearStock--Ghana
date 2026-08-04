@@ -80,16 +80,22 @@ export function PinInput({
         ))}
       </TouchableOpacity>
 
+      {/* The digit boxes above already mask the PIN (they show ●), so the
+          hidden field itself must NOT be a password field: on Android a
+          secureTextEntry field triggers the password manager, which autofills
+          the "confirm PIN" box with a different value and makes the two PINs
+          never match. Keep it a plain numeric field with autofill turned off. */}
       <TextInput
         ref={inputRef}
         value={value}
         onChangeText={handleChange}
         keyboardType="numeric"
         maxLength={PIN_LENGTH}
-        secureTextEntry={!isVisible}
         style={styles.hiddenInput}
         autoComplete="off"
         autoCorrect={false}
+        textContentType="none"
+        importantForAutofill="no"
       />
 
       <TouchableOpacity
