@@ -28,7 +28,6 @@ import {
 
 interface FormState {
   fullName: string;
-  email: string;
   region: Region | '';
   cityTown: string;
 }
@@ -46,7 +45,6 @@ export default function ProfileSetupScreen() {
 
   const [form, setForm] = useState<FormState>({
     fullName: '',
-    email: '',
     region: '',
     cityTown: '',
   });
@@ -95,7 +93,6 @@ export default function ProfileSetupScreen() {
       setLoading(true);
       const saved = await updateProfile({
         fullName: form.fullName.trim(),
-        email: form.email.trim() || undefined,
         region: form.region,
         cityTown: form.cityTown.trim(),
       });
@@ -162,16 +159,8 @@ export default function ProfileSetupScreen() {
             leftIcon="person-outline"
           />
 
-          <Input
-            label="Email Address (Optional)"
-            placeholder="Enter your email address"
-            value={form.email}
-            onChangeText={(text) => updateForm('email', text)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            leftIcon="mail-outline"
-            hint="Used for important account notifications"
-          />
+          {/* Email is captured at sign-up (for the OTP) and saved then, so it
+              isn't asked for again here; it's editable later from the profile. */}
 
           {/* Region Picker */}
           <View style={styles.fieldContainer}>

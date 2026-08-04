@@ -51,6 +51,21 @@ export const sendOtp = async (
   return { otp: d?.otp ?? null, emailSent: !!d?.emailSent };
 };
 
+// PIN reset uses its own endpoint: it requires the number to already have an
+// account (the opposite of sign-up) and issues a PIN_RESET code, so it must not
+// go through /auth/send-otp — that one now rejects numbers that already exist.
+export const sendResetOtp = async (
+  phone: string
+): Promise<{ otp: string | null; emailSent: boolean }> => {
+  if (ENV.USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return { otp: MOCK_OTP, emailSent: false };
+  }
+  const response = await apiClient.post('/auth/forgot-pin', { phone });
+  const d = response.data.data as { otp: string | null; emailSent: boolean };
+  return { otp: d?.otp ?? null, emailSent: !!d?.emailSent };
+};
+
 export const verifyOtp = async (
   data: VerifyOtpRequest
 ): Promise<VerifyOtpResult> => {

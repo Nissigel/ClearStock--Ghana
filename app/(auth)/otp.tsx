@@ -14,7 +14,7 @@ import { OtpInput } from '@/components/ui/OtpInput';
 import { Button } from '@/components/ui/Button';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { verifyOtp, sendOtp } from '@/api/auth.api';
+import { verifyOtp, sendOtp, sendResetOtp } from '@/api/auth.api';
 import { Spacing, FontSize } from '@/constants/theme';
 import { OTP_RESEND_COOLDOWN_SECONDS } from '@/constants/app';
 import type { OtpPurpose } from '@/types/auth.types';
@@ -122,11 +122,17 @@ export default function OtpVerifyScreen() {
   const handleResend = async () => {
     try {
       setResendLoading(true);
-      const { otp: newCode } = await sendOtp({
-        phone: phoneNumber,
-        purpose: purpose ?? 'REGISTRATION',
-        email: email || undefined,
-      });
+      // PIN reset has its own endpoint (the number must already exist); sign-up
+      // uses send-otp. Resending has to match, or a reset resend would be
+      // rejected as "already registered".
+      const { otp: newCode } =
+        purpose === 'PIN_RESET'
+          ? await sendResetOtp(phoneNumber)
+          : await sendOtp({
+              phone: phoneNumber,
+              purpose: purpose ?? 'REGISTRATION',
+              email: email || undefined,
+            });
       setCountdown(OTP_RESEND_COOLDOWN_SECONDS);
       setCanResend(false);
       setOtp('');
