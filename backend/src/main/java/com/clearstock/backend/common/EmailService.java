@@ -90,6 +90,14 @@ public class EmailService {
                         + "— The ClearStock Ghana Team");
     }
 
+    /** Account status changes (suspended / reactivated) sent to the user. */
+    public boolean sendAccountStatusEmail(String to, String name, String subject, String message) {
+        return send(to, subject,
+                "Hi " + name + ",\n\n"
+                        + message + "\n\n"
+                        + "— The ClearStock Ghana Team");
+    }
+
     /** A free-text message an admin sends to a user from the dashboard. */
     public boolean sendAdminMessageEmail(String to, String name, String message) {
         return send(to, "A message from ClearStock",

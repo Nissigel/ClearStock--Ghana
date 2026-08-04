@@ -141,7 +141,8 @@ public class AuthService {
         // from the dashboard would change a label and nothing else.
         if (user.getAccountStatus() == AccountStatus.SUSPENDED) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "This account has been suspended. Please contact ClearStock support.");
+                    "This account has been suspended. Please contact ClearStock support "
+                            + "at clearstock101@gmail.com.");
         }
 
         String token = jwtUtil.generateToken(user.getId(), user.getPhone());

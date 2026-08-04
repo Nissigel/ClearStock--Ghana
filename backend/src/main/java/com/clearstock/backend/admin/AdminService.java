@@ -177,18 +177,25 @@ public class AdminService {
                         ? AuditAction.SUSPENDED_USER : AuditAction.REACTIVATED_USER,
                 "USER", user.getId(), displayNameOf(user), reason);
 
+        boolean hasEmail = user.getEmail() != null && !user.getEmail().isBlank();
         if (status == AccountStatus.SUSPENDED) {
-            notificationService.send(user,
-                    "Your account has been suspended",
-                    (reason == null || reason.isBlank()
-                            ? "Please contact ClearStock support."
-                            : reason + " Please contact ClearStock support."),
+            String message = (reason == null || reason.isBlank()
+                    ? "Please contact ClearStock support at clearstock101@gmail.com."
+                    : reason + " Please contact ClearStock support at clearstock101@gmail.com.");
+            notificationService.send(user, "Your account has been suspended", message,
                     NotificationType.ACCOUNT, user.getId());
+            if (hasEmail) {
+                emailService.sendAccountStatusEmail(user.getEmail(), user.getName(),
+                        "Your ClearStock account has been suspended", message);
+            }
         } else {
-            notificationService.send(user,
-                    "Your account is active again",
-                    "You can sign in and trade on ClearStock as normal.",
+            String message = "You can sign in and trade on ClearStock as normal.";
+            notificationService.send(user, "Your account is active again", message,
                     NotificationType.ACCOUNT, user.getId());
+            if (hasEmail) {
+                emailService.sendAccountStatusEmail(user.getEmail(), user.getName(),
+                        "Your ClearStock account is active again", message);
+            }
         }
 
         return toUserResponse(user);

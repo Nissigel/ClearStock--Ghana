@@ -31,6 +31,8 @@ public class MessagingService {
     private static final String CLOSED_REASON = "This conversation is closed.";
     private static final String COMPLETED_REASON =
             "This transaction is over — you can no longer message each other here.";
+    private static final String CANCELLED_REASON =
+            "This order was cancelled — you can no longer message each other here.";
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
@@ -244,22 +246,35 @@ public class MessagingService {
         if (conversation.getStatus() == ConversationStatus.CLOSED) {
             return CLOSED_REASON;
         }
-        return transactionOver(conversation) ? COMPLETED_REASON : null;
+        if (hasTransactionInStatus(conversation, TransactionStatus.COMPLETED)) {
+            return COMPLETED_REASON;
+        }
+        // A cancelled order (e.g. the buyer didn't pay in time) also ends the
+        // deal, so the chat closes rather than staying open with nothing to do.
+        if (hasTransactionInStatus(conversation, TransactionStatus.CANCELLED)) {
+            return CANCELLED_REASON;
+        }
+        return null;
     }
 
     /**
-     * True once this buyer and seller have a completed transaction on this
-     * listing. The deal is finished at that point, so the conversation closes
-     * and the contact numbers are hidden again — there is nothing left to
-     * arrange, and neither side needs the other's number any more.
+     * True once this buyer and seller have a finished transaction on this
+     * listing — completed or cancelled. Either way the deal is over, so the
+     * conversation closes and the contact numbers are hidden again: there is
+     * nothing left to arrange, and neither side needs the other's number.
      */
     private boolean transactionOver(Conversation conversation) {
+        return hasTransactionInStatus(conversation, TransactionStatus.COMPLETED)
+                || hasTransactionInStatus(conversation, TransactionStatus.CANCELLED);
+    }
+
+    private boolean hasTransactionInStatus(Conversation conversation, TransactionStatus status) {
         return transactionRepository
                 .existsByListingAndBuyerAndSellerAndTransactionStatus(
                         conversation.getListing(),
                         conversation.getBuyer(),
                         conversation.getSeller(),
-                        TransactionStatus.COMPLETED);
+                        status);
     }
 
     /**
