@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { KeyboardAvoidingWrapper } from '@/components/ui/KeyboardAvoidingWrapper';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { sendOtp } from '@/api/auth.api';
+import { sendResetOtp } from '@/api/auth.api';
 import { Spacing, FontSize } from '@/constants/theme';
 
 export default function ForgotPinScreen() {
@@ -39,10 +39,7 @@ export default function ForgotPinScreen() {
     if (!validate()) return;
     try {
       setLoading(true);
-      const { otp } = await sendOtp({
-        phone: phoneNumber,
-        purpose: 'PIN_RESET',
-      });
+      const { otp } = await sendResetOtp(phoneNumber);
       router.push({
         pathname: '/(auth)/otp',
         params: {
@@ -53,7 +50,18 @@ export default function ForgotPinScreen() {
         },
       });
     } catch (err) {
-      setError('Failed to send OTP. Please try again.');
+      // A number with no account can't reset a PIN — say so plainly instead of
+      // a generic failure.
+      const status = (err as { response?: { status?: number; data?: { message?: string } } })
+        ?.response;
+      if (status?.status === 404) {
+        setError(
+          status.data?.message ??
+            'No account found for this number. Please register instead.'
+        );
+      } else {
+        setError('Failed to send OTP. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

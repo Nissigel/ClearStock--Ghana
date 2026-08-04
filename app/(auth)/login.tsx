@@ -87,7 +87,18 @@ export default function LoginPinScreen() {
         router.replace('/(buyer)/(tabs)/home');
       }
     } catch (err) {
-      setPinError('Incorrect phone number or PIN. Please try again.');
+      // A suspended account comes back as 403 with a reason — show that instead
+      // of the generic "wrong PIN", which would be misleading.
+      const status = (err as { response?: { status?: number; data?: { message?: string } } })
+        ?.response;
+      if (status?.status === 403) {
+        setPinError(
+          status.data?.message ??
+            'This account has been suspended. Please contact ClearStock support.'
+        );
+      } else {
+        setPinError('Incorrect phone number or PIN. Please try again.');
+      }
       setPin('');
     } finally {
       setLoading(false);
