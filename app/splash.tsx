@@ -134,7 +134,7 @@ export default function SplashScreen() {
           </View>
 
           <Text style={[styles.tagline, { color: colors.brandGreenMuted }]}>
-            Buy and sell surplus goods{'\n'}before they go to waste.
+            Clear Fast. Buy Smart
           </Text>
         </Animated.View>
       </View>
